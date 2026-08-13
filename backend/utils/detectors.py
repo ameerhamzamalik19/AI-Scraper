@@ -1,67 +1,55 @@
 import re
-from urllib.parse import urlparse
-from typing import List, Dict
-
+from typing import List, Dict, Any
+from utils.validators import is_valid_scraping_url
 
 class InputDetector:
-    """Accurate input detection for URLs vs messages"""
+    """Detect input type (URL, question, etc.)"""
     
     URL_PATTERN = re.compile(
-        r'(?:https?://|www\.)'  # Protocol or www
-        r'(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}'  # Domain
-        r'(?:/[^\s]*)?',  # Path
+        r'^https?://[^\s]+', re.IGNORECASE
+    )
+    
+    QUESTION_PATTERN = re.compile(
+        r'^(what|where|when|why|how|who|which|is|are|do|does|did|can|could|would|will|should|'
+        r'explain|describe|tell|show|give|find|search|analyze|summarize|extract|compare|'
+        r'contrast|evaluate|discuss|clarify|define|list|provide|identify)\b',
         re.IGNORECASE
     )
     
     @classmethod
-    def extract_urls(cls, text: str) -> List[str]:
-        """Extract all URLs from text"""
-        return cls.URL_PATTERN.findall(text)
-    
-    @staticmethod
-    def is_valid_url(url: str) -> bool:
-        """Check if a string is a valid URL"""
-        if not url.startswith(('http://', 'https://')):
-            url = 'https://' + url
-        
-        try:
-            result = urlparse(url)
-            if not all([result.scheme, result.netloc]):
-                return False
-            if result.scheme not in ['http', 'https']:
-                return False
-            if '.' not in result.netloc:
-                return False
-            return True
-        except Exception:
-            return False
-    
-    @classmethod
-    def detect_input_type(cls, content: str) -> Dict:
-        """Detect the type of input"""
+    def detect_input_type(cls, content: str) -> Dict[str, Any]:
+        """Detect the type of input content"""
         content = content.strip()
-        extracted_urls = cls.extract_urls(content)
         
-        valid_urls = []
-        for url in extracted_urls:
-            if cls.is_valid_url(url):
-                if not url.startswith(('http://', 'https://')):
-                    url = 'https://' + url
-                valid_urls.append(url)
+        # Check for URLs
+        raw_urls = re.findall(r'https?://[^\s]+', content)
         
-        text_content = content
-        for url in extracted_urls:
-            text_content = text_content.replace(url, '').strip()
+        # Filter - only HTTPS
+        valid_urls = [url for url in raw_urls if is_valid_scraping_url(url)]
+        has_valid_url = len(valid_urls) > 0
         
-        input_type = 'message'
-        if valid_urls and not text_content:
+        # Check if it's a question
+        has_question = bool(cls.QUESTION_PATTERN.search(content)) or content.endswith('?')
+        
+        # Determine input type
+        if has_valid_url:
             input_type = 'url'
-        elif valid_urls and text_content:
-            input_type = 'mixed'
+        elif has_question:
+            input_type = 'question'
+        else:
+            input_type = 'message'
         
         return {
-            'type': input_type,
+            'has_url': has_valid_url,
             'urls': valid_urls,
-            'text_content': text_content,
-            'has_url': len(valid_urls) > 0
+            'has_question': has_question,
+            'input_type': input_type
         }
+    
+    @classmethod
+    def extract_urls(cls, content: str) -> List[str]:
+        """Extract all URLs from content"""
+        # Simple URL extraction - matches http:// and https://
+        # More sophisticated version would handle URLs in text
+        urls = re.findall(r'https?://[^\s]+', content)
+        return urls

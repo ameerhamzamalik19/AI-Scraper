@@ -323,23 +323,56 @@
 
 -- COMMENT ON CONSTRAINT uq_chunk_page_hash ON chunks IS 'Prevents duplicate chunks within same page version for idempotent processing';
 
+-- SELECT * FROM messages;
+
+-- CREATE TABLE messages (
+--     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+--     chat_id UUID NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+--     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+--     role VARCHAR(20) NOT NULL, -- 'user' or 'assistant'
+--     content TEXT NOT NULL,
+--     is_url BOOLEAN DEFAULT FALSE,
+--     url_processed BOOLEAN DEFAULT FALSE,
+--     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+--     CONSTRAINT chk_role CHECK (role IN ('user', 'assistant'))
+-- );
 
 
-CREATE TABLE messages (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    chat_id UUID NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    role VARCHAR(20) NOT NULL, -- 'user' or 'assistant'
-    content TEXT NOT NULL,
-    is_url BOOLEAN DEFAULT FALSE,
-    url_processed BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT chk_role CHECK (role IN ('user', 'assistant'))
-);
+-- -- Indexes
+-- CREATE INDEX idx_messages_chat_id ON messages(chat_id);
+-- CREATE INDEX idx_messages_user_id ON messages(user_id);
+-- CREATE INDEX idx_messages_created_at ON messages(created_at);
+
+-- CREATE TABLE chats (
+--     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+--     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+--     page_id UUID REFERENCES pages(id) ON DELETE SET NULL,
+--     title VARCHAR(255),
+--     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+--     CONSTRAINT fk_chat_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+--     CONSTRAINT fk_chat_page FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE SET NULL
+-- );
+
+-- -- Indexes for performance
+-- CREATE INDEX idx_chats_user_id ON chats(user_id);
+-- CREATE INDEX idx_chats_page_id ON chats(page_id);
+-- CREATE INDEX idx_chats_created_at ON chats(created_at);
+
+-- COMMENT ON TABLE chats IS NULL;
+-- COMMENT ON COLUMN chats.page_id IS NULL;
+
+-- ALTER TABLE chats DROP COLUMN page_id;
+
+-- ALTER TABLE chats ADD COLUMN project_id UUID REFERENCES projects(id) ON DELETE CASCADE;
+-- CREATE INDEX idx_chats_project_id ON chats(project_id);
 
 
--- Indexes
-CREATE INDEX idx_messages_chat_id ON messages(chat_id);
-CREATE INDEX idx_messages_user_id ON messages(user_id);
-CREATE INDEX idx_messages_created_at ON messages(created_at);
+-- ALTER TABLE pages ADD COLUMN chat_id UUID REFERENCES chats(id) ON DELETE CASCADE;
+
+-- -- Create index for performance
+-- CREATE INDEX idx_pages_chat_id ON pages(chat_id);
+
+-- -- Comment on column
+-- COMMENT ON COLUMN pages.chat_id IS 'Chat that this page belongs to';

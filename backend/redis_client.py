@@ -31,7 +31,14 @@ class RedisClient:
         """Check if Redis is available"""
         return self.client is not None
     
-    def add_scraping_job(self, url: str, project_id: str, user_id: str) -> Optional[str]:
+    def add_scraping_job(
+            self, url: str, 
+            project_id: str, 
+            user_id: str,
+            chat_id: str = None,
+            message_id: str = None,
+            page_id: str = None 
+        ) -> Optional[str]:
         """Add a URL scraping job to Redis queue"""
         if not self.is_available():
             print("Redis client not available, skipping job queue")
@@ -44,6 +51,9 @@ class RedisClient:
                 "url": url,
                 "project_id": project_id,
                 "user_id": user_id,
+                "chat_id": chat_id,
+                "message_id": message_id,
+                "page_id": page_id,
                 "status": "pending",
                 "created_at": get_iso_timestamp()
             }
@@ -74,6 +84,17 @@ class RedisClient:
         except Exception as e:
             print(f"Failed to get job from Redis: {e}")
             return None
+
+    def get_queue_length(self) -> int:
+        """Get the number of jobs in the queue"""
+        if not self.is_available():
+            return 0
+        
+        try:
+            return self.client.llen(settings.SCRAPING_QUEUE_NAME)
+        except Exception as e:
+            print(f"Failed to get queue length: {e}")
+            return 0
 
 
 # Singleton instance
