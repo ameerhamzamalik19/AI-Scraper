@@ -2,7 +2,7 @@ import asyncio
 import time
 from typing import Dict, Any, List, Optional
 from urllib.parse import urlparse
-
+from workers.processor_worker import process_document
 from crawler.frontier import URLFrontier
 from crawler.fetcher import Fetcher
 from crawler.parser import HTMLParser
@@ -80,6 +80,11 @@ class Crawler:
                 response_size=fetch_result.get('response_size', 0),
                 fetch_method=fetch_result.get('method', 'httpx')
             )
+
+            # ✅ TRIGGER PROCESSOR WORKER
+            process_document.send(version['document_id'])  # ← Sends to processing_queue
+
+            print(f"📤 Triggered processor for document: {version['document_id']}")
             
             # Mark as visited in frontier
             self.frontier.mark_visited(url)

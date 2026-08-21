@@ -9,5 +9,9 @@ redis_client: redis.Redis = redis.Redis(
 )
 
 REDIS_JOB_PREFIX: str = "scraping_job:"
+SCRAPING_QUEUE_NAME: str = "scraping_queue"
+PROCESSING_QUEUE_NAME = "processing_queue"
+CHUNKING_QUEUE_NAME: str = "chunking_queue"     
+EMBEDDING_QUEUE_NAME: str = "embedding_queue"
 
 JOB_TTL_SECONDS: int = 86000

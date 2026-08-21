@@ -6,7 +6,7 @@ from config import crawler_settings, settings
 
 @dramatiq.actor(
         queue_name=settings.SCRAPING_QUEUE_NAME, 
-        max_retries=0, 
+        max_retries=3, 
         time_limit=600000
     )
 def crawl_website(job_id: str):

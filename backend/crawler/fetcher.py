@@ -5,7 +5,7 @@ from typing import Optional, Dict, Any
 from urllib.parse import urlparse
 import hashlib
 import time
-
+import re
 from config import crawler_settings
 
 
@@ -33,7 +33,115 @@ class Fetcher:
                 max_redirects=5,
             )
         return self.http_client
-    
+
+    def _detect_login_required(self, html: str, url: str, status_code: int) -> tuple[bool, str]:
+        """
+        Detect if the page requires login/authentication.
+        Returns: (is_login_page, reason)
+        Uses precise indicators to minimize false positives.
+        """
+        if not html:
+            return False, None
+        
+        html_lower = html.lower()
+        
+        # ============================================================
+        # PRECISE LOGIN INDICATORS (only when login is actually required)
+        # ============================================================
+        
+        # 1. Login form with password field (most reliable)
+        if re.search(r'<form[^>]*>(?:.*?)<input[^>]*type=["\']password["\']', html, re.IGNORECASE):
+            return True, "Login form detected (password field)"
+        
+        # 2. Login-specific action URL
+        if re.search(r'<form[^>]*action=["\'].*?(login|signin|auth).*?["\']', html, re.IGNORECASE):
+            return True, "Login form action detected"
+        
+        # 3. Explicit login page title
+        title_match = re.search(r'<title[^>]*>(.*?)</title>', html, re.IGNORECASE)
+        if title_match:
+            title = title_match.group(1).lower()
+            if re.search(r'\b(login|sign in|log in|signin|authentication)\b', title):
+                return True, f"Login page title: {title}"
+        
+        # 4. Login heading (h1/h2 with login text)
+        if re.search(r'<h[1-3][^>]*>.*?(login|sign in|log in|sign in).*?</h[1-3]>', html, re.IGNORECASE):
+            return True, "Login heading detected"
+        
+        # 5. Access denied messages (only when explicit)
+        if re.search(r'(access denied|access is denied|you don\'t have permission|not authorized|unauthorized access)', html_lower):
+            return True, "Access denied message detected"
+        
+        # 6. Login URL pattern
+        if re.search(r'(/login|/signin|/auth|/log-in|/sign-in)', url.lower()):
+            return True, "Login URL path detected"
+        
+        return False, None
+
+    def _detect_blocking(self, status_code: int, headers: dict, html: str) -> tuple[bool, str]:
+        """
+        Detect if the request was blocked (Cloudflare, anti-bot, etc.)
+        Returns: (is_blocked, reason)
+        Only triggers when actual blocking is detected.
+        """
+        html_lower = html.lower() if html else ""
+        
+        # ============================================================
+        # PRECISE BLOCKING INDICATORS
+        # ============================================================
+        
+        # 1. HTTP status codes that indicate blocking
+        if status_code in [401, 403]:
+            return True, f"HTTP {status_code} - Access Denied"
+        
+        # 2. Cloudflare Challenge (only when actually showing challenge)
+        cloudflare_indicators = [
+            'cf-browser-verification',
+            'challenge-platform',
+            'turnstile.apit',
+            'cloudflare-challenge',
+            'cf-chl-widget',
+            'cf_captcha',
+            'captcha-bypass',
+            'security challenge',
+            'checking your browser',
+            'please wait while your request is being verified',
+            'verify you are human',
+            'browser check',
+            'cf_clearance',
+        ]
+        
+        for indicator in cloudflare_indicators:
+            if indicator in html_lower:
+                return True, f"Cloudflare challenge detected: {indicator}"
+        
+        # 3. Generic CAPTCHA (only when actually present)
+        if re.search(r'<[^>]*class=["\'].*?(captcha|recaptcha|g-recaptcha).*?["\']', html, re.IGNORECASE):
+            return True, "CAPTCHA detected"
+        
+        # 4. Rate limiting (only when explicit)
+        if 'x-ratelimit' in str(headers).lower():
+            return True, "Rate limited"
+        
+        # 5. WAF/Block pages (only when explicit)
+        waf_indicators = [
+            'request blocked',
+            'access denied',
+            'you have been blocked',
+            'ip address blocked',
+            'suspicious activity',
+            'automated request',
+            'our systems have detected',
+            'unusual traffic',
+            'ddos protection',
+        ]
+        
+        for indicator in waf_indicators:
+            if indicator in html_lower:
+                return True, f"WAF/Block page detected: {indicator}"
+        
+        return False, None
+
     async def _get_browser(self):
         """Get Playwright browser instance"""
         if self.playwright is None:
@@ -62,7 +170,7 @@ class Fetcher:
                 'content_type': content_type,
                 'response_size': len(response.content),
                 'headers': dict(response.headers),
-                'url': str(response.url),  # Final URL after redirects
+                'url': str(response.url),
                 'method': 'httpx'
             }
         except httpx.TimeoutException:
@@ -89,14 +197,11 @@ class Fetcher:
         try:
             page = await context.new_page()
             
-            # Navigate with timeout
             response = await page.goto(url, wait_until='networkidle', timeout=crawler_settings.BROWSER_TIMEOUT * 1000)
             
-            # Get HTML after JS execution
             html = await page.content()
             title = await page.title()
             
-            # Get response info
             status_code = response.status if response else 200
             content_type = response.headers.get('content-type', 'text/html') if response else 'text/html'
             
@@ -122,29 +227,85 @@ class Fetcher:
             }
     
     async def fetch(self, url: str) -> Dict[str, Any]:
-        """
-        Hybrid fetch: Try HTTPX first, fallback to Playwright if needed.
-        """
+        """Fetch with login and blocking detection"""
         print(f"🌐 Fetching: {url}")
         
-        # Try HTTPX first
-        result = await self.fetch_httpx(url)
+        client = await self._get_http_client()
         
-        # If HTTPX succeeded with HTML, return it
-        if result.get('success') and result.get('html'):
-            print(f"✅ HTTPX success: {url}")
-            return result
-        
-        # If HTTPX failed or didn't get HTML (likely JS-heavy), try Playwright
-        print(f"🔄 HTTPX failed, falling back to Playwright: {url}")
-        result = await self.fetch_playwright(url)
-        
-        if result.get('success'):
-            print(f"✅ Playwright success: {url}")
-        else:
-            print(f"❌ Both methods failed: {url}")
-        
-        return result
+        try:
+            response = await client.get(url)
+            content_type = response.headers.get('content-type', '').lower()
+            is_html = 'text/html' in content_type or 'application/xhtml+xml' in content_type
+            html = response.text if is_html else None
+            
+            # ============================================================
+            # CHECK FOR BLOCKING (only when actually blocked)
+            # ============================================================
+            is_blocked, block_reason = self._detect_blocking(
+                response.status_code, 
+                response.headers, 
+                html
+            )
+            
+            if is_blocked:
+                print(f"🚫 Blocked: {block_reason}")
+                return {
+                    'success': False,
+                    'error': block_reason,
+                    'is_blocked': True,
+                    'requires_login': False,
+                    'status_code': response.status_code,
+                    'method': 'httpx'
+                }
+            
+            # ============================================================
+            # CHECK FOR LOGIN (only when actually login is required)
+            # ============================================================
+            if is_html and html:
+                requires_login, login_reason = self._detect_login_required(html, url, response.status_code)
+                if requires_login:
+                    print(f"🔐 Login required: {login_reason}")
+                    return {
+                        'success': False,
+                        'error': login_reason,
+                        'requires_login': True,
+                        'is_blocked': False,
+                        'status_code': response.status_code,
+                        'method': 'httpx'
+                    }
+            
+            # ============================================================
+            # SUCCESS
+            # ============================================================
+            return {
+                'success': response.status_code == 200 and is_html,
+                'html': html,
+                'status_code': response.status_code,
+                'content_type': content_type,
+                'response_size': len(response.content),
+                'headers': dict(response.headers),
+                'url': str(response.url),
+                'method': 'httpx',
+                'requires_login': False,
+                'is_blocked': False
+            }
+            
+        except httpx.TimeoutException:
+            return {
+                'success': False,
+                'error': 'Timeout',
+                'requires_login': False,
+                'is_blocked': False,
+                'method': 'httpx'
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e),
+                'requires_login': False,
+                'is_blocked': False,
+                'method': 'httpx'
+            }
     
     async def close(self):
         """Clean up resources"""

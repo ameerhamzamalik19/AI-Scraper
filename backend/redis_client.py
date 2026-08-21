@@ -4,6 +4,7 @@ from typing import Optional
 from datetime import datetime, timezone
 from config import settings
 from exceptions import RedisError
+from redis_config import JOB_TTL_SECONDS
 from utils.helpers import generate_uuid, get_iso_timestamp
 
 
@@ -64,12 +65,40 @@ class RedisClient:
             
             # Add to queue
             self.client.lpush(settings.SCRAPING_QUEUE_NAME, json.dumps(job_data))
+
+            from workers.crawler_worker import crawl_website
+            crawl_website.send(job_id)
             
             print(f"Added scraping job {job_id} to Redis queue for URL: {url}")
             return job_id
         except Exception as e:
             print(f"Failed to add scraping job to Redis: {e}")
             return None
+
+    def update_job_status(self, job_id: str, status: str, **kwargs) -> bool:
+        """Update job status in Redis"""
+        if not self.is_available():
+            return False
+        
+        try:
+            redis_key = f"{settings.REDIS_JOB_PREFIX}{job_id}"
+            data = self.client.get(redis_key)
+            
+            if not data:
+                print(f"⚠️ Job {job_id} not found in Redis")
+                return False
+            
+            job_data = json.loads(data)
+            job_data['status'] = status
+            job_data.update(kwargs)
+            job_data['updated_at'] = get_iso_timestamp()
+            
+            self.client.setex(redis_key, settings.REDIS_JOB_TTL, json.dumps(job_data))
+            print(f"✅ Updated job {job_id} status to: {status}")
+            return True
+        except Exception as e:
+            print(f"❌ Failed to update job status: {e}")
+            return False
     
     def get_job(self, job_id: str) -> Optional[dict]:
         """Get job from Redis"""

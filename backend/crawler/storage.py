@@ -1,9 +1,12 @@
+import json
 from typing import Optional, Dict, Any
 import hashlib
 from database import get_db_connection
 from utils.helpers import generate_uuid, get_current_datetime, safe_datetime_for_db
 from exceptions import DatabaseError
+import logging
 
+logger = logging.getLogger(__name__)
 
 class CrawlerStorage:
     """Store crawled data in PostgreSQL"""
@@ -26,6 +29,7 @@ class CrawlerStorage:
         safe_now = safe_datetime_for_db(now)
         
         async with get_db_connection() as conn:
+            logger.info(f"Creating new page: {page_id}")
             await conn.execute(
                 """INSERT INTO pages 
                    (id, chat_id, project_id, url, normalized_url, created_at, updated_at) 
@@ -63,28 +67,39 @@ class CrawlerStorage:
         content_hash = hashlib.sha256(html.encode('utf-8')).hexdigest()
         
         async with get_db_connection() as conn:
-            await conn.execute(
-                """INSERT INTO page_versions 
-                   (id, page_id, status_code, content_type, 
-                    content_hash, fetch_method, response_size, 
-                    fetched_at, created_at, updated_at) 
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)""",
-                version_id, page_id, status_code, content_type,
-                content_hash, fetch_method, response_size,
-                safe_now, safe_now, safe_now
-            )
+            try:
+                await conn.execute(
+                    """INSERT INTO page_versions 
+                    (id, page_id, status_code, content_type, 
+                        content_hash, fetch_method, response_size, 
+                        fetched_at, created_at, updated_at) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)""",
+                    version_id, page_id, status_code, content_type,
+                    content_hash, fetch_method, response_size,
+                    safe_now, safe_now, safe_now
+                )
+                logger.info(f"Creating new page version: {version_id}")
+                print("create_page_version")
+            except Exception as e:
+                logger.error(f"Error creating page version: {e}")
+                raise DatabaseError(f"Failed to create page version: {e}")
             
             # Also create document entry for the raw HTML
             # This will be processed by the processor worker later
             document_id = generate_uuid()
-            await conn.execute(
-                """INSERT INTO documents 
-                   (id, page_version_id, content, content_format, 
-                    metadata, processing_status, created_at, updated_at) 
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8)""",
-                document_id, version_id, html, 'html',
-                metadata, 'PENDING', safe_now, safe_now
-            )
+            metadata_json = json.dumps(metadata) if metadata else '{}'
+            try:
+                await conn.execute(
+                    """INSERT INTO documents 
+                    (id, page_version_id, content, content_format, 
+                        metadata, processing_status, created_at, updated_at) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)""",
+                    document_id, version_id, html, 'html',
+                    metadata_json, 'PENDING', safe_now, safe_now
+                )
+            except Exception as e:
+                logger.error(f"Error creating document: {e}")
+                raise DatabaseError(f"Failed to create document: {e}")
             
             return {
                 "version_id": version_id,

@@ -1,3 +1,6 @@
+-- START COMMAND:
+    --  psql -U postgres -p 5433
+
 -- -- ============================================================================
 -- -- Universal Website Scraping + RAG Platform - V1 Database Schema
 -- -- PostgreSQL + pgvector
@@ -376,3 +379,39 @@
 
 -- -- Comment on column
 -- COMMENT ON COLUMN pages.chat_id IS 'Chat that this page belongs to';
+
+-- Add processing status to documents (if not exists)
+-- ALTER TABLE documents ADD COLUMN IF NOT EXISTS processing_status VARCHAR(50) DEFAULT 'PENDING';
+-- ALTER TABLE documents ADD COLUMN IF NOT EXISTS cleaned_content TEXT;
+-- ALTER TABLE documents ADD COLUMN IF NOT EXISTS processed_at TIMESTAMP WITH TIME ZONE;
+
+-- -- Add chunk metadata columns
+-- ALTER TABLE chunks ADD COLUMN IF NOT EXISTS heading_path JSONB DEFAULT '[]';
+-- ALTER TABLE chunks ADD COLUMN IF NOT EXISTS token_count INTEGER;
+-- ALTER TABLE chunks ADD COLUMN IF NOT EXISTS embedding_status VARCHAR(50) DEFAULT 'PENDING';
+
+-- -- Add embedding vector column (if not exists)
+-- ALTER TABLE chunks ADD COLUMN IF NOT EXISTS embedding vector(1536);
+
+-- -- Add embedding metadata
+-- ALTER TABLE chunks ADD COLUMN IF NOT EXISTS embedding_model VARCHAR(100);
+-- ALTER TABLE chunks ADD COLUMN IF NOT EXISTS embedding_dimension INTEGER;
+
+-- -- Index for vector similarity search
+-- CREATE INDEX IF NOT EXISTS idx_chunks_embedding ON chunks USING ivfflat (embedding vector_cosine_ops);
+
+-- ALTER TABLE chunks DROP COLUMN embedding;
+
+-- -- Add new vector column with 2048 dimensions
+-- ALTER TABLE chunks ADD COLUMN embedding vector(2048);
+
+-- -- Recreate the index
+-- CREATE INDEX idx_chunks_embedding ON chunks USING ivfflat (embedding vector_cosine_ops);
+
+-- ALTER TABLE chunks DROP COLUMN IF EXISTS embedding;
+
+-- -- Add halfvec column with 2048 dimensions
+-- ALTER TABLE chunks ADD COLUMN embedding halfvec(2048);
+
+-- -- Create index with halfvec_cosine_ops
+-- CREATE INDEX idx_chunks_embedding ON chunks USING ivfflat (embedding halfvec_cosine_ops);

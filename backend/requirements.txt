@@ -7,3 +7,7 @@ httpx==0.28.1
 playwright==1.62.0
 beautifulsoup4==4.15.0
 dramatiq==2.2.0
+markdownify==1.2.3
+psycopg2-binary==2.9.12
+requests==2.34.2
+openai==3.1.0

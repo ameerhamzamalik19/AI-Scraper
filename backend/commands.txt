@@ -1,0 +1,11 @@
+# Terminal 1 - Crawler
+dramatiq workers.crawler_worker -p 1 -t 2 -v
+
+# Terminal 2 - Processor
+dramatiq workers.processor_worker -p 1 -t 2 -v
+
+# Terminal 3 - Chunker
+dramatiq workers.chunker_worker -p 1 -t 2 -v
+
+# Terminal 4 - Embedder
+dramatiq workers.embedder_worker -p 1 -t 2 -v
