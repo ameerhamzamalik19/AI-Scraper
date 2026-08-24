@@ -65,7 +65,8 @@ class MessageService:
         chat_id: str, 
         user_id: str, 
         limit: int = 50,
-        offset: int = 0
+        offset: int = 0,
+        latest: bool = False
     ) -> List[dict]:
         """Get messages for a chat with pagination"""
         try:
@@ -78,14 +79,18 @@ class MessageService:
                 if not chat:
                     raise NotFoundError(f"Chat {chat_id} not found")
                 
+                order_by = "created_at DESC, id DESC" if latest else "created_at ASC, id ASC"
                 messages = await conn.fetch(
-                    """SELECT id, chat_id, user_id, role, content, is_url, url_processed, created_at, updated_at
+                    f"""SELECT id, chat_id, user_id, role, content, is_url, url_processed, created_at, updated_at
                        FROM messages 
                        WHERE chat_id = $1 
-                       ORDER BY created_at ASC
+                       ORDER BY {order_by}
                        LIMIT $2 OFFSET $3""",
                     chat_id, limit, offset
                 )
+
+                if latest:
+                    messages = list(reversed(messages))
                 
                 return [{
                     "id": str(msg['id']),

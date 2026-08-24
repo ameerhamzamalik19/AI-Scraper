@@ -415,3 +415,19 @@
 
 -- -- Create index with halfvec_cosine_ops
 -- CREATE INDEX idx_chunks_embedding ON chunks USING ivfflat (embedding halfvec_cosine_ops);
+
+-- CREATE TABLE IF NOT EXISTS media_assets (
+--     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+--     page_version_id UUID NOT NULL REFERENCES page_versions(id) ON DELETE CASCADE,
+--     document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+--     media_type VARCHAR(20) NOT NULL,
+--     source_url TEXT,
+--     mime_type VARCHAR(100),
+--     data_base64 TEXT,
+--     description TEXT NOT NULL,
+--     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+--     CONSTRAINT chk_media_type CHECK (media_type IN ('image', 'table'))
+-- );
+
+-- CREATE INDEX IF NOT EXISTS idx_media_assets_document_id ON media_assets(document_id);
+-- CREATE INDEX IF NOT EXISTS idx_media_assets_page_version_id ON media_assets(page_version_id);

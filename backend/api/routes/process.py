@@ -10,6 +10,7 @@ from utils.validators import is_valid_url_for_scraping
 from utils.helpers import get_iso_timestamp, generate_uuid
 from exceptions import NotFoundError
 from redis_client import redis_client
+from api.routes.retrieval_pipeline import answer_user_question
 
 router = APIRouter(prefix="/api", tags=["process"])
 
@@ -97,6 +98,13 @@ async def process_link(request: LinkRequest):
                 status_code=400,
                 detail="This conversation already has a URL. You cannot add a new URL to an existing conversation."
             )
+
+        chat_history = await MessageService.get_messages(
+            chat_id,
+            user_id,
+            limit=20,
+            latest=True
+        )
         
         # Save user message
         user_message = await MessageService.create_message(
@@ -158,6 +166,16 @@ async def process_link(request: LinkRequest):
         else:
             # It's a question - acknowledge
             response_content = f"I received your question: \"{content}\"\n\nOnce I've processed the website content, I'll be able to answer your questions. (RAG search coming soon!)"
+            response_content = answer_user_question(
+                content,
+                chat_id=chat_id,
+                project_id=project_id,
+                page_id=page_id,
+                chat_history=chat_history
+            )
+            
+            if response_content is None:
+                response_content = "I couldn't process your question. Please try again."
         
         # Save assistant response
         assistant_message = await MessageService.create_message(

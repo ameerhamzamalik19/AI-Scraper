@@ -1,0 +1,141 @@
+version: '3.8'
+
+services:
+  # Main application
+  main:
+    build: .
+    command: python main.py
+    volumes:
+      - .:/app
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:postgres@localhost:5433/universal_scraper
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Crawler Worker
+  crawler:
+    build: .
+    command: dramatiq workers.crawler_worker -p 1 -t 2 -v
+    volumes:
+      - .:/app
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:postgres@localhost:5433/universal_scraper
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Processor Worker
+  processor:
+    build: .
+    command: dramatiq workers.processor_worker -p 1 -t 2 -v
+    volumes:
+      - .:/app
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:postgres@localhost:5433/universal_scraper
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Chunker Worker
+  chunker:
+    build: .
+    command: dramatiq workers.chunker_worker -p 1 -t 2 -v
+    volumes:
+      - .:/app
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:postgres@localhost:5433/universal_scraper
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Embedder Worker
+  embedder:
+    build: .
+    command: dramatiq workers.embedder_worker -p 1 -t 2 -v
+    volumes:
+      - .:/app
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:postgres@localhost:5433/universal_scraper
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Redis (for Dramatiq broker)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # PostgreSQL (optional - if you need a database)
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=universal_scraper
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

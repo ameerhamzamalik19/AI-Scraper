@@ -50,9 +50,24 @@ class SemanticChunker:
                 path = path[:heading['level'] - 1]
                 path.append(heading['text'])
         return path
+
+    @classmethod
+    def remove_boilerplate_lines(cls, text: str) -> str:
+        """Remove standalone footer and navigation lines before chunking."""
+        boilerplate_patterns = (
+            r'^©?\s*[^\n]*all rights reserved\s*$',
+            r'^\s*(follow us|contact us|privacy policy|terms of service)\s*$',
+            r'^\s*\[?(follow us|privacy policy|terms of service)\]?\s*$',
+        )
+        lines = [
+            line for line in text.split('\n')
+            if not any(re.search(pattern, line.strip(), re.IGNORECASE) for pattern in boilerplate_patterns)
+        ]
+        return '\n'.join(lines)
     
     def chunk_text(self, text: str) -> List[Dict[str, Any]]:
         """Chunk text into semantic chunks with heading context"""
+        text = self.remove_boilerplate_lines(text)
         chunks = []
         
         lines = text.split('\n')
@@ -117,7 +132,7 @@ class SemanticChunker:
             chunk['chunk_index'] = i
             chunk['token_count'] = len(chunk['content'].split())
         
-        return final_chunks
+        return self.filter_chunks(final_chunks)
     
     def _split_long_chunk(self, content: str, heading_path: List[str]) -> List[Dict[str, Any]]:
         """Split a long chunk into smaller pieces"""
@@ -134,6 +149,38 @@ class SemanticChunker:
             })
         
         return chunks
+
+    @staticmethod
+    def _normalize_content(content: str) -> str:
+        """Normalize text for boilerplate detection and deduplication."""
+        return re.sub(r'\s+', ' ', content).strip().lower()
+
+    @classmethod
+    def _is_useful_chunk(cls, content: str) -> bool:
+        """Reject short navigation, footer, and other boilerplate fragments."""
+        normalized = cls._normalize_content(content)
+        if len(normalized.split()) < 8 or len(normalized) < 40:
+            return False
+
+        boilerplate_patterns = (
+            r'^©?\s*[^\n]*all rights reserved$',
+            r'^(follow us|contact us|privacy policy|terms of service)$',
+            r'^\[?(follow us|privacy policy|terms of service)\]?\b',
+            r'^(home|about us|services|company|menu|navigation)$',
+        )
+        return not any(re.search(pattern, normalized) for pattern in boilerplate_patterns)
+
+    def filter_chunks(self, chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Keep useful, unique chunks before they are persisted or embedded."""
+        filtered = []
+        seen = set()
+        for chunk in chunks:
+            content_key = self._normalize_content(chunk['content'])
+            if not self._is_useful_chunk(chunk['content']) or content_key in seen:
+                continue
+            seen.add(content_key)
+            filtered.append(chunk)
+        return filtered
 
 
 def chunk_exists(page_version_id: str, chunk_hash: str) -> bool:

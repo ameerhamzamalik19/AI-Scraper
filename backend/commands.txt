@@ -1,3 +1,6 @@
+#main
+python main.py
+
 # Terminal 1 - Crawler
 dramatiq workers.crawler_worker -p 1 -t 2 -v
 

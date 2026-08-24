@@ -3,7 +3,13 @@ import dramatiq
 import logging
 import json
 import re
+import base64
+import mimetypes
+import os
+from urllib.parse import urljoin, urlparse
 from typing import Dict, Any
+import requests
+from openai import OpenAI
 from database_sync import execute_query, execute_update, execute_one
 from utils.helpers import get_current_datetime
 from redis_config import PROCESSING_QUEUE_NAME
@@ -108,6 +114,83 @@ class DocumentProcessor:
         
         return metadata
 
+    @staticmethod
+    def _image_data(source_url: str) -> tuple[str, str]:
+        """Download an image and return its MIME type and base64 payload."""
+        if source_url.startswith('data:'):
+            header, payload = source_url.split(',', 1)
+            mime_type = header[5:].split(';', 1)[0] or 'application/octet-stream'
+            return mime_type, payload
+
+        response = requests.get(source_url, timeout=30)
+        response.raise_for_status()
+        if len(response.content) > 10 * 1024 * 1024:
+            raise ValueError('image exceeds 10 MB limit')
+        mime_type = response.headers.get('content-type', '').split(';', 1)[0]
+        mime_type = mime_type or mimetypes.guess_type(source_url)[0] or 'application/octet-stream'
+        return mime_type, base64.b64encode(response.content).decode('ascii')
+
+    @staticmethod
+    def describe_image(source_url: str, alt_text: str = '', title: str = '') -> str:
+        """Create searchable image metadata without sending pixels to a text-only model."""
+        filename = urlparse(source_url).path.rsplit('/', 1)[-1]
+        details = [value.strip() for value in (alt_text, title, filename, source_url) if value and value.strip()]
+        if not details:
+            return 'Image asset captured from the crawled page.'
+        return 'Image asset: ' + '. '.join(dict.fromkeys(details))
+
+    @staticmethod
+    def describe_table(table_text: str) -> str:
+        """Generate a searchable description while preserving table values."""
+        api_key = os.getenv('GROQ_API_KEY')
+        if not api_key:
+            return f'Table data: {table_text}'
+        try:
+            client = OpenAI(base_url='https://api.groq.com/openai/v1', api_key=api_key)
+            response = client.chat.completions.create(
+                model='groq/compound-mini',
+                messages=[{'role': 'user', 'content': f'Summarize this table for semantic search. Preserve labels, numbers, relationships, and key conclusions. Return only factual text.\n\n{table_text}'}],
+                temperature=0.1,
+                max_tokens=800
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            logger.warning('Table description generation failed: %s', e)
+            return f'Table data: {table_text}'
+
+    @staticmethod
+    def extract_media(html: str, page_url: str) -> list[Dict[str, Any]]:
+        """Extract images and tables, preserving originals and descriptions."""
+        soup = BeautifulSoup(html, 'html.parser')
+        assets = []
+        for image in soup.find_all('img')[:20]:
+            source = image.get('src') or image.get('data-src')
+            if not source:
+                continue
+            source_url = urljoin(page_url, source)
+            try:
+                mime_type, payload = DocumentProcessor._image_data(source_url)
+                description = DocumentProcessor.describe_image(
+                    source_url,
+                    image.get('alt', ''),
+                    image.get('title', '')
+                )
+                assets.append({'media_type': 'image', 'source_url': source_url,
+                               'mime_type': mime_type, 'data_base64': payload,
+                               'description': description})
+            except Exception as e:
+                logger.warning('Unable to process image %s: %s', source_url, e)
+
+        for table in soup.find_all('table')[:20]:
+            table_text = table.get_text(' | ', strip=True)
+            if not table_text:
+                continue
+            assets.append({'media_type': 'table', 'source_url': page_url,
+                           'mime_type': 'text/html',
+                           'data_base64': base64.b64encode(str(table).encode('utf-8')).decode('ascii'),
+                           'description': DocumentProcessor.describe_table(table_text)})
+        return assets
+
 
 @dramatiq.actor(
     queue_name=PROCESSING_QUEUE_NAME,
@@ -121,7 +204,11 @@ def process_document(document_id: str):
     try:
         # Get document
         doc = execute_one(
-            "SELECT id, page_version_id, content, metadata FROM documents WHERE id = %s",
+                """SELECT d.id, d.page_version_id, d.content, d.metadata, p.url
+                    FROM documents d
+                    JOIN page_versions pv ON pv.id = d.page_version_id
+                    JOIN pages p ON p.id = pv.page_id
+                    WHERE d.id = %s""",
             (document_id,)
         )
         
@@ -141,7 +228,7 @@ def process_document(document_id: str):
         else:
             metadata = metadata_raw or {}
         
-        url = metadata.get('url', '')
+        url = metadata.get('url') or doc.get('url') or ''
         print(f"📋 Processing HTML for: {url}")
         
         # Check if already processed
@@ -158,6 +245,9 @@ def process_document(document_id: str):
         
         # Clean and convert
         markdown_content = DocumentProcessor.html_to_markdown(html)
+        media_assets = DocumentProcessor.extract_media(html, url)
+        for asset in media_assets:
+            markdown_content += f"\n\n## {asset['media_type'].title()}\n\n{asset['description']}"
         
         # Extract metadata from HTML
         extracted_metadata = DocumentProcessor.extract_metadata_from_html(html)
@@ -176,6 +266,17 @@ def process_document(document_id: str):
                WHERE id = %s""",
             (markdown_content, json.dumps(merged_metadata), now, now, document_id)
         )
+
+        for asset in media_assets:
+            execute_update(
+                """INSERT INTO media_assets
+                   (page_version_id, document_id, media_type, source_url,
+                    mime_type, data_base64, description, created_at)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+                (doc['page_version_id'], document_id, asset['media_type'],
+                 asset['source_url'], asset['mime_type'], asset['data_base64'],
+                 asset['description'], now)
+            )
         
         print(f"✅ Document {document_id} processed successfully ({len(markdown_content)} chars)")
         

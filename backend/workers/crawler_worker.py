@@ -3,6 +3,7 @@ import asyncio
 from redis_client import redis_client
 from crawler.crawler import Crawler
 from config import crawler_settings, settings
+from database import close_db_pool
 
 @dramatiq.actor(
         queue_name=settings.SCRAPING_QUEUE_NAME, 
@@ -39,8 +40,10 @@ def crawl_website(job_id: str):
                 max_pages=crawler_settings.MAX_PAGES_PER_CRAWL
             )
             
-            results = await crawler.run()
-            return results
+            try:
+                return await crawler.run()
+            finally:
+                await close_db_pool()
         
         # Run the async crawler
         results = asyncio.run(run_crawler())

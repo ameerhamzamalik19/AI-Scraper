@@ -1,12 +1,130 @@
 import httpx
 import asyncio
+import multiprocessing
 from playwright.async_api import async_playwright
+from playwright.sync_api import sync_playwright
 from typing import Optional, Dict, Any
 from urllib.parse import urlparse
 import hashlib
 import time
 import re
+from bs4 import BeautifulSoup
 from config import crawler_settings
+
+
+def _render_with_playwright(url: str) -> Dict[str, Any]:
+    """Render a page in a process with valid Windows subprocess handles."""
+    try:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(
+                headless=True,
+                args=['--no-sandbox', '--disable-setuid-sandbox']
+            )
+            context = browser.new_context(
+                user_agent=crawler_settings.USER_AGENT,
+                viewport={'width': 1280, 'height': 1024}
+            )
+            try:
+                page = context.new_page()
+                response = page.goto(
+                    url,
+                    wait_until='networkidle',
+                    timeout=crawler_settings.BROWSER_TIMEOUT * 1000
+                )
+                html = page.content()
+                title = page.title()
+                status_code = response.status if response else 200
+                content_type = response.headers.get('content-type', 'text/html') if response else 'text/html'
+
+                return {
+                    'success': status_code == 200,
+                    'html': html,
+                    'title': title,
+                    'status_code': status_code,
+                    'content_type': content_type,
+                    'response_size': len(html.encode('utf-8')),
+                    'headers': dict(response.headers) if response else {},
+                    'url': url,
+                    'method': 'playwright'
+                }
+            finally:
+                context.close()
+                browser.close()
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'method': 'playwright'
+        }
+
+
+def _playwright_process_entry(request_connection) -> None:
+    """Keep one Playwright browser alive and render URLs sent by the parent."""
+    try:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(
+                headless=True,
+                args=['--no-sandbox', '--disable-setuid-sandbox']
+            )
+
+            while True:
+                request = request_connection.recv()
+                if request is None:
+                    break
+
+                request_connection.send(_render_with_playwright_context(browser, request))
+
+            browser.close()
+    except Exception as e:
+        try:
+            request_connection.send({
+                'success': False,
+                'error': str(e),
+                'method': 'playwright'
+            })
+        except (BrokenPipeError, EOFError):
+            pass
+    finally:
+        request_connection.close()
+
+
+def _render_with_playwright_context(browser, url: str) -> Dict[str, Any]:
+    """Render one URL using the browser kept alive by the worker process."""
+    context = browser.new_context(
+        user_agent=crawler_settings.USER_AGENT,
+        viewport={'width': 1280, 'height': 1024}
+    )
+    try:
+        page = context.new_page()
+        response = page.goto(
+            url,
+            wait_until='networkidle',
+            timeout=crawler_settings.BROWSER_TIMEOUT * 1000
+        )
+        html = page.content()
+        title = page.title()
+        status_code = response.status if response else 200
+        content_type = response.headers.get('content-type', 'text/html') if response else 'text/html'
+
+        return {
+            'success': status_code == 200,
+            'html': html,
+            'title': title,
+            'status_code': status_code,
+            'content_type': content_type,
+            'response_size': len(html.encode('utf-8')),
+            'headers': dict(response.headers) if response else {},
+            'url': url,
+            'method': 'playwright'
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'method': 'playwright'
+        }
+    finally:
+        context.close()
 
 
 class Fetcher:
@@ -18,6 +136,9 @@ class Fetcher:
         self.http_client = None
         self.browser = None
         self.playwright = None
+        self.browser_process = None
+        self.browser_connection = None
+        self.use_playwright = False
         
     async def _get_http_client(self) -> httpx.AsyncClient:
         """Get or create HTTPX client"""
@@ -142,6 +263,21 @@ class Fetcher:
         
         return False, None
 
+    def _needs_browser_rendering(self, html: str) -> bool:
+        """Detect client-rendered application shells with no server HTML."""
+        if not html:
+            return False
+
+        soup = BeautifulSoup(html, 'html.parser')
+        root = soup.find(id=re.compile(r'^(?:__next|__nuxt)$'))
+        if not root or root.get_text(' ', strip=True):
+            return False
+
+        return any(
+            any(marker in script.get('src', '').lower() for marker in ('/_next/', '/_nuxt/'))
+            for script in soup.find_all('script', src=True)
+        )
+
     async def _get_browser(self):
         """Get Playwright browser instance"""
         if self.playwright is None:
@@ -188,38 +324,31 @@ class Fetcher:
     
     async def fetch_playwright(self, url: str) -> Dict[str, Any]:
         """Fetch using Playwright (JavaScript rendering)"""
-        browser = await self._get_browser()
-        context = await browser.new_context(
-            user_agent=crawler_settings.USER_AGENT,
-            viewport={'width': 1280, 'height': 1024}
-        )
-        
+        return await asyncio.to_thread(self._fetch_from_browser_process, url)
+
+    def _fetch_from_browser_process(self, url: str) -> Dict[str, Any]:
+        """Send a URL to the persistent Playwright browser process."""
+        if self.browser_process is None or not self.browser_process.is_alive():
+            context = multiprocessing.get_context('spawn')
+            parent_connection, child_connection = context.Pipe()
+            self.browser_process = context.Process(
+                target=_playwright_process_entry,
+                args=(child_connection,)
+            )
+            self.browser_process.start()
+            child_connection.close()
+            self.browser_connection = parent_connection
+
         try:
-            page = await context.new_page()
-            
-            response = await page.goto(url, wait_until='networkidle', timeout=crawler_settings.BROWSER_TIMEOUT * 1000)
-            
-            html = await page.content()
-            title = await page.title()
-            
-            status_code = response.status if response else 200
-            content_type = response.headers.get('content-type', 'text/html') if response else 'text/html'
-            
-            await context.close()
-            
-            return {
-                'success': status_code == 200,
-                'html': html,
-                'title': title,
-                'status_code': status_code,
-                'content_type': content_type,
-                'response_size': len(html.encode('utf-8')),
-                'headers': response.headers if response else {},
-                'url': url,
-                'method': 'playwright'
-            }
-        except Exception as e:
-            await context.close()
+            self.browser_connection.send(url)
+            if not self.browser_connection.poll(crawler_settings.BROWSER_TIMEOUT + 30):
+                return {
+                    'success': False,
+                    'error': 'Playwright rendering timed out',
+                    'method': 'playwright'
+                }
+            return self.browser_connection.recv()
+        except (BrokenPipeError, EOFError, OSError) as e:
             return {
                 'success': False,
                 'error': str(e),
@@ -229,6 +358,9 @@ class Fetcher:
     async def fetch(self, url: str) -> Dict[str, Any]:
         """Fetch with login and blocking detection"""
         print(f"🌐 Fetching: {url}")
+
+        if self.use_playwright:
+            return await self.fetch_playwright(url)
         
         client = await self._get_http_client()
         
@@ -273,6 +405,11 @@ class Fetcher:
                         'status_code': response.status_code,
                         'method': 'httpx'
                     }
+
+            if response.status_code == 200 and is_html and self._needs_browser_rendering(html):
+                print(f"🖥️ Client-rendered shell detected; using Playwright: {url}")
+                self.use_playwright = True
+                return await self.fetch_playwright(url)
             
             # ============================================================
             # SUCCESS
@@ -320,3 +457,21 @@ class Fetcher:
         if self.playwright:
             await self.playwright.stop()
             self.playwright = None
+
+        if self.browser_connection:
+            await asyncio.to_thread(self._close_browser_process)
+
+    def _close_browser_process(self):
+        """Stop the persistent browser process after the crawl."""
+        try:
+            if self.browser_connection and self.browser_process and self.browser_process.is_alive():
+                self.browser_connection.send(None)
+                self.browser_process.join(timeout=10)
+                if self.browser_process.is_alive():
+                    self.browser_process.terminate()
+                    self.browser_process.join()
+        finally:
+            if self.browser_connection:
+                self.browser_connection.close()
+            self.browser_connection = None
+            self.browser_process = None
