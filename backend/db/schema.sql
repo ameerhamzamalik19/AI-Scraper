@@ -1,6 +1,8 @@
 -- START COMMAND:
     --  psql -U postgres -p 5433
 
+    -- \i 'C:/Users/magnus mage/Documents/GitHub/AI Scraper/backend/db/schema.sql'
+
 -- -- ============================================================================
 -- -- Universal Website Scraping + RAG Platform - V1 Database Schema
 -- -- PostgreSQL + pgvector
@@ -431,3 +433,6 @@
 
 -- CREATE INDEX IF NOT EXISTS idx_media_assets_document_id ON media_assets(document_id);
 -- CREATE INDEX IF NOT EXISTS idx_media_assets_page_version_id ON media_assets(page_version_id);
+
+-- SELECT * FROM chunks WHERE content LIKE '%backend%' ORDER BY created_at DESC LIMIT 5;
+-- docker exec -it 6bd8453c6895a440513bc79d93e8357e3c74065260bf977ac848f64161dd2e52 psql -U postgres -d universal_scraper -c "DELETE FROM chunks;"

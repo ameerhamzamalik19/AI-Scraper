@@ -1,12 +1,28 @@
+import os
 import redis
 
-redis_client: redis.Redis = redis.Redis(
-    host='localhost', 
-    port=6379, 
-    db=0, 
-    decode_responses=True,
-    socket_timeout=5.0  # Prevent infinite hangs if Redis dies
-)
+# Get Redis configuration from environment variables
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+REDIS_DB = int(os.getenv("REDIS_DB", 0))
+
+# Also support REDIS_URL if provided
+REDIS_URL = os.getenv("REDIS_URL", None)
+
+if REDIS_URL:
+    redis_client = redis.Redis.from_url(
+        REDIS_URL,
+        decode_responses=True,
+        socket_timeout=5.0
+    )
+else:
+    redis_client = redis.Redis(
+        host=REDIS_HOST,
+        port=REDIS_PORT,
+        db=REDIS_DB,
+        decode_responses=True,
+        socket_timeout=5.0
+    )
 
 REDIS_JOB_PREFIX: str = "scraping_job:"
 SCRAPING_QUEUE_NAME: str = "scraping_queue"

@@ -1,0 +1,10 @@
+{
+  "www.microsoft.com": {
+    "text_patterns": [],
+    "selectors": []
+  },
+  "abc.xyz": {
+    "text_patterns": [],
+    "selectors": []
+  }
+}

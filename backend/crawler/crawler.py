@@ -23,7 +23,7 @@ class Crawler:
         user_id: str,
         chat_id: str,
         page_id: str,
-        max_pages: int = 100
+        max_pages: int = 1
     ):
         self.url = url
         self.project_id = project_id

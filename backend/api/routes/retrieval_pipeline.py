@@ -1,13 +1,26 @@
 from typing import Any, Dict, List
-from openai import OpenAI
+from ollama import Client
 from database_sync import execute_query
 from workers.embedder_worker import get_embedding
 import os
 import logging
 import json
-from openrouter import OpenRouter
+import re
 
 logger = logging.getLogger(__name__)
+
+
+def format_generation_error(error: Exception) -> str:
+    """Return a user-safe message for failures from the generation provider."""
+    error_text = str(error)
+    retry_match = re.search(r"try again in ([^.]+)", error_text, re.IGNORECASE)
+
+    if "429" in error_text or "rate_limit" in error_text.lower() or "rate limit" in error_text.lower():
+        retry_text = f" Please try again in {retry_match.group(1)}." if retry_match else " Please try again shortly."
+        return f"The AI service is temporarily rate-limited.{retry_text}"
+
+    logger.exception("LLM generation failed")
+    return "I couldn't generate an answer right now. Please try again later."
 
 # ============================================
 # PROMPT TEMPLATES - NATURAL & CONVERSATIONAL
@@ -92,21 +105,27 @@ such as "it", "they", or "that" using the conversation history. Preserve the
 user's meaning and return only the rewritten question, with no explanation."""
 
     try:
-        with OpenRouter(api_key=os.getenv("OPENROUTER_API_KEY")) as client:
-            response = client.chat.send(
-                model="nvidia/nemotron-3-ultra-550b-a55b:free",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "Rewrite follow-up questions into standalone questions. Return only the question."
-                    },
-                    {"role": "user", "content": prompt}
-                ],
-            )
+        # Initialize Ollama Cloud client
+        client = Client(
+            host="https://ollama.com",
+            headers={'Authorization': 'Bearer ' + os.getenv("OLLAMA_API_KEY")}
+        )
+        
+        response = client.chat(
+            model="gpt-oss:20b",  # Using your recommended model
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Rewrite follow-up questions into standalone questions. Return only the question."
+                },
+                {"role": "user", "content": prompt}
+            ],
+            stream=False
+        )
 
-            standalone_question = response.choices[0].message.content.strip()
-            print(f"✅ Standalone question generated: {standalone_question}")
-            return standalone_question or user_question
+        standalone_question = response['message']['content'].strip()
+        print(f"✅ Standalone question generated: {standalone_question}")
+        return standalone_question or user_question
     except Exception as e:
         logger.warning("Standalone question generation failed: %s", e)
         return user_question
@@ -170,7 +189,7 @@ def retrieve_relevant_chunks(
 
         if not chunks:
             print("❌ No chunks found for the given embedding")
-            return ["Nothing found for the given embedding."]
+            return []
 
         print(f"✅ Retrieved {len(chunks)} relevant chunks from the database")
         print(f"Sample chunk: {json.dumps(chunks, indent=2)}")
@@ -182,8 +201,8 @@ def retrieve_relevant_chunks(
         return chunks
         
     except Exception as e:
-        print(f"❌ Error in retrieve_relevant_chunks: {e}")
-        return ["An error occurred while retrieving relevant chunks."]
+        logger.exception("Error retrieving relevant chunks: %s", e)
+        return []
 
 # ============================================
 # GENERATION FUNCTIONS
@@ -196,69 +215,51 @@ def generate_response(
 ) -> str:
     """
     Generate a natural, conversational response based on the provided context.
-    Single LLM call - simple, fast, reliable.
+    Uses Ollama Cloud API for generation.
     """
-    # user_prompt = build_user_prompt(user_question, context_chunks)
-
-    # history_messages = [
-    #     {
-    #         "role": message["role"],
-    #         "content": message["content"]
-    #     }
-    #     for message in (chat_history or [])
-    #     if message.get("role") in {"user", "assistant"}
-    #     and message.get("content")
-    # ]
-
-    # try:
-    #     with OpenRouter(api_key=os.getenv("OPENROUTER_API_KEY")) as client:
-    #         response = client.chat.send(
-    #             model="nvidia/nemotron-3-ultra-550b-a55b:free",
-    #             messages=[
-    #                 {"role": "system", "content": SYSTEM_PROMPT},
-    #                 *history_messages,
-    #                 {"role": "user", "content": user_prompt}
-    #             ],
-    #         )
-
-    #         answer = response.choices[0].message.content
-    #         return answer
-
-    # except Exception as e:
-    #     print(f"❌ LLM API call failed: {e}")
-    #     import traceback
-    #     traceback.print_exc()
-    #     return f"I encountered an error: {str(e)}"
-    
-    client = OpenAI(
-        base_url="https://api.groq.com/openai/v1",
-        api_key=os.getenv("GROQ_API_KEY")
-    )
-    
     user_prompt = build_user_prompt(user_question, context_chunks)
 
+    # Build conversation history for context
+    history_messages = [
+        {
+            "role": message["role"],
+            "content": message["content"]
+        }
+        for message in (chat_history or [])
+        if message.get("role") in {"user", "assistant"}
+        and message.get("content")
+    ]
+
     try:
-        completion = client.chat.completions.create(
-            model="groq/compound-mini",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.3,  # Slightly higher for more natural language
-            top_p=0.85,
-            max_tokens=500,  # Shorter, more concise responses
-            # extra_body={"chat_template_kwargs": {"thinking": True, "reasoning_effort": "high"}},
-            stream=False
+        # Initialize Ollama Cloud client
+        client = Client(
+            host="https://ollama.com",
+            headers={'Authorization': 'Bearer ' + os.getenv("OLLAMA_API_KEY")}
         )
         
-        answer = completion.choices[0].message.content
+        # Prepare messages with conversation history
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            *history_messages,  # Include chat history if available
+            {"role": "user", "content": user_prompt}
+        ]
+        
+        response = client.chat(
+            model="gpt-oss:20b",  # Your chosen conversational model
+            messages=messages,
+            stream=False,
+            options={
+                "temperature": 0.3,  # Slightly higher for more natural language
+                "top_p": 0.85,
+                "num_predict": 500,  # Shorter, more concise responses
+            }
+        )
+        
+        answer = response['message']['content']
         return answer
 
     except Exception as e:
-        print(f"❌ LLM API call failed: {e}")
-        import traceback
-        traceback.print_exc()
-        return f"I encountered an error: {str(e)}"
+        return format_generation_error(e)
 
 def answer_user_question(
     user_question: str,

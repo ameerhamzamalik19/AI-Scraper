@@ -47,6 +47,7 @@ class ChatService:
     @staticmethod
     async def get_chats(user_id: str) -> List[dict]:
         """Get all chats for a user, ordered by most recent message"""
+        print(f"IN get_chats: {user_id}")
         try:
             logger.info(f"Fetching chats for user_id: {user_id}")
             async with get_db_connection() as conn:
@@ -79,6 +80,7 @@ class ChatService:
                     "updated_at": chat['updated_at'].isoformat() if chat['updated_at'] else None
                 } for chat in chats]
         except Exception as e:
+            logger.error(f"Error fetching chats for user_id {user_id}: {str(e)}")
             raise DatabaseError(f"Failed to get chats: {str(e)}")
     
     @staticmethod

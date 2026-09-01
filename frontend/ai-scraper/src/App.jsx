@@ -12,8 +12,24 @@ function App() {
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
-
+  const websocketRef = useRef(null);
+  const websocketConnectedRef = useRef(false);
   const API_URL = 'http://localhost:8000';
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const fetchChatHistory = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/chats`);
+      console.log(response.data);
+      setChatHistory(response.data);
+    } catch (error) {
+      console.error('Error fetching chat history:', error);
+      setError('Failed to load chat history');
+    }
+  };
 
   // Load chat history on mount
   useEffect(() => {
@@ -25,19 +41,44 @@ function App() {
     scrollToBottom();
   }, [messages]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  useEffect(() => {
+    if (!currentChatId) return undefined;
 
-  const fetchChatHistory = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/api/chats`);
-      setChatHistory(response.data);
-    } catch (error) {
-      console.error('Error fetching chat history:', error);
-      setError('Failed to load chat history');
-    }
-  };
+    const websocketUrl = `${API_URL.replace(/^http/, 'ws')}/ws/${currentChatId}`;
+    const websocket = new WebSocket(websocketUrl);
+    websocketRef.current = websocket;
+
+    websocket.onopen = () => {
+      websocketConnectedRef.current = true;
+      websocket.send('join');
+    };
+
+    websocket.onmessage = (event) => {
+      const payload = JSON.parse(event.data);
+      if (payload.type === 'message' && payload.message) {
+        setMessages(prev => [...prev, payload.message]);
+      }
+    };
+
+    websocket.onerror = () => {
+      websocketConnectedRef.current = false;
+    };
+
+    websocket.onclose = () => {
+      websocketConnectedRef.current = false;
+      if (websocketRef.current === websocket) {
+        websocketRef.current = null;
+      }
+    };
+
+    return () => {
+      websocketConnectedRef.current = false;
+      websocket.close();
+      if (websocketRef.current === websocket) {
+        websocketRef.current = null;
+      }
+    };
+  }, [currentChatId]);
 
   const loadChat = async (chatId) => {
     try {
@@ -85,15 +126,17 @@ function App() {
 
       console.log('Response received:', response.data);
 
-      // Extract the assistant message from response
-      const assistantMessage = response.data.message;
-      setMessages(prev => [...prev, assistantMessage]);
-      
       // IMPORTANT: Update the conversation ID with the UUID from backend
       if (response.data.chat_id) {
         const newChatId = response.data.chat_id;
         setCurrentChatId(newChatId);
         console.log('Conversation ID (UUID) updated to:', newChatId);
+      }
+
+      // A new chat has no room until the backend returns its id, so use the
+      // HTTP response for that first assistant message. Existing rooms stream it.
+      if (!websocketConnectedRef.current) {
+        setMessages(prev => [...prev, response.data.message]);
       }
       
       // Log user ID

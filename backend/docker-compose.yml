@@ -5,11 +5,16 @@ services:
   main:
     build: .
     command: python main.py
+    ports:
+      - "8000:8000"
     volumes:
       - .:/app
     environment:
       - REDIS_URL=redis://redis:6379/0
-      - DATABASE_URL=postgresql://postgres:postgres@localhost:5433/universal_scraper
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/universal_scraper  # Fixed: changed 5433 to 5432
     depends_on:
       - redis
       - postgres
@@ -29,7 +34,10 @@ services:
       - .:/app
     environment:
       - REDIS_URL=redis://redis:6379/0
-      - DATABASE_URL=postgresql://postgres:postgres@localhost:5433/universal_scraper
+      - REDIS_HOST=redis  # Added
+      - REDIS_PORT=6379   # Added
+      - REDIS_DB=0        # Added
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/universal_scraper  # Fixed: changed localhost to postgres and 5433 to 5432
     depends_on:
       - redis
       - postgres
@@ -49,7 +57,10 @@ services:
       - .:/app
     environment:
       - REDIS_URL=redis://redis:6379/0
-      - DATABASE_URL=postgresql://postgres:postgres@localhost:5433/universal_scraper
+      - REDIS_HOST=redis  # Added
+      - REDIS_PORT=6379   # Added
+      - REDIS_DB=0        # Added
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/universal_scraper  # Fixed: changed localhost to postgres and 5433 to 5432
     depends_on:
       - redis
       - postgres
@@ -69,7 +80,10 @@ services:
       - .:/app
     environment:
       - REDIS_URL=redis://redis:6379/0
-      - DATABASE_URL=postgresql://postgres:postgres@localhost:5433/universal_scraper
+      - REDIS_HOST=redis  # Added
+      - REDIS_PORT=6379   # Added
+      - REDIS_DB=0        # Added
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/universal_scraper  # Fixed: changed localhost to postgres and 5433 to 5432
     depends_on:
       - redis
       - postgres
@@ -89,7 +103,10 @@ services:
       - .:/app
     environment:
       - REDIS_URL=redis://redis:6379/0
-      - DATABASE_URL=postgresql://postgres:postgres@localhost:5433/universal_scraper
+      - REDIS_HOST=redis  # Added
+      - REDIS_PORT=6379   # Added
+      - REDIS_DB=0        # Added
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/universal_scraper  # Fixed: changed localhost to postgres and 5433 to 5432
     depends_on:
       - redis
       - postgres
@@ -114,17 +131,18 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # PostgreSQL (optional - if you need a database)
+  # PostgreSQL
   postgres:
-    image: postgres:15-alpine
+    # image: postgres:15-alpine
+    image: pgvector/pgvector:pg18
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=universal_scraper
     ports:
-      - "5433:5432"
+      - "5433:5432"  # Host port 5433 maps to container port 5432
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     networks:
       - app-network
     logging:

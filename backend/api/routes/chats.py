@@ -18,8 +18,8 @@ async def get_chats(
     user_id: Optional[str] = Depends(get_user_id_from_header)
 ):
     """Get all chat sessions for a user"""
-    print(f"API call to get chats for user_id: {user_id}")
     user_id = os.getenv("HARDCODED_USER_ID")  # Hardcoded for testing
+    print(f"API call to get chats for user_id: {user_id}")
     return await ChatService.get_chats(user_id)
 
 

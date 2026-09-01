@@ -63,7 +63,23 @@ class CrawlerStorage:
         now = get_current_datetime()
         safe_now = safe_datetime_for_db(now)
         
-        # Create content hash
+        # ============================================================
+        # FIX: Sanitize HTML to remove null bytes and invalid UTF-8
+        # ============================================================
+        if html:
+            # Remove null bytes
+            html = html.replace('\x00', '')
+            # Remove other control characters except newline, tab, carriage return
+            import re
+            html = re.sub(r'[\x01-\x08\x0b\x0c\x0e-\x1f\x7f]', '', html)
+            # Ensure valid UTF-8
+            try:
+                html = html.encode('utf-8', errors='ignore').decode('utf-8')
+            except Exception:
+                # If all else fails, force clean
+                html = ''.join(c for c in html if ord(c) >= 32 or c in '\n\r\t')
+        
+        # Create content hash from sanitized HTML
         content_hash = hashlib.sha256(html.encode('utf-8')).hexdigest()
         
         async with get_db_connection() as conn:
@@ -79,7 +95,6 @@ class CrawlerStorage:
                     safe_now, safe_now, safe_now
                 )
                 logger.info(f"Creating new page version: {version_id}")
-                print("create_page_version")
             except Exception as e:
                 logger.error(f"Error creating page version: {e}")
                 raise DatabaseError(f"Failed to create page version: {e}")
@@ -94,7 +109,7 @@ class CrawlerStorage:
                     (id, page_version_id, content, content_format, 
                         metadata, processing_status, created_at, updated_at) 
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)""",
-                    document_id, version_id, html, 'html',
+                    document_id, version_id, html, 'html',  # Now sanitized
                     metadata_json, 'PENDING', safe_now, safe_now
                 )
             except Exception as e:

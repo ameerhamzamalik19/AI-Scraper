@@ -8,8 +8,9 @@ from typing import List, Dict, Any
 from database_sync import execute_query, execute_update, execute_one
 from utils.helpers import get_current_datetime
 from redis_config import CHUNKING_QUEUE_NAME
+from processors.chunker import EnhancedChunker
 
-print("✅ Chunker worker loaded")
+print("✅ Chunker worker loaded with EnhancedChunker")
 
 
 class SemanticChunker:
@@ -199,10 +200,10 @@ def chunk_exists(page_version_id: str, chunk_hash: str) -> bool:
 )
 def chunk_document(document_id: str):
     """
-    Chunk processed document into semantic chunks (SYNC version).
-    Skips duplicate chunks to avoid unique constraint violations.
+    Chunk processed document using new EnhancedChunker with structure-aware logic.
+    Uses document_structure from metadata for semantic understanding.
     """
-    print(f"📦 Chunking document: {document_id}")
+    print(f"📦 Chunking document with EnhancedChunker: {document_id}")
     
     try:
         # Get document
@@ -215,14 +216,9 @@ def chunk_document(document_id: str):
             print(f"❌ Document {document_id} not found")
             return
         
-        content = doc.get('cleaned_content')
-        if not content:
-            print(f"⚠️ No cleaned content for document {document_id}")
-            return
-        
         page_version_id = doc['page_version_id']
         
-        # Parse metadata
+        # Parse metadata to get document_structure
         metadata_raw = doc['metadata']
         if isinstance(metadata_raw, str):
             try:
@@ -232,45 +228,89 @@ def chunk_document(document_id: str):
         else:
             metadata = metadata_raw or {}
         
-        url = metadata.get('url', '')
-        print(f"📋 Chunking content ({len(content)} chars) for: {url}")
+        # Check if this document already has chunks (to avoid reprocessing)
+        existing_chunks_count = execute_one(
+            "SELECT COUNT(*) as count FROM chunks WHERE document_id = %s",
+            (document_id,)
+        )
         
-        # Create chunks
-        chunker = SemanticChunker(chunk_size=500, chunk_overlap=50)
-        chunks = chunker.chunk_text(content)
+        if existing_chunks_count and existing_chunks_count['count'] > 0:
+            print(f"📊 Document {document_id} already has {existing_chunks_count['count']} chunks. Skipping reprocessing.")
+            return
         
-        print(f"📊 Created {len(chunks)} chunks")
+        # Extract structure from metadata (created by ContentProcessor in processor_worker)
+        document_structure = metadata.get('document_structure', {})
         
-        # Store chunks (skip duplicates)
+        if not document_structure:
+            print(f"⚠️ No document_structure found in metadata, falling back to plain text chunking")
+            # Fallback: use cleaned_content if structure is missing
+            content = doc.get('cleaned_content', '')
+            if not content:
+                print(f"⚠️ No content available for document {document_id}")
+                return
+            document_structure = metadata.get('document_structure', {})
+
+            if not document_structure:
+                print(f"⚠️ No document_structure in metadata for {document_id} — using plain text fallback")
+                content = doc.get('cleaned_content', '') or ''
+                # cleaned_content is already plain text — don't re-parse as HTML
+                chunker = SemanticChunker(chunk_size=500, chunk_overlap=50)
+                chunks = chunker.chunk_text(content)
+            else:
+                chunks = EnhancedChunker.chunk_structure(document_structure)
+            # if not plain_text:
+            #     print(f"⚠️ No plain text available for document {document_id}")
+            #     return
+            # chunker = SemanticChunker(chunk_size=500, chunk_overlap=50)
+            # chunks = chunker.chunk_text(plain_text)
+        else:
+            url = metadata.get('url', '')
+            print(f"📋 Using structured content for: {url}")
+            print(f"📊 Structure contains: {len(document_structure.get('sections', []))} sections, {len(document_structure.get('tables', []))} tables, {len(document_structure.get('cards', []))} cards")
+            
+            # 🎯 USE NEW ENHANCED CHUNKER
+            chunks = EnhancedChunker.chunk_structure(document_structure)
+            print(f"✨ EnhancedChunker created {len(chunks)} structure-aware chunks")
+        
+        # Store chunks with ON CONFLICT to handle duplicates gracefully
         now = get_current_datetime().isoformat()
         chunk_ids = []
         skipped_count = 0
+        inserted_count = 0
         
         for chunk_data in chunks:
             chunk_id = str(uuid.uuid4())
-            content_hash = hashlib.sha256(chunk_data['content'].encode('utf-8')).hexdigest()
-            
-            # Check if chunk already exists (skip duplicate)
-            if chunk_exists(page_version_id, content_hash):
-                print(f"⏭️ Skipping duplicate chunk: {content_hash[:16]}...")
-                skipped_count += 1
-                continue
+            content = chunk_data.get('content', '')
+            content_hash = hashlib.sha256(content.encode('utf-8')).hexdigest()
+            chunk_index = chunk_data.get('chunk_index', 0)
             
             heading_path = json.dumps(chunk_data.get('heading_path', []))
+            chunk_type = chunk_data.get('chunk_type', 'text')
             
-            execute_update(
+            # Map new chunk types to schema-compatible ones
+            chunk_type_map = {
+                'section': 'text',
+                'table': 'table',
+                'card': 'mixed',
+                'paragraph_group': 'text',
+            }
+            db_chunk_type = chunk_type_map.get(chunk_type, 'text')
+            
+            # Use ON CONFLICT to skip duplicates without error
+            result = execute_update(
                 """INSERT INTO chunks 
                    (id, page_version_id, document_id, chunk_index, chunk_type, 
-                    content, heading_path, token_count, chunk_hash, 
+                    content, heading_path, token_count, chunk_hash,
                     embedding_status, created_at, updated_at) 
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                   ON CONFLICT (document_id, chunk_index) DO NOTHING""",
                 (
                     chunk_id,
                     page_version_id,
                     document_id,
-                    chunk_data['chunk_index'],
-                    'text',
-                    chunk_data['content'],
+                    chunk_index,
+                    db_chunk_type,
+                    content,
                     heading_path,
                     chunk_data.get('token_count', 0),
                     content_hash,
@@ -280,14 +320,27 @@ def chunk_document(document_id: str):
                 )
             )
             
-            chunk_ids.append(chunk_id)
+            # Check if insert was successful (result is the number of rows affected)
+            if result == 0:
+                skipped_count += 1
+                print(f"⏭️ Skipped duplicate chunk index {chunk_index}")
+            else:
+                inserted_count += 1
+                chunk_ids.append(chunk_id)
         
-        print(f"✅ Stored {len(chunk_ids)} chunks for document {document_id} (skipped {skipped_count} duplicates)")
+        print(f"✅ Document {document_id}: inserted {inserted_count} chunks, skipped {skipped_count} duplicates")
+        
+        # Update document status to CHUNKED
+        # execute_update(
+        #     "UPDATE documents SET processing_status = 'CHUNKED', updated_at = %s WHERE id = %s",
+        #     (now, document_id)
+        # )
         
         # Enqueue embedding job
         if chunk_ids:
             from workers.embedder_worker import embed_chunks
             embed_chunks.send(chunk_ids)
+            print(f"📤 Sent {len(chunk_ids)} chunks to embedder")
         else:
             print(f"⚠️ No new chunks to embed for document {document_id}")
         
@@ -300,5 +353,5 @@ def chunk_document(document_id: str):
         raise
 
 
-print("✅ Chunker worker registered")
+print("✅ Chunker worker registered with EnhancedChunker")
 print(f"📋 Listening on queue: {CHUNKING_QUEUE_NAME}")

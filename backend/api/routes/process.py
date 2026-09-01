@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException
 from models import LinkRequest, ProcessLinkResponse
 from services.user_service import UserService
@@ -11,6 +13,7 @@ from utils.helpers import get_iso_timestamp, generate_uuid
 from exceptions import NotFoundError
 from redis_client import redis_client
 from api.routes.retrieval_pipeline import answer_user_question
+from websocket_manager import chat_connection_manager
 
 router = APIRouter(prefix="/api", tags=["process"])
 
@@ -166,7 +169,8 @@ async def process_link(request: LinkRequest):
         else:
             # It's a question - acknowledge
             response_content = f"I received your question: \"{content}\"\n\nOnce I've processed the website content, I'll be able to answer your questions. (RAG search coming soon!)"
-            response_content = answer_user_question(
+            response_content = await asyncio.to_thread(
+                answer_user_question,
                 content,
                 chat_id=chat_id,
                 project_id=project_id,
@@ -186,6 +190,7 @@ async def process_link(request: LinkRequest):
             is_url=False
         )
         print(f"Created assistant message: {assistant_message['id']}")
+        await chat_connection_manager.broadcast(chat_id, assistant_message)
         
         # Return response
         return ProcessLinkResponse(

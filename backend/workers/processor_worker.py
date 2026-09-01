@@ -7,35 +7,428 @@ import base64
 import mimetypes
 import os
 from urllib.parse import urljoin, urlparse
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional, Tuple
 import requests
-from openai import OpenAI
+from ollama import Client as OllamaClient
 from database_sync import execute_query, execute_update, execute_one
 from utils.helpers import get_current_datetime
 from redis_config import PROCESSING_QUEUE_NAME
+from crawler.content_processor import ContentProcessor
 
 logger = logging.getLogger(__name__)
 
 try:
     from bs4 import BeautifulSoup
     import markdownify
+    from PIL import Image
+    import io
     print("✅ Processor dependencies imported successfully")
 except Exception as e:
     print(f"❌ Failed to import processor dependencies: {e}")
     raise
 
 
+class OllamaVisionClient:
+    """Client for Ollama cloud free tier using the official ollama Python library."""
+
+    def __init__(self, model: str = None):
+        self.model = model or os.getenv('OLLAMA_VISION_MODEL', 'gemma4:31b-cloud')
+        api_key = os.getenv('OLLAMA_API_KEY', '')
+        self._client = OllamaClient(
+            host="https://ollama.com",
+            headers={'Authorization': f'Bearer {api_key}'} if api_key else {}
+        )
+
+    def _chat(self, messages: List[Dict[str, Any]], num_predict: int = 512, temperature: float = 0.2) -> Optional[str]:
+        """
+        Internal method — send a chat request and return the content string.
+        All public methods funnel through here for consistent error handling.
+        """
+        try:
+            response = self._client.chat(
+                model=self.model,
+                messages=messages,
+                stream=False,
+                options={
+                    "temperature": temperature,
+                    "top_p": 0.9,
+                    "num_predict": num_predict,
+                }
+            )
+            return response['message']['content'].strip()
+        except Exception as e:
+            logger.error(f"Ollama API call failed: {e}")
+            return None
+
+    def generate_description(
+        self,
+        prompt: str,
+        image_data: Optional[str] = None,
+        text_context: Optional[str] = None
+    ) -> Optional[str]:
+        """
+        Generate a description using gemma4:31b-cloud.
+        Supports both text-only and vision (image) calls.
+        """
+        full_prompt = prompt
+        if text_context:
+            full_prompt = f"{prompt}\n\nContext from page: {text_context}"
+
+        if image_data:
+            # Vision call — image goes in the images field of the user message
+            messages = [
+                {
+                    "role": "user",
+                    "content": full_prompt,
+                    "images": [image_data]
+                }
+            ]
+        else:
+            messages = [
+                {"role": "user", "content": full_prompt}
+            ]
+
+        return self._chat(messages, num_predict=512, temperature=0.2)
+
+    def analyze_image_with_vision(self, image_data: str, prompt: str) -> Optional[str]:
+        """
+        Dedicated vision call with lower temperature for factual extraction.
+        """
+        messages = [
+            {
+                "role": "user",
+                "content": prompt,
+                "images": [image_data]
+            }
+        ]
+        return self._chat(messages, num_predict=1024, temperature=0.1)
+
+    def extract_structured_data(self, image_data: str, data_type: str = "general") -> Optional[Dict]:
+        """
+        Extract structured data from an image using vision.
+        Returns parsed JSON dict or a plain-text fallback dict.
+        """
+        prompts = {
+            "general": """Analyze this image and extract ALL structured information.
+
+Return ONLY valid JSON with this schema:
+{
+  "content_type": "team_photo|chart|infographic|screenshot|diagram|table|product_photo|document|other",
+  "visible_text": "ALL text visible in the image",
+  "entities": [
+    {
+      "type": "person|organization|product|service|date|number|metric|label|location|event|other",
+      "name": "Entity name or label",
+      "value": "Associated value if applicable",
+      "context": "Additional context from the image"
+    }
+  ],
+  "relationships": [
+    {
+      "source": "Entity A",
+      "relation": "has_role|works_for|leads|contains|costs|represents|other",
+      "target": "Entity B"
+    }
+  ],
+  "headings": ["Main headings or titles visible"],
+  "summary": "Brief factual summary (2-3 sentences)",
+  "searchable_text": "Concatenated text optimized for search retrieval"
+}
+
+Extract EVERY piece of information visible. Be comprehensive and factual.""",
+
+            "table": """Analyze this table image and extract ALL data.
+Return ONLY valid JSON:
+{
+  "content_type": "table",
+  "headers": ["column1", "column2"],
+  "rows": [["value1", "value2"]],
+  "caption": "Table caption if visible",
+  "summary": "Brief description of what this table shows",
+  "searchable_text": "Combined text for search"
+}""",
+
+            "chart": """Analyze this chart/graph and extract key information.
+Return ONLY valid JSON:
+{
+  "content_type": "chart",
+  "chart_type": "bar|line|pie|scatter|area|other",
+  "title": "Chart title if visible",
+  "x_axis": "X-axis label",
+  "y_axis": "Y-axis label",
+  "data_points": [{"label": "point1", "value": "value1"}],
+  "summary": "What this chart shows",
+  "searchable_text": "Combined text for search"
+}"""
+        }
+
+        prompt = prompts.get(data_type, prompts["general"])
+        response = self.analyze_image_with_vision(image_data, prompt)
+
+        if not response:
+            return None
+
+        try:
+            json_match = re.search(r'\{.*\}', response, re.DOTALL)
+            if json_match:
+                return json.loads(json_match.group())
+            # No JSON found — wrap plain text as a minimal dict
+            return {
+                "content_type": "image",
+                "visible_text": response,
+                "searchable_text": response
+            }
+        except (json.JSONDecodeError, Exception) as e:
+            logger.error(f"Structured data JSON parse failed: {e}")
+            return {
+                "content_type": "image",
+                "visible_text": response,
+                "searchable_text": response
+            }
+
+class MediaAnalyzer:
+    """Analyze media assets with Ollama, using heuristics to skip unnecessary calls"""
+    
+    def __init__(self):
+        self.ollama = OllamaVisionClient()
+        self.ollama_enabled = bool(os.getenv('OLLAMA_API_KEY', '').strip())
+        
+    def should_analyze_image(self, img_element, source_url: str, width: int = 0, height: int = 0) -> Tuple[bool, str]:
+        """
+        Determine if an image should be analyzed by Ollama.
+        Returns: (should_analyze, reason)
+        """
+        # Skip if Ollama is disabled
+        if not self.ollama_enabled:
+            return False, "Ollama disabled"
+        
+        # Check size - skip icons and decorators
+        if width > 0 and height > 0:
+            if width < 100 or height < 100:
+                return False, f"Image too small ({width}x{height}) - likely icon/decorator"
+        
+        # Check if image is likely an icon based on src/class
+        src = source_url.lower()
+        alt_text = img_element.get('alt', '').strip().lower()
+        class_attr = img_element.get('class', [])
+        if isinstance(class_attr, str):
+            class_attr = class_attr.split()
+        
+        icon_indicators = ['icon', 'logo', 'button', 'arrow', 'bullet', 'dot', 'separator', 'line', 'spacer', 'bg-', 'background']
+        for indicator in icon_indicators:
+            if indicator in src or any(indicator in cls.lower() for cls in class_attr):
+                return False, f"Appears to be icon/decorator (indicator: {indicator})"
+        
+        # Skip if no alt text and no parent text context
+        if not alt_text:
+            # Check if parent has text content
+            parent = img_element.parent
+            has_context = False
+            for _ in range(3):  # Check up to 3 levels up
+                if parent and parent.get_text(strip=True):
+                    has_context = True
+                    break
+                parent = parent.parent if parent else None
+            
+            if not has_context:
+                return False, "No alt text and no surrounding text context - likely decorative"
+        
+        # Check if image is referenced from a likely chart/data source
+        chart_indicators = ['chart', 'graph', 'plot', 'diagram', 'infographic', 'screenshot', 'screen-shot']
+        is_chart = any(indicator in src.lower() or indicator in alt_text for indicator in chart_indicators)
+        
+        if is_chart:
+            return True, "Likely chart/graph/screenshot with semantic value"
+        
+        # For images with alt text but not clearly charts, analyze if they have significant size
+        if width > 200 or height > 200:
+            return True, "Image with meaningful dimensions and context"
+        
+        # Default: don't analyze to save quota
+        return False, "Low-confidence image, skipping to save quota"
+    
+    def should_analyze_table(self, table_element) -> Tuple[bool, str]:
+        """Determine if a table should be analyzed by Ollama."""
+        if not self.ollama_enabled:
+            return False, "Ollama disabled"
+        
+        try:
+            rows = table_element.find_all('tr')
+            if len(rows) < 2:
+                return False, f"Table has only {len(rows)} rows (min 2 needed)"
+            
+            # Check columns
+            max_cols = 0
+            for row in rows:
+                cols = len(row.find_all(['td', 'th']))
+                max_cols = max(max_cols, cols)
+            
+            if max_cols < 2:
+                return False, f"Table has only {max_cols} columns (min 2 needed)"
+            
+            # Check if table parses cleanly to markdown
+            markdown = DocumentProcessor._extract_table_markdown(table_element)
+            if markdown and self._is_clean_markdown_table(markdown):
+                # Parse as markdown - no LLM needed
+                return False, "Table parses cleanly to markdown format"
+            
+            # Complex tables (nested, merged cells, etc.)
+            return True, "Complex table with structural formatting"
+            
+        except Exception as e:
+            logger.warning(f"Error analyzing table: {e}")
+            return False, "Error analyzing table, skipping"
+    
+    def _is_clean_markdown_table(self, markdown: str) -> bool:
+        """Check if a table is cleanly parsed to markdown."""
+        lines = markdown.strip().split('\n')
+        if len(lines) < 3:  # Need header, separator, at least 1 row
+            return False
+        # Check if separator line exists
+        return any('---' in line for line in lines)
+    
+    def generate_image_description(self, img_element, image_data: str, source_url: str) -> Optional[str]:
+        """Generate a searchable description for an image using Ollama."""
+        # Get context
+        alt_text = img_element.get('alt', '').strip()
+        title = img_element.get('title', '').strip()
+        
+        # Gather surrounding text context
+        context = []
+        parent = img_element.parent
+        for _ in range(3):  # Up to 3 levels up
+            if parent:
+                # Get text from siblings and parent
+                text = parent.get_text(strip=True)
+                if text:
+                    # Get text around the image (before/after within parent)
+                    context.append(text)
+                parent = parent.parent if parent else None
+            else:
+                break
+        
+        # Try to get caption/figcaption
+        caption = None
+        figcaption = img_element.find_parent('figure')
+        if figcaption:
+            cap = figcaption.find('figcaption')
+            if cap:
+                caption = cap.get_text(strip=True)
+        
+        context_text = " ".join(filter(None, [alt_text, title, caption] + context))
+        context_text = context_text[:500]  # Limit context length
+        
+        prompt = f"""You are a precise data extractor. Analyze this image and describe ONLY the factual information that would help someone find it in a search query.
+
+Focus on:
+- Main subject/what's shown (e.g., "growth chart", "team photo", "architecture diagram")
+- Any visible text, labels, numbers, or data points
+- Key visual elements that matter
+- The type of content (chart, screenshot, diagram, photo, infographic, etc.)
+
+DO NOT add opinions, speculation, or marketing language.
+Provide a concise, fact-based description optimized for semantic search.
+
+{context_text if context_text else "No additional context available."}"""
+
+        try:
+            description = self.ollama.generate_description(prompt, image_data)
+            if description:
+                # Clean up the description
+                description = description.strip()
+                # Remove any markdown formatting that might have been added
+                description = re.sub(r'^["\']|["\']$', '', description)
+                return description
+            return None
+        except Exception as e:
+            logger.error(f"Failed to generate image description: {e}")
+            return None
+    
+    def generate_table_description(self, table_element, table_text: str) -> Optional[str]:
+        """Generate a searchable description for a complex table using Ollama."""
+        # Extract table structure
+        try:
+            headers = []
+            rows_data = []
+            
+            # Get headers
+            thead = table_element.find('thead')
+            if thead:
+                for th in thead.find_all(['th', 'td']):
+                    headers.append(th.get_text(strip=True))
+            
+            # If no thead, try first row as headers
+            if not headers:
+                first_row = table_element.find('tr')
+                if first_row:
+                    for th in first_row.find_all(['th', 'td']):
+                        headers.append(th.get_text(strip=True))
+            
+            # Get data rows
+            for tr in table_element.find_all('tr'):
+                cells = []
+                for td in tr.find_all(['td', 'th']):
+                    cells.append(td.get_text(strip=True))
+                if cells:
+                    rows_data.append(cells)
+            
+            # Prepare structured table data
+            table_summary = f"Headers: {headers}\n\nRows: {rows_data[:10]}"  # First 10 rows max
+            
+            prompt = f"""Analyze this table data and create a searchable description.
+
+Table data:
+{table_summary}
+
+Provide a concise description that would help someone find this table in a search. Include:
+- The type of data presented
+- Key relationships between columns
+- Important numbers or patterns
+- What this table is about
+
+DO NOT add speculation or marketing. Just factual description."""
+
+            description = self.ollama.generate_description(prompt)
+            if description:
+                return description.strip()
+            return None
+            
+        except Exception as e:
+            logger.error(f"Failed to generate table description: {e}")
+            return None
+    
+    def extract_structured_content(self, image_data: str, source_url: str, content_type: str = "general") -> Optional[Dict]:
+        """
+        Generic structured content extraction from images.
+        This extracts ANY structured information, not just specific types.
+        """
+        try:
+            result = self.ollama.extract_structured_data(image_data, content_type)
+            if result:
+                logger.info(f"📊 Extracted structured content: {result.get('content_type', 'unknown')}")
+                return result
+            return None
+        except Exception as e:
+            logger.error(f"Structured content extraction failed: {e}")
+            return None
+
+
 class DocumentProcessor:
-    """Clean and process raw HTML into Markdown"""
+    """Clean and process raw HTML into Markdown with full content preservation"""
     
     @staticmethod
     def clean_html(html: str) -> str:
-        """Clean HTML and extract main content"""
+        """
+        Clean HTML by removing boilerplate while preserving main content.
+        This is the FIRST step - removes navigation, headers, footers, etc.
+        """
         soup = BeautifulSoup(html, 'html.parser')
         
-        for tag in soup(['script', 'style', 'noscript', 'iframe', 'header', 'footer', 'nav']):
+        # Remove non-content tags
+        for tag in soup(['script', 'style', 'noscript', 'iframe', 'svg']):
             tag.decompose()
         
+        # Remove boilerplate elements (navigation, footer, sidebar, etc.)
         boilerplate_selectors = [
             'nav', '.nav', '.navigation', '.menu',
             '.sidebar', '.side-bar', '.widget',
@@ -49,6 +442,9 @@ class DocumentProcessor:
             '.comments', '.comment-section',
             '.related-articles', '.recommended',
             '.breadcrumb', '.breadcrumbs',
+            '.pagination', '.page-numbers',
+            '.search', '.search-form',
+            '.tags', '.categories',
         ]
         
         for selector in boilerplate_selectors:
@@ -59,25 +455,188 @@ class DocumentProcessor:
     
     @staticmethod
     def html_to_markdown(html: str) -> str:
-        """Convert HTML to Markdown"""
+        """
+        Convert HTML to Markdown preserving ALL content.
+        This uses the new enhanced extraction while maintaining backward compatibility.
+        """
         try:
+            # First clean the HTML (remove boilerplate)
             cleaned_html = DocumentProcessor.clean_html(html)
             
-            md = markdownify.markdownify(
-                cleaned_html,
-                heading_style="ATX",
-                bullets="-",
-                strip=['script', 'style', 'noscript', 'iframe'],
-                convert_internally=True
-            )
+            # Use BeautifulSoup to parse and preserve structure
+            soup = BeautifulSoup(cleaned_html, 'html.parser')
             
-            md = re.sub(r'\n\s*\n', '\n\n', md)
-            md = md.strip()
+            # Build markdown from structured content
+            markdown_parts = []
             
-            return md
+            # Process body content
+            body = soup.find('body')
+            if not body:
+                body = soup
+            
+            # Extract content preserving structure
+            markdown_parts.extend(DocumentProcessor._extract_element_content(body))
+            
+            # Join and clean up
+            markdown = '\n\n'.join(filter(None, markdown_parts))
+            markdown = re.sub(r'\n{3,}', '\n\n', markdown)
+            markdown = markdown.strip()
+            
+            return markdown
+            
         except Exception as e:
             logger.error(f"Error converting HTML to markdown: {e}")
-            return html
+            # Fallback: use markdownify library
+            try:
+                cleaned_html = DocumentProcessor.clean_html(html)
+                md = markdownify.markdownify(
+                    cleaned_html,
+                    heading_style="ATX",
+                    bullets="-",
+                    strip=['script', 'style', 'noscript', 'iframe'],
+                    convert_internally=True
+                )
+                md = re.sub(r'\n\s*\n', '\n\n', md)
+                return md.strip()
+            except Exception as e2:
+                logger.error(f"Fallback markdown conversion also failed: {e2}")
+                return html
+    
+    @staticmethod
+    def _extract_element_content(element, level: int = 0) -> List[str]:
+        """
+        Recursively extract content from HTML elements preserving structure.
+        This is the key method that extracts ALL content, not just headings.
+        """
+        parts = []
+        indent = "  " * level
+        
+        if element.name is None:
+            # Text node
+            text = element.string
+            if text and text.strip():
+                parts.append(text.strip())
+            return parts
+        
+        # Handle different element types
+        tag = element.name.lower()
+        
+        # Headings - preserve hierarchy
+        if tag in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+            text = element.get_text().strip()
+            if text:
+                level_num = int(tag[1])
+                prefix = '#' * level_num
+                parts.append(f"{prefix} {text}")
+        
+        # Paragraphs
+        elif tag == 'p':
+            text = element.get_text().strip()
+            if text and len(text) > 10:  # Skip very short paragraphs
+                parts.append(text)
+        
+        # Lists
+        elif tag in ['ul', 'ol']:
+            list_items = []
+            for li in element.find_all('li', recursive=False):
+                li_text = li.get_text().strip()
+                if li_text:
+                    # Check if list item has sub-content
+                    sub_items = []
+                    for child in li.find_all(['ul', 'ol'], recursive=True):
+                        sub_items.extend(DocumentProcessor._extract_element_content(child, level + 1))
+                    
+                    if sub_items:
+                        list_items.append(f"- {li_text}")
+                        list_items.extend([f"  {item}" for item in sub_items])
+                    else:
+                        list_items.append(f"- {li_text}")
+            
+            if list_items:
+                parts.append('\n'.join(list_items))
+        
+        # Tables - preserve structure
+        elif tag == 'table':
+            table_text = DocumentProcessor._extract_table_markdown(element)
+            if table_text:
+                parts.append(table_text)
+        
+        # Divs and sections - extract their content
+        elif tag in ['div', 'section', 'article', 'main', 'aside']:
+            # Only process if it has meaningful content
+            text = element.get_text().strip()
+            if len(text) > 20:
+                # Process children
+                for child in element.children:
+                    child_parts = DocumentProcessor._extract_element_content(child, level + 1)
+                    if child_parts:
+                        parts.extend(child_parts)
+        
+        # Other block elements
+        elif tag in ['blockquote', 'pre', 'code']:
+            text = element.get_text().strip()
+            if text:
+                if tag == 'blockquote':
+                    parts.append(f"> {text}")
+                else:
+                    parts.append(text)
+        
+        # Process children for other elements (like spans, strong, em)
+        else:
+            for child in element.children:
+                child_parts = DocumentProcessor._extract_element_content(child, level + 1)
+                if child_parts:
+                    parts.extend(child_parts)
+        
+        return parts
+    
+    @staticmethod
+    def _extract_table_markdown(table_element) -> Optional[str]:
+        """Extract table as markdown preserving structure."""
+        try:
+            rows = []
+            
+            # Extract headers
+            headers = []
+            thead = table_element.find('thead')
+            if thead:
+                for th in thead.find_all(['th', 'td']):
+                    headers.append(th.get_text().strip())
+            else:
+                # Try first row as headers
+                first_row = table_element.find('tr')
+                if first_row:
+                    for th in first_row.find_all(['th', 'td']):
+                        headers.append(th.get_text().strip())
+            
+            if headers:
+                rows.append("| " + " | ".join(headers) + " |")
+                rows.append("|" + "|".join(["---"] * len(headers)) + "|")
+            
+            # Extract data rows
+            for tr in table_element.find_all('tr'):
+                # Skip if this is the header row
+                if tr == table_element.find('tr') and not thead:
+                    continue
+                
+                cells = []
+                for td in tr.find_all(['td', 'th']):
+                    cells.append(td.get_text().strip())
+                
+                if cells:
+                    # Pad to match header count
+                    while len(cells) < len(headers):
+                        cells.append("")
+                    rows.append("| " + " | ".join(cells) + " |")
+            
+            if len(rows) <= 1:  # Only headers or empty
+                return None
+            
+            return "**Table:**\n\n" + "\n".join(rows)
+            
+        except Exception as e:
+            logger.warning(f"Error extracting table: {e}")
+            return None
     
     @staticmethod
     def extract_metadata_from_html(html: str) -> Dict[str, Any]:
@@ -90,6 +649,9 @@ class DocumentProcessor:
             'keywords': None,
             'canonical_url': None,
             'language': None,
+            'og_title': None,
+            'og_description': None,
+            'og_image': None,
         }
         
         title = soup.find('title')
@@ -112,6 +674,19 @@ class DocumentProcessor:
         if html_tag:
             metadata['language'] = html_tag.get('lang', 'en')
         
+        # Open Graph
+        og_title = soup.find('meta', property='og:title')
+        if og_title:
+            metadata['og_title'] = og_title.get('content', '').strip()
+        
+        og_desc = soup.find('meta', property='og:description')
+        if og_desc:
+            metadata['og_description'] = og_desc.get('content', '').strip()
+        
+        og_image = soup.find('meta', property='og:image')
+        if og_image:
+            metadata['og_image'] = og_image.get('content', '').strip()
+        
         return metadata
 
     @staticmethod
@@ -131,6 +706,24 @@ class DocumentProcessor:
         return mime_type, base64.b64encode(response.content).decode('ascii')
 
     @staticmethod
+    def get_image_dimensions(source_url: str, image_data: Optional[str] = None) -> Tuple[int, int]:
+        """Get image dimensions using PIL."""
+        try:
+            if image_data:
+                # Decode base64
+                img_bytes = base64.b64decode(image_data)
+                img = Image.open(io.BytesIO(img_bytes))
+                return img.width, img.height
+            else:
+                # Download and check
+                response = requests.get(source_url, timeout=10)
+                img = Image.open(io.BytesIO(response.content))
+                return img.width, img.height
+        except Exception as e:
+            logger.debug(f"Could not get image dimensions: {e}")
+            return 0, 0
+
+    @staticmethod
     def describe_image(source_url: str, alt_text: str = '', title: str = '') -> str:
         """Create searchable image metadata without sending pixels to a text-only model."""
         filename = urlparse(source_url).path.rsplit('/', 1)[-1]
@@ -141,54 +734,126 @@ class DocumentProcessor:
 
     @staticmethod
     def describe_table(table_text: str) -> str:
-        """Generate a searchable description while preserving table values."""
-        api_key = os.getenv('GROQ_API_KEY')
-        if not api_key:
-            return f'Table data: {table_text}'
-        try:
-            client = OpenAI(base_url='https://api.groq.com/openai/v1', api_key=api_key)
-            response = client.chat.completions.create(
-                model='groq/compound-mini',
-                messages=[{'role': 'user', 'content': f'Summarize this table for semantic search. Preserve labels, numbers, relationships, and key conclusions. Return only factual text.\n\n{table_text}'}],
-                temperature=0.1,
-                max_tokens=800
-            )
-            return response.choices[0].message.content.strip()
-        except Exception as e:
-            logger.warning('Table description generation failed: %s', e)
-            return f'Table data: {table_text}'
+        """Generate a searchable description from table text."""
+        # Simple fallback description without external API
+        lines = table_text.strip().split('\n')[:10]
+        summary = ' | '.join(line.strip() for line in lines if line.strip())
+        if len(lines) > 10:
+            summary += ' ... (truncated)'
+        return f'Table data: {summary}'
 
     @staticmethod
     def extract_media(html: str, page_url: str) -> list[Dict[str, Any]]:
-        """Extract images and tables, preserving originals and descriptions."""
+        """Extract images and tables with intelligent LLM-based descriptions."""
         soup = BeautifulSoup(html, 'html.parser')
         assets = []
+        media_analyzer = MediaAnalyzer()
+        
+        # Process images
         for image in soup.find_all('img')[:20]:
             source = image.get('src') or image.get('data-src')
             if not source:
                 continue
             source_url = urljoin(page_url, source)
+            
             try:
+                # Get image data
                 mime_type, payload = DocumentProcessor._image_data(source_url)
-                description = DocumentProcessor.describe_image(
-                    source_url,
-                    image.get('alt', ''),
-                    image.get('title', '')
+                
+                # Get dimensions
+                width, height = DocumentProcessor.get_image_dimensions(source_url, payload)
+                
+                # Check if we should analyze this image
+                should_analyze, reason = media_analyzer.should_analyze_image(
+                    image, source_url, width, height
                 )
-                assets.append({'media_type': 'image', 'source_url': source_url,
-                               'mime_type': mime_type, 'data_base64': payload,
-                               'description': description})
+                
+                structured_data = None
+                if should_analyze:
+                    logger.info(f"🔍 Analyzing image: {source_url} - {reason}")
+                    
+                    # Generate description
+                    description = media_analyzer.generate_image_description(
+                        image, payload, source_url
+                    )
+                    
+                    # Also extract structured content (generic)
+                    structured_data = media_analyzer.extract_structured_content(
+                        payload, source_url, "general"
+                    )
+                    
+                    if structured_data:
+                        # Use structured data to enhance description
+                        if structured_data.get('visible_text'):
+                            description = f"{description or ''} | Visible text: {structured_data['visible_text']}"
+                        if structured_data.get('entities'):
+                            entity_text = " | ".join([
+                                f"{e.get('name', '')} ({e.get('type', '')})" 
+                                for e in structured_data.get('entities', [])[:5]
+                            ])
+                            if entity_text:
+                                description = f"{description} | Entities: {entity_text}"
+                    
+                    if not description:
+                        logger.warning(f"⚠️ LLM description failed, using fallback for {source_url}")
+                        description = DocumentProcessor.describe_image(
+                            source_url,
+                            image.get('alt', ''),
+                            image.get('title', '')
+                        )
+                else:
+                    logger.debug(f"⏭️ Skipping image: {source_url} - {reason}")
+                    description = DocumentProcessor.describe_image(
+                        source_url,
+                        image.get('alt', ''),
+                        image.get('title', '')
+                    )
+                
+                assets.append({
+                    'media_type': 'image',
+                    'source_url': source_url,
+                    'mime_type': mime_type,
+                    'data_base64': payload,
+                    'description': description,
+                    'width': width,
+                    'height': height,
+                    'was_analyzed': should_analyze,
+                    'structured_data': structured_data
+                })
+                
             except Exception as e:
                 logger.warning('Unable to process image %s: %s', source_url, e)
 
+        # Process tables
         for table in soup.find_all('table')[:20]:
             table_text = table.get_text(' | ', strip=True)
             if not table_text:
                 continue
-            assets.append({'media_type': 'table', 'source_url': page_url,
-                           'mime_type': 'text/html',
-                           'data_base64': base64.b64encode(str(table).encode('utf-8')).decode('ascii'),
-                           'description': DocumentProcessor.describe_table(table_text)})
+            
+            # Check if we should analyze this table
+            should_analyze, reason = media_analyzer.should_analyze_table(table)
+            
+            if should_analyze:
+                logger.info(f"🔍 Analyzing table: {reason}")
+                description = media_analyzer.generate_table_description(table, table_text)
+                if description:
+                    logger.info(f"✅ Generated table description: {description[:100]}...")
+                else:
+                    logger.warning(f"⚠️ LLM table description failed, using fallback")
+                    description = DocumentProcessor.describe_table(table_text)
+            else:
+                logger.debug(f"⏭️ Skipping table analysis: {reason}")
+                description = DocumentProcessor.describe_table(table_text)
+            
+            assets.append({
+                'media_type': 'table',
+                'source_url': page_url,
+                'mime_type': 'text/html',
+                'data_base64': base64.b64encode(str(table).encode('utf-8')).decode('ascii'),
+                'description': description,
+                'was_analyzed': should_analyze
+            })
+        
         return assets
 
 
@@ -198,7 +863,7 @@ class DocumentProcessor:
     time_limit=600000
 )
 def process_document(document_id: str):
-    """Process raw HTML document (SYNC version)"""
+    """Process raw HTML document with enhanced content extraction"""
     print(f"📄 Processing document: {document_id}")
     
     try:
@@ -230,6 +895,7 @@ def process_document(document_id: str):
         
         url = metadata.get('url') or doc.get('url') or ''
         print(f"📋 Processing HTML for: {url}")
+        print(f"📄 Raw HTML size: {len(html)} chars")
         
         # Check if already processed
         if doc.get('processing_status') == 'COMPLETED':
@@ -243,19 +909,71 @@ def process_document(document_id: str):
             (now, document_id)
         )
         
-        # Clean and convert
-        markdown_content = DocumentProcessor.html_to_markdown(html)
-        media_assets = DocumentProcessor.extract_media(html, url)
-        for asset in media_assets:
-            markdown_content += f"\n\n## {asset['media_type'].title()}\n\n{asset['description']}"
-        
-        # Extract metadata from HTML
+        # Step 1: Extract metadata from HTML
         extracted_metadata = DocumentProcessor.extract_metadata_from_html(html)
+
+        # Skip HTML-to-markdown conversion entirely. Store the raw HTML plus the
+        # structured extraction output in metadata for downstream chunking.
+        processor_result = ContentProcessor.process_html(
+                html,
+                source_url=url,
+                page_title=(
+                    metadata.get('title') or
+                    metadata.get('og_title') or
+                    extracted_metadata.get('title') or
+                    url or
+                    'Untitled Page'
+                )
+            )
+
+        raw_content = processor_result.get('all_text', '')
+        print(f"📄 Raw HTML length: {len(raw_content)} chars")
+
+        document_structure = processor_result.get('document_structure', {})
+        section_count = len(document_structure.get('sections', []))
+        table_count = len(document_structure.get('tables', []))
+        print(f"📊 Document structure: {section_count} sections, {table_count} tables")
+
+        # Log sample of extracted content for debugging
+        if raw_content:
+            sample = raw_content[:500] + "..." if len(raw_content) > 500 else raw_content
+            print(f"🧾 Raw HTML sample: {sample}")
+
+        # Step 2: Extract media assets with intelligent analysis
+        media_assets = DocumentProcessor.extract_media(html, url)
         
-        # Merge metadata
-        merged_metadata = {**metadata, **extracted_metadata}
+        # Log media processing stats
+        analyzed_images = sum(1 for a in media_assets if a.get('was_analyzed') and a['media_type'] == 'image')
+        analyzed_tables = sum(1 for a in media_assets if a.get('was_analyzed') and a['media_type'] == 'table')
+        print(f"📊 Media assets: {len(media_assets)} total (Images analyzed: {analyzed_images}, Tables analyzed: {analyzed_tables})")
         
-        # Update document
+        for asset in media_assets:
+            raw_content += f"\n\nMedia asset: {asset['media_type']} - {asset['description']}"
+            
+            # Also add structured data to raw_content for search
+            if asset.get('structured_data'):
+                structured = asset['structured_data']
+                if structured.get('visible_text'):
+                    raw_content += f"\nVisible text: {structured['visible_text']}"
+                if structured.get('entities'):
+                    for entity in structured.get('entities', []):
+                        raw_content += f"\nEntity: {entity.get('name', '')} ({entity.get('type', '')}) - {entity.get('value', '')}"
+
+        # Step 3: Merge metadata
+        merged_metadata = {
+            **metadata,
+            **extracted_metadata,
+            'document_structure': document_structure,   # sections/tables/cards for EnhancedChunker
+            'url': url,
+            'extraction_version': '2.0',
+            'media_analysis_stats': {
+                'total_assets': len(media_assets),
+                'analyzed_images': analyzed_images,
+                'analyzed_tables': analyzed_tables,
+            }
+        }
+
+        # Step 4: Update document
         execute_update(
             """UPDATE documents 
                SET cleaned_content = %s, 
@@ -264,21 +982,24 @@ def process_document(document_id: str):
                    processed_at = %s,
                    updated_at = %s
                WHERE id = %s""",
-            (markdown_content, json.dumps(merged_metadata), now, now, document_id)
+            (raw_content, json.dumps(merged_metadata), now, now, document_id)
         )
 
+        # Step 5: Store media assets with structured data
         for asset in media_assets:
             execute_update(
                 """INSERT INTO media_assets
-                   (page_version_id, document_id, media_type, source_url,
+                (page_version_id, document_id, media_type, source_url,
                     mime_type, data_base64, description, created_at)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
                 (doc['page_version_id'], document_id, asset['media_type'],
-                 asset['source_url'], asset['mime_type'], asset['data_base64'],
-                 asset['description'], now)
+                asset['source_url'], asset['mime_type'], asset['data_base64'],
+                asset['description'], now)
             )
-        
-        print(f"✅ Document {document_id} processed successfully ({len(markdown_content)} chars)")
+
+        print(f"✅ Document {document_id} processed successfully")
+        print(f"   - Raw HTML length: {len(raw_content)} chars")
+        print(f"   - Media assets: {len(media_assets)}")
         
         # Enqueue chunking job
         from workers.chunker_worker import chunk_document

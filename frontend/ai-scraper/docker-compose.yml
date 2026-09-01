@@ -1,0 +1,9 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-scraper-frontend
+    ports:
+      - "80:80"
+    restart: unless-stopped
