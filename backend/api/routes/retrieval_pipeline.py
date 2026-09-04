@@ -134,15 +134,41 @@ user's meaning and return only the rewritten question, with no explanation."""
 # DATABASE FUNCTIONS
 # ============================================
 
+# Category weights for boosting
+CATEGORY_BOOST = {
+    'main_content': 1.0,
+    'header_nav': 0.8,
+    'footer': 0.7,
+    'sidebar': 0.5,
+    'excluded': 0.0,
+}
+
+# Categories to exclude entirely (pure UI noise)
+EXCLUDED_CATEGORIES = ['excluded', 'filter', 'modal', 'cookie']
+
+# Minimum similarity threshold
+MIN_SIMILARITY_THRESHOLD = 0.0
+
 def retrieve_relevant_chunks(
     embedding: List[float],
     chat_id: str,
-    limit: int = 5,
-    min_similarity: float = 0.0
+    limit: int = 10,
+    min_similarity: float = MIN_SIMILARITY_THRESHOLD,
+    exclude_ui: bool = True
 ) -> List[Dict[str, Any]]:
     """
     Return completed chunks nearest to an embedding using cosine distance.
-    Compatible with halfvec(2048) embeddings in your schema.
+    Supports category-based boosting and UI exclusion.
+    
+    Args:
+        embedding: The query embedding vector
+        chat_id: The chat ID to retrieve chunks for
+        limit: Maximum number of chunks to return
+        min_similarity: Minimum similarity threshold (0.0-1.0)
+        exclude_ui: If True, exclude chunks with chunk_category in EXCLUDED_CATEGORIES
+    
+    Returns:
+        List of chunks sorted by adjusted similarity (after category boosting)
     """
     if not embedding or not chat_id:
         print("❌ No embedding provided")
@@ -153,50 +179,80 @@ def retrieve_relevant_chunks(
 
     vector = "[{}]".format(",".join(str(value) for value in embedding))
     
-    # Try with halfvec casting (your schema)
     try:
-        chunks = execute_query(
-            """
-                 SELECT chunk_id, page_version_id, document_id, chunk_index,
-                     chunk_type, content, context_prefix, heading_path,
-                     token_count, similarity
-                 FROM (
-                  SELECT DISTINCT ON (LOWER(REGEXP_REPLACE(c.content, '\\s+', ' ', 'g')))
-                      c.id AS chunk_id,
-                      c.page_version_id,
-                      c.document_id,
-                      c.chunk_index,
-                      c.chunk_type,
-                      c.content,
-                      c.context_prefix,
-                      c.heading_path,
-                      c.token_count,
-                      1 - (c.embedding <=> %s::halfvec) AS similarity
-                  FROM chunks c
-                  JOIN page_versions pv ON pv.id = c.page_version_id
-                  JOIN pages p ON p.id = pv.page_id
-                  WHERE c.embedding_status = 'COMPLETED'
-                    AND c.embedding IS NOT NULL
-                    AND p.chat_id = %s
-                  ORDER BY LOWER(REGEXP_REPLACE(c.content, '\\s+', ' ', 'g')),
-                        c.embedding <=> %s::halfvec
-                 ) AS unique_chunks
-                 ORDER BY similarity DESC
-                 LIMIT %s
-                 """,
-    (vector, chat_id, vector, limit),
-        )
+        # Build query with optional category filtering
+        query = """
+             SELECT chunk_id, page_version_id, document_id, chunk_index,
+                 chunk_type, content, context_prefix, heading_path,
+                 token_count, chunk_category, similarity
+             FROM (
+              SELECT DISTINCT ON (LOWER(REGEXP_REPLACE(c.content, '\\s+', ' ', 'g')))
+                  c.id AS chunk_id,
+                  c.page_version_id,
+                  c.document_id,
+                  c.chunk_index,
+                  c.chunk_type,
+                  c.content,
+                  c.context_prefix,
+                  c.heading_path,
+                  c.token_count,
+                  c.chunk_category,
+                  1 - (c.embedding <=> %s::halfvec) AS similarity
+              FROM chunks c
+              JOIN page_versions pv ON pv.id = c.page_version_id
+              JOIN pages p ON p.id = pv.page_id
+              WHERE c.embedding_status = 'COMPLETED'
+                AND c.embedding IS NOT NULL
+                AND p.chat_id = %s
+        """
+        
+        # Exclude UI noise categories if requested
+        if exclude_ui:
+            excluded_list = "', '".join(EXCLUDED_CATEGORIES)
+            query += f" AND c.chunk_category NOT IN ('{excluded_list}')"
+        
+        query += """
+              ORDER BY LOWER(REGEXP_REPLACE(c.content, '\\s+', ' ', 'g')),
+                       c.embedding <=> %s::halfvec
+             ) AS unique_chunks
+             ORDER BY similarity DESC
+             LIMIT %s
+             """
+        
+        chunks = execute_query(query, (vector, chat_id, vector, limit * 2))  # Get extra for boosting
 
         if not chunks:
             print("❌ No chunks found for the given embedding")
             return []
 
         print(f"✅ Retrieved {len(chunks)} relevant chunks from the database")
-        print(f"Sample chunk: {json.dumps(chunks, indent=2)}")
+        print(f"Chunks: {chunks[:7]}...")  # Log first 7 chunks for debugging
+        # ============================================================
+        # Apply category-based boosting and re-rank
+        # ============================================================
+        for chunk in chunks:
+            category = chunk.get('chunk_category', 'main_content')
+            boost = CATEGORY_BOOST.get(category, 0.5)
+            original_similarity = chunk.get('similarity', 0)
+            chunk['original_similarity'] = original_similarity
+            chunk['adjusted_similarity'] = original_similarity * boost
+            chunk['category_boost'] = boost
         
-        # Filter by minimum similarity threshold if set
+        # Sort by adjusted similarity
+        chunks.sort(key=lambda x: x['adjusted_similarity'], reverse=True)
+        
+        # Log what we found
+        for i, chunk in enumerate(chunks[:5]):
+            print(f"  #{i+1}: {chunk['chunk_category']} (boost: {chunk['category_boost']:.2f}) "
+                  f"raw: {chunk['original_similarity']:.4f} → adjusted: {chunk['adjusted_similarity']:.4f}")
+        
+        # Apply minimum similarity threshold to adjusted scores
         if min_similarity > 0:
-            chunks = [chunk for chunk in chunks if chunk.get('similarity', 0) >= min_similarity]
+            chunks = [chunk for chunk in chunks if chunk['adjusted_similarity'] >= min_similarity]
+            print(f"✅ Filtered to {len(chunks)} chunks above threshold {min_similarity}")
+        
+        # Limit results
+        chunks = chunks[:limit]
         
         return chunks
         
@@ -271,6 +327,11 @@ def answer_user_question(
     """
     Complete RAG pipeline: embed question, retrieve relevant chunks, generate answer.
     Returns natural, conversational answers without sources or reasoning.
+    
+    Now with:
+    - Category-based boosting (main_content gets full weight, header/footer get medium weight)
+    - Similarity threshold of 0.5 to filter out noise
+    - Exclusion of UI noise (filter, modal, cookie chunks)
     """
     if not user_question or not user_question.strip():
         return "Please provide a valid question."
@@ -287,16 +348,29 @@ def answer_user_question(
         if not embedding:
             return "I couldn't process that question. Please try again."
 
-        # Step 3: Retrieve relevant chunks
-        chunks = retrieve_relevant_chunks(embedding, chat_id=chat_id, limit=10)
+        # Step 3: Retrieve relevant chunks with category boosting and threshold
+        chunks = retrieve_relevant_chunks(
+            embedding, 
+            chat_id=chat_id, 
+            limit=10,
+            min_similarity=MIN_SIMILARITY_THRESHOLD,
+            exclude_ui=True
+        )
         
         if not chunks:
             return "I don't have enough information about that in the available content."
 
+        # Log the chunks being used
+        print(f"📊 Using {len(chunks)} chunks for generation:")
+        for i, chunk in enumerate(chunks[:3]):
+            category = chunk.get('chunk_category', 'unknown')
+            similarity = chunk.get('adjusted_similarity', chunk.get('similarity', 0))
+            content_preview = chunk.get('content', '')[:100].replace('\n', ' ')
+            print(f"  #{i+1}: [{category}] sim:{similarity:.4f} - {content_preview}...")
+
         # Step 4: Generate natural response with the original history
         response = generate_response(standalone_question, chunks, chat_history)
         print("✅ Generated response:", response)
-        # Step 4: Return just the answer - clean, natural, no extra fluff
         return response
 
     except Exception as e:
@@ -325,3 +399,23 @@ def check_embedding_dimension() -> Dict[str, Any]:
         dims = sample.count(',') + 1
         return {'dimension': dims}
     return {'dimension': 0}
+
+def get_available_categories(chat_id: str) -> Dict[str, int]:
+    """Get count of chunks by category for a chat."""
+    result = execute_query(
+        """
+        SELECT 
+            c.chunk_category,
+            COUNT(*) as count
+        FROM chunks c
+        JOIN page_versions pv ON pv.id = c.page_version_id
+        JOIN pages p ON p.id = pv.page_id
+        WHERE c.embedding_status = 'COMPLETED'
+          AND c.embedding IS NOT NULL
+          AND p.chat_id = %s
+        GROUP BY c.chunk_category
+        """,
+        (chat_id,)
+    )
+    
+    return {row['chunk_category']: row['count'] for row in result} if result else {}

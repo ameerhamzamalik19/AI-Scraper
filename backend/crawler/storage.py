@@ -1,6 +1,8 @@
+# crawler/storage.py
 import json
 from typing import Optional, Dict, Any
 import hashlib
+import re
 from database import get_db_connection
 from utils.helpers import generate_uuid, get_current_datetime, safe_datetime_for_db
 from exceptions import DatabaseError
@@ -23,7 +25,6 @@ class CrawlerStorage:
         Since we dropped the unique constraint, we always create a new page.
         """
         # Always create a new page for this crawl
-        # This way each crawl gets its own page record
         page_id = generate_uuid()
         now = get_current_datetime()
         safe_now = safe_datetime_for_db(now)
@@ -63,14 +64,11 @@ class CrawlerStorage:
         now = get_current_datetime()
         safe_now = safe_datetime_for_db(now)
         
-        # ============================================================
-        # FIX: Sanitize HTML to remove null bytes and invalid UTF-8
-        # ============================================================
+        # Sanitize HTML to remove null bytes and invalid UTF-8
         if html:
             # Remove null bytes
             html = html.replace('\x00', '')
             # Remove other control characters except newline, tab, carriage return
-            import re
             html = re.sub(r'[\x01-\x08\x0b\x0c\x0e-\x1f\x7f]', '', html)
             # Ensure valid UTF-8
             try:
@@ -100,7 +98,6 @@ class CrawlerStorage:
                 raise DatabaseError(f"Failed to create page version: {e}")
             
             # Also create document entry for the raw HTML
-            # This will be processed by the processor worker later
             document_id = generate_uuid()
             metadata_json = json.dumps(metadata) if metadata else '{}'
             try:
@@ -109,17 +106,20 @@ class CrawlerStorage:
                     (id, page_version_id, content, content_format, 
                         metadata, processing_status, created_at, updated_at) 
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)""",
-                    document_id, version_id, html, 'html',  # Now sanitized
+                    document_id, version_id, html, 'html',
                     metadata_json, 'PENDING', safe_now, safe_now
                 )
+                logger.info(f"Created document: {document_id}")
             except Exception as e:
                 logger.error(f"Error creating document: {e}")
                 raise DatabaseError(f"Failed to create document: {e}")
             
+            # ✅ FIX: Return with 'id' and 'document_id' keys (crawler.py expects these)
             return {
-                "version_id": version_id,
+                "id": version_id,           # ← crawler.py expects 'id'
+                "document_id": document_id,  # ← crawler.py expects 'document_id'
+                "version_id": version_id,    # Keep for backward compatibility
                 "page_id": page_id,
-                "document_id": document_id,
                 "content_hash": content_hash,
                 "created_at": safe_now.isoformat()
             }

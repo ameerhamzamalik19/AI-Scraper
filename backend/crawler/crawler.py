@@ -1,5 +1,6 @@
 import asyncio
 import time
+import logging
 from typing import Dict, Any, List, Optional
 from urllib.parse import urlparse
 from workers.processor_worker import process_document
@@ -8,12 +9,16 @@ from crawler.fetcher import Fetcher
 from crawler.parser import HTMLParser
 from crawler.storage import CrawlerStorage
 from config import crawler_settings
+from database_sync import execute_query
+
+logger = logging.getLogger(__name__)
 
 
 class Crawler:
     """
     Main crawler orchestrator.
     Crawls a website with BFS, max_pages limit, same domain only.
+    Tracks all crawled URLs for display to the user.
     """
     
     def __init__(
@@ -29,30 +34,136 @@ class Crawler:
         self.project_id = project_id
         self.user_id = user_id
         self.chat_id = chat_id
-        self.page_id = page_id  # The original page that started this crawl
+        self.page_id = page_id
         self.max_pages = max_pages
         
         self.frontier = URLFrontier(url, max_pages)
         self.fetcher = Fetcher()
+        self.crawled_url_records: List[Dict[str, Any]] = []
         self.results = {
             "pages_crawled": 0,
+            "crawled_pages": [],
             "pages_discovered": 0,
             "pages_failed": 0,
             "errors": []
         }
     
+    def _save_crawled_url_record(self, url: str, status: str, 
+                              page_id: Optional[str] = None,
+                              page_version_id: Optional[str] = None,
+                              document_id: Optional[str] = None,
+                              page_title: Optional[str] = None,
+                              error: Optional[str] = None):
+        """Store a crawled URL record in memory and database."""
+        # Check if URL already exists in memory
+        existing = next((r for r in self.crawled_url_records if r['url'] == url), None)
+        if existing:
+            # Update existing record
+            existing['status'] = status
+            if page_title:
+                existing['page_title'] = page_title
+            if error:
+                existing['error'] = error
+            if page_id:
+                existing['page_id'] = page_id
+            if document_id:
+                existing['document_id'] = document_id
+            if page_version_id:
+                existing['page_version_id'] = page_version_id
+        else:
+            # Create new record
+            record = {
+                'url': url,
+                'page_title': page_title or '',
+                'document_id': document_id,
+                'page_id': page_id,
+                'page_version_id': page_version_id,
+                'status': status,
+                'error': error,
+                'crawled_at': time.time()
+            }
+            self.crawled_url_records.append(record)
+        
+        # Store in database - UPDATE instead of INSERT
+        try:
+            execute_query(
+                """
+                INSERT INTO crawled_urls 
+                (chat_id, url, page_title, document_id, page_id, page_version_id, status, error_message)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (chat_id, url) DO UPDATE SET
+                    page_title = EXCLUDED.page_title,
+                    document_id = EXCLUDED.document_id,
+                    page_id = EXCLUDED.page_id,
+                    page_version_id = EXCLUDED.page_version_id,
+                    status = EXCLUDED.status,
+                    error_message = EXCLUDED.error_message,
+                    crawled_at = NOW()
+                """,
+                (self.chat_id, url, page_title, document_id, page_id, page_version_id, status, error)
+            )
+            logger.debug(f"💾 Saved crawled URL: {url} ({status})")
+        except Exception as e:
+            logger.error(f"Failed to save crawled URL record: {e}")
+            raise
+        # Broadcast status update via WebSocket
+        self._broadcast_crawl_progress()
+    
+    def _broadcast_crawl_progress(self):
+        """Broadcast crawl progress via WebSocket using Redis PubSub."""
+        try:
+            from redis_pubsub import WebSocketPubSub
+            
+            total = len(self.crawled_url_records)
+            completed = len([r for r in self.crawled_url_records if r.get('status') == 'completed'])
+            failed = len([r for r in self.crawled_url_records if r.get('status') == 'failed'])
+            pending = len([r for r in self.crawled_url_records if r.get('status') == 'pending'])
+            processing = len([r for r in self.crawled_url_records if r.get('status') == 'processing'])
+            
+            status_message = {
+                'type': 'crawl_progress',
+                'total': total,
+                'completed': completed,
+                'failed': failed,
+                'pending': pending,
+                'processing': processing,
+                'urls': [
+                    {
+                        'url': r['url'],
+                        'title': r.get('page_title', '') or r['url'],
+                        'status': r.get('status', 'pending'),
+                        'error': r.get('error')
+                    }
+                    for r in self.crawled_url_records
+                ]
+            }
+            
+            # Use WebSocketPubSub.publish
+            WebSocketPubSub.publish(self.chat_id, status_message)
+            logger.debug(f"📡 Broadcasted crawl progress: {completed}/{total}")
+            
+        except ImportError as e:
+            logger.warning(f"Could not import WebSocketPubSub: {e}")
+        except Exception as e:
+            logger.error(f"Failed to broadcast crawl progress: {e}")
+    
     async def _crawl_page(self, url: str) -> Optional[Dict[str, Any]]:
         """Crawl a single page and store results"""
         try:
+            # Mark as processing
+            self._save_crawled_url_record(url, 'processing')
+            
             # Fetch content
             fetch_result = await self.fetcher.fetch(url)
             
             if not fetch_result.get('success'):
                 self.results["pages_failed"] += 1
+                error_msg = fetch_result.get('error', 'Unknown error')
                 self.results["errors"].append({
                     "url": url,
-                    "error": fetch_result.get('error', 'Unknown error')
+                    "error": error_msg
                 })
+                self._save_crawled_url_record(url, 'failed', error=error_msg)
                 return None
             
             # Parse HTML
@@ -62,7 +173,6 @@ class Crawler:
             links = parser.extract_links(html, url)
             
             # Store in database
-            # Always create a new page for this crawl
             page = await CrawlerStorage.get_or_create_page(
                 project_id=self.project_id,
                 chat_id=self.chat_id,
@@ -81,9 +191,9 @@ class Crawler:
                 fetch_method=fetch_result.get('method', 'httpx')
             )
 
-            # ✅ TRIGGER PROCESSOR WORKER
-            process_document.send(version['document_id'])  # ← Sends to processing_queue
-
+            # Trigger processor worker
+            process_document.send(self.chat_id, version['document_id'])
+            
             print(f"📤 Triggered processor for document: {version['document_id']}")
             
             # Mark as visited in frontier
@@ -91,20 +201,34 @@ class Crawler:
             
             # Add discovered links to frontier
             current_depth = 0
-            # Since we're using BFS without depth tracking for simplicity,
-            # we'll just add all links with a default depth
-            # The max_pages limit will stop the crawl
-            
-            # Filter out the current URL to avoid self-loops
             new_links = [link for link in links if link != url]
             
-            # Limit new links to prevent explosion
             if len(new_links) > 100:
                 new_links = new_links[:100]
             
             self.frontier.add_urls(new_links, current_depth + 1)
             self.results["pages_discovered"] += len(new_links)
             self.results["pages_crawled"] += 1
+            
+            page_data = {
+                'url': url,
+                'document_id': version['document_id'],
+                'page_id': page['id'],
+                'page_version_id': version['id'],
+                'title': metadata.get('title', ''),
+                'links_count': len(new_links)
+            }
+            self.results["crawled_pages"].append(page_data)
+            
+            # Save as completed
+            self._save_crawled_url_record(
+                url=url,
+                status='completed',
+                page_id=page['id'],
+                page_version_id=version['id'],
+                document_id=version['document_id'],
+                page_title=metadata.get('title', '')
+            )
             
             print(f"   ✅ Crawled: {url} ({self.results['pages_crawled']}/{self.max_pages})")
             print(f"   📊 Found {len(new_links)} new links")
@@ -119,10 +243,12 @@ class Crawler:
         except Exception as e:
             print(f"❌ Error crawling {url}: {e}")
             self.results["pages_failed"] += 1
+            error_msg = str(e)
             self.results["errors"].append({
                 "url": url,
-                "error": str(e)
+                "error": error_msg
             })
+            self._save_crawled_url_record(url, 'failed', error=error_msg)
             return None
     
     async def run(self) -> Dict[str, Any]:
@@ -130,6 +256,9 @@ class Crawler:
         print(f"🕷️ Starting crawl for: {self.url}")
         print(f"📊 Max pages: {self.max_pages}")
         print("-" * 50)
+        
+        # Mark initial URL as pending
+        self._save_crawled_url_record(self.url, 'pending')
         
         crawl_count = 0
         
@@ -151,9 +280,15 @@ class Crawler:
         # Clean up
         await self.fetcher.close()
         
+        # Broadcast final progress
+        self._broadcast_crawl_progress()
+        
         print("-" * 50)
         print(f"✅ Crawl completed!")
         print(f"📊 Pages crawled: {self.results['pages_crawled']}")
+        print(f"📄 Crawled pages:")
+        for page in self.results["crawled_pages"]:
+            print(f"   - {page.get('url', 'Unknown URL')} (doc: {page.get('document_id', 'N/A')})")
         print(f"📊 Pages discovered: {self.results['pages_discovered']}")
         print(f"📊 Pages failed: {self.results['pages_failed']}")
         

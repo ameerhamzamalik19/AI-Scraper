@@ -2,16 +2,15 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from contextlib import asynccontextmanager
-
 from config import settings
 from database import close_db_pool
-from api.routes import chats, process, scraping, users
+from api.routes import chats, process, scraping, users, websocket_router
 from websocket_manager import chat_connection_manager
 
 # Create FastAPI app
 app = FastAPI(
-    title="Universal Scraper API",
-    description="API for Universal Website Scraping + RAG Platform",
+    title="Universal Scraper",
+    description="Turn any website into a knowledge graph with AI-powered scraping and data extraction.",
     version="1.0.0"
 )
 
@@ -29,6 +28,7 @@ app.include_router(chats.router)
 app.include_router(process.router)
 app.include_router(scraping.router)
 app.include_router(users.router)
+app.include_router(websocket_router)
 
 
 @app.on_event("shutdown")
@@ -51,19 +51,6 @@ async def root():
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy"}
-
-
-@app.websocket("/ws/{chat_id}")
-async def chat_websocket(websocket: WebSocket, chat_id: str):
-    """Join a chat room and stream messages saved for that conversation."""
-    await chat_connection_manager.join(chat_id, websocket)
-    try:
-        while True:
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        chat_connection_manager.leave(chat_id, websocket)
-    except Exception:
-        chat_connection_manager.leave(chat_id, websocket)
 
 
 if __name__ == "__main__":

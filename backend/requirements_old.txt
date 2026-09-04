@@ -1,0 +1,25 @@
+# fastapi==0.141.1
+fastapi==0.115.12
+uvicorn==0.52.1
+# redis==8.1.0
+redis==5.2.1
+asyncpg==0.31.0
+python-dotenv==1.1.0
+httpx==0.28.1
+playwright==1.62.0
+beautifulsoup4==4.15.0
+# dramatiq==2.2.0
+dramatiq==1.18.0
+markdownify==1.2.3
+psycopg2-binary==2.9.12
+requests==2.34.2
+# openai==3.1.0
+websockets==15.0.1
+# openrouter==1.1.77
+playwright-stealth==2.0.3
+h2==4.4.1
+brotli==1.2.0
+pillow==12.3.0
+ollama==0.6.2
+trafilatura==2.2.0
+readability-lxml==0.9

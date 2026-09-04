@@ -1,4 +1,5 @@
 # workers/chunker_worker.py
+import os
 import dramatiq
 import hashlib
 import json
@@ -9,9 +10,9 @@ from database_sync import execute_query, execute_update, execute_one
 from utils.helpers import get_current_datetime
 from redis_config import CHUNKING_QUEUE_NAME
 from processors.chunker import EnhancedChunker
+from utils.chat_status_tracker import ChatStatusTracker
 
 print("✅ Chunker worker loaded with EnhancedChunker")
-
 
 class SemanticChunker:
     """
@@ -198,14 +199,22 @@ def chunk_exists(page_version_id: str, chunk_hash: str) -> bool:
     max_retries=2,
     time_limit=600000
 )
-def chunk_document(document_id: str):
+def chunk_document(chat_id: str, document_id: str):
     """
     Chunk processed document using new EnhancedChunker with structure-aware logic.
     Uses document_structure from metadata for semantic understanding.
     """
-    print(f"📦 Chunking document with EnhancedChunker: {document_id}")
+    print(f"📦 Chunking document with EnhancedChunker: {document_id} for chat: {chat_id}")
     
     try:
+        # Update status: chunking started
+        ChatStatusTracker.update(
+            chat_id,
+            status=ChatStatusTracker.STATUS_CHUNKING,
+            progress=60,
+            current_step="Splitting content into chunks..."
+        )
+
         # Get document
         doc = execute_one(
             "SELECT id, page_version_id, cleaned_content, metadata FROM documents WHERE id = %s",
@@ -213,7 +222,9 @@ def chunk_document(document_id: str):
         )
         
         if not doc:
-            print(f"❌ Document {document_id} not found")
+            error_msg = f"Document not found: {document_id}"
+            print(f"❌ {error_msg}")
+            ChatStatusTracker.mark_failed(chat_id, error_msg)
             return
         
         page_version_id = doc['page_version_id']
@@ -236,41 +247,69 @@ def chunk_document(document_id: str):
         
         if existing_chunks_count and existing_chunks_count['count'] > 0:
             print(f"📊 Document {document_id} already has {existing_chunks_count['count']} chunks. Skipping reprocessing.")
+            ChatStatusTracker.update(
+                chat_id,
+                status=ChatStatusTracker.STATUS_CHUNKING,
+                progress=80,
+                current_step=f"Document already chunked ({existing_chunks_count['count']} chunks)"
+            )
+            # Still send to embedding if chunks exist
+            from workers.embedder_worker import embed_chunks
+            embed_chunks.send(chat_id, document_id)
             return
         
         # Extract structure from metadata (created by ContentProcessor in processor_worker)
         document_structure = metadata.get('document_structure', {})
-        
+        full_structure = {
+            'page_title': metadata.get('page_title') or document_structure.get('page_title', ''),
+            'source_url': metadata.get('url') or document_structure.get('source_url', ''),
+            'main_content': {
+                'sections': document_structure.get('sections', []),
+                'tables': document_structure.get('tables', []),
+                'lists': document_structure.get('lists', []),
+                'all_text': metadata.get('all_text', ''),
+                'has_content': bool(document_structure.get('sections')),
+            },
+            'ui_summary': metadata.get('ui_summary', []),
+        }
+
         if not document_structure:
             print(f"⚠️ No document_structure found in metadata, falling back to plain text chunking")
             # Fallback: use cleaned_content if structure is missing
             content = doc.get('cleaned_content', '')
             if not content:
-                print(f"⚠️ No content available for document {document_id}")
+                error_msg = "No content available for document"
+                print(f"⚠️ {error_msg}")
+                ChatStatusTracker.mark_failed(chat_id, error_msg)
                 return
-            document_structure = metadata.get('document_structure', {})
-
-            if not document_structure:
-                print(f"⚠️ No document_structure in metadata for {document_id} — using plain text fallback")
-                content = doc.get('cleaned_content', '') or ''
-                # cleaned_content is already plain text — don't re-parse as HTML
-                chunker = SemanticChunker(chunk_size=500, chunk_overlap=50)
-                chunks = chunker.chunk_text(content)
-            else:
-                chunks = EnhancedChunker.chunk_structure(document_structure)
-            # if not plain_text:
-            #     print(f"⚠️ No plain text available for document {document_id}")
-            #     return
-            # chunker = SemanticChunker(chunk_size=500, chunk_overlap=50)
-            # chunks = chunker.chunk_text(plain_text)
+            
+            # Use cleaned_content for plain text chunking
+            chunker = SemanticChunker(chunk_size=500, chunk_overlap=50)
+            chunks = chunker.chunk_text(content)
         else:
             url = metadata.get('url', '')
             print(f"📋 Using structured content for: {url}")
             print(f"📊 Structure contains: {len(document_structure.get('sections', []))} sections, {len(document_structure.get('tables', []))} tables, {len(document_structure.get('cards', []))} cards")
             
+            # Update progress
+            ChatStatusTracker.update(
+                chat_id,
+                status=ChatStatusTracker.STATUS_CHUNKING,
+                progress=65,
+                current_step="Analyzing document structure..."
+            )
+            
             # 🎯 USE NEW ENHANCED CHUNKER
-            chunks = EnhancedChunker.chunk_structure(document_structure)
+            chunks = EnhancedChunker.chunk_structure(full_structure)
             print(f"✨ EnhancedChunker created {len(chunks)} structure-aware chunks")
+        
+        # Update progress
+        ChatStatusTracker.update(
+            chat_id,
+            status=ChatStatusTracker.STATUS_CHUNKING,
+            progress=70,
+            current_step=f"Storing {len(chunks)} chunks..."
+        )
         
         # Store chunks with ON CONFLICT to handle duplicates gracefully
         now = get_current_datetime().isoformat()
@@ -330,26 +369,38 @@ def chunk_document(document_id: str):
         
         print(f"✅ Document {document_id}: inserted {inserted_count} chunks, skipped {skipped_count} duplicates")
         
-        # Update document status to CHUNKED
-        # execute_update(
-        #     "UPDATE documents SET processing_status = 'CHUNKED', updated_at = %s WHERE id = %s",
-        #     (now, document_id)
-        # )
+        # Update status: chunking complete
+        ChatStatusTracker.update(
+            chat_id,
+            status=ChatStatusTracker.STATUS_EMBEDDING,
+            progress=80,
+            current_step=f"Generating embeddings for {len(chunks)} chunks..."
+        )
         
         # Enqueue embedding job
         if chunk_ids:
             from workers.embedder_worker import embed_chunks
-            embed_chunks.send(chunk_ids)
+            embed_chunks.send(chat_id, document_id)
             print(f"📤 Sent {len(chunk_ids)} chunks to embedder")
         else:
             print(f"⚠️ No new chunks to embed for document {document_id}")
+            # If no new chunks, mark as completed
+            ChatStatusTracker.update(
+                chat_id,
+                status=ChatStatusTracker.STATUS_COMPLETED,
+                progress=100,
+                current_step="No new chunks to embed"
+            )
         
         return chunk_ids
         
     except Exception as e:
-        print(f"❌ Error chunking document {document_id}: {e}")
+        error_msg = f"Error chunking document: {str(e)}"
+        print(f"❌ {error_msg}")
         import traceback
         traceback.print_exc()
+        
+        ChatStatusTracker.mark_failed(chat_id, error_msg)
         raise
 
 

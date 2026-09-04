@@ -1,5 +1,5 @@
+# api/routes/process.py
 import asyncio
-
 from fastapi import APIRouter, Depends, HTTPException
 from models import LinkRequest, ProcessLinkResponse
 from services.user_service import UserService
@@ -13,7 +13,8 @@ from utils.helpers import get_iso_timestamp, generate_uuid
 from exceptions import NotFoundError
 from redis_client import redis_client
 from api.routes.retrieval_pipeline import answer_user_question
-from websocket_manager import chat_connection_manager
+from websocket_manager import chat_connection_manager  # 🆕 Add this
+from utils.chat_status_tracker import ChatStatusTracker
 
 router = APIRouter(prefix="/api", tags=["process"])
 
@@ -69,6 +70,12 @@ async def process_link(request: LinkRequest):
             chat_id = chat['id']
             is_new_chat = True
             print(f"Created new chat: {chat_id}")
+            
+            # 🆕 Initialize chat status tracking
+            ChatStatusTracker.initialize(chat_id)
+            
+            # 🆕 Broadcast new chat creation
+            await chat_connection_manager.send_status(chat_id)
         
         # --- VALIDATION: First message in a new chat MUST be a URL ---
         if is_new_chat and not detection['has_url']:
@@ -119,6 +126,9 @@ async def process_link(request: LinkRequest):
         )
         print(f"Created user message: {user_message['id']}")
         
+        # 🆕 Broadcast user message via WebSocket
+        await chat_connection_manager.send_message(chat_id, user_message)
+        
         # Generate response based on detection
         scraping_job_id = None
         page_id = None
@@ -138,6 +148,15 @@ async def process_link(request: LinkRequest):
                 )
                 page_id = page['id']
                 print(f"✅ Created page: {page_id}")
+                
+                # 🆕 Update chat status to crawling
+                ChatStatusTracker.update(
+                    chat_id,
+                    status=ChatStatusTracker.STATUS_CRAWLING,
+                    progress=5,
+                    current_step=f"Starting crawl for {url}..."
+                )
+                await chat_connection_manager.send_status(chat_id)
                 
                 # Enqueue scraping job to Redis
                 print(f"📤 Enqueuing scraping job to Redis...")
@@ -159,6 +178,11 @@ async def process_link(request: LinkRequest):
                 else:
                     print("⚠️ Redis returned no job ID - job not enqueued")
                     response_content = f"I've received your URL: **{url}**\n\n⚠️ Scraping service is currently unavailable. Please try again later."
+                    
+                    # 🆕 Update status to failed
+                    ChatStatusTracker.mark_failed(chat_id, "Scraping service unavailable")
+                    await chat_connection_manager.send_status(chat_id)
+                    
             except Exception as e:
                 print(f"❌ Error during scraping setup: {str(e)}")
                 import traceback
@@ -166,9 +190,23 @@ async def process_link(request: LinkRequest):
                 # Continue without scraping
                 url = detection['urls'][0]
                 response_content = f"I've received your URL: **{url}**\n\n⚠️ There was an error setting up the scraping job. Please try again later."
+                
+                # 🆕 Update status to failed
+                ChatStatusTracker.mark_failed(chat_id, f"Scraping setup error: {str(e)}")
+                await chat_connection_manager.send_status(chat_id)
         else:
             # It's a question - acknowledge
             response_content = f"I received your question: \"{content}\"\n\nOnce I've processed the website content, I'll be able to answer your questions. (RAG search coming soon!)"
+            
+            # 🆕 Update status to processing
+            ChatStatusTracker.update(
+                chat_id,
+                status=ChatStatusTracker.STATUS_PROCESSING,
+                progress=50,
+                current_step="Processing your question..."
+            )
+            await chat_connection_manager.send_status(chat_id)
+            
             response_content = await asyncio.to_thread(
                 answer_user_question,
                 content,
@@ -180,6 +218,10 @@ async def process_link(request: LinkRequest):
             
             if response_content is None:
                 response_content = "I couldn't process your question. Please try again."
+            
+            # 🆕 Mark as answered
+            ChatStatusTracker.mark_answered(chat_id)
+            await chat_connection_manager.send_status(chat_id)
         
         # Save assistant response
         assistant_message = await MessageService.create_message(
@@ -190,7 +232,9 @@ async def process_link(request: LinkRequest):
             is_url=False
         )
         print(f"Created assistant message: {assistant_message['id']}")
-        await chat_connection_manager.broadcast(chat_id, assistant_message)
+        
+        # 🆕 Broadcast assistant message via WebSocket
+        await chat_connection_manager.send_message(chat_id, assistant_message)
         
         # Return response
         return ProcessLinkResponse(

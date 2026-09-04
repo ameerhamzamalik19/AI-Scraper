@@ -14,6 +14,8 @@ from database_sync import execute_query, execute_update, execute_one
 from utils.helpers import get_current_datetime
 from redis_config import PROCESSING_QUEUE_NAME
 from crawler.content_processor import ContentProcessor
+from utils.chat_status_tracker import ChatStatusTracker
+
 
 logger = logging.getLogger(__name__)
 
@@ -185,6 +187,7 @@ Return ONLY valid JSON:
                 "visible_text": response,
                 "searchable_text": response
             }
+
 
 class MediaAnalyzer:
     """Analyze media assets with Ollama, using heuristics to skip unnecessary calls"""
@@ -862,23 +865,33 @@ class DocumentProcessor:
     max_retries=2,
     time_limit=600000
 )
-def process_document(document_id: str):
-    """Process raw HTML document with enhanced content extraction"""
-    print(f"📄 Processing document: {document_id}")
+def process_document(chat_id: str, document_id: str):
+    """Process raw HTML document with enhanced content extraction and status tracking"""
+    print(f"📄 Processing document: {document_id} for chat: {chat_id}")
     
     try:
+        # Update status: processing started
+        ChatStatusTracker.update(
+            chat_id,
+            status=ChatStatusTracker.STATUS_PROCESSING,
+            progress=25,
+            current_step="Extracting content from HTML..."
+        )
+
         # Get document
         doc = execute_one(
-                """SELECT d.id, d.page_version_id, d.content, d.metadata, p.url
-                    FROM documents d
-                    JOIN page_versions pv ON pv.id = d.page_version_id
-                    JOIN pages p ON p.id = pv.page_id
-                    WHERE d.id = %s""",
+            """SELECT d.id, d.page_version_id, d.content, d.metadata, p.url
+                FROM documents d
+                JOIN page_versions pv ON pv.id = d.page_version_id
+                JOIN pages p ON p.id = pv.page_id
+                WHERE d.id = %s""",
             (document_id,)
         )
         
         if not doc:
-            print(f"❌ Document {document_id} not found")
+            error_msg = f"Document not found: {document_id}"
+            print(f"❌ {error_msg}")
+            ChatStatusTracker.mark_failed(chat_id, error_msg)
             return
         
         html = doc['content']
@@ -896,6 +909,14 @@ def process_document(document_id: str):
         url = metadata.get('url') or doc.get('url') or ''
         print(f"📋 Processing HTML for: {url}")
         print(f"📄 Raw HTML size: {len(html)} chars")
+
+        # Update progress
+        ChatStatusTracker.update(
+            chat_id,
+            status=ChatStatusTracker.STATUS_PROCESSING,
+            progress=40,
+            current_step="Cleaning and extracting content..."
+        )
         
         # Check if already processed
         if doc.get('processing_status') == 'COMPLETED':
@@ -912,19 +933,18 @@ def process_document(document_id: str):
         # Step 1: Extract metadata from HTML
         extracted_metadata = DocumentProcessor.extract_metadata_from_html(html)
 
-        # Skip HTML-to-markdown conversion entirely. Store the raw HTML plus the
-        # structured extraction output in metadata for downstream chunking.
+        # Process content structure
         processor_result = ContentProcessor.process_html(
-                html,
-                source_url=url,
-                page_title=(
-                    metadata.get('title') or
-                    metadata.get('og_title') or
-                    extracted_metadata.get('title') or
-                    url or
-                    'Untitled Page'
-                )
+            html,
+            source_url=url,
+            page_title=(
+                metadata.get('title') or
+                metadata.get('og_title') or
+                extracted_metadata.get('title') or
+                url or
+                'Untitled Page'
             )
+        )
 
         raw_content = processor_result.get('all_text', '')
         print(f"📄 Raw HTML length: {len(raw_content)} chars")
@@ -938,6 +958,14 @@ def process_document(document_id: str):
         if raw_content:
             sample = raw_content[:500] + "..." if len(raw_content) > 500 else raw_content
             print(f"🧾 Raw HTML sample: {sample}")
+
+        # Update progress
+        ChatStatusTracker.update(
+            chat_id,
+            status=ChatStatusTracker.STATUS_PROCESSING,
+            progress=50,
+            current_step="Extracting images and tables..."
+        )
 
         # Step 2: Extract media assets with intelligent analysis
         media_assets = DocumentProcessor.extract_media(html, url)
@@ -963,7 +991,7 @@ def process_document(document_id: str):
         merged_metadata = {
             **metadata,
             **extracted_metadata,
-            'document_structure': document_structure,   # sections/tables/cards for EnhancedChunker
+            'document_structure': document_structure,
             'url': url,
             'extraction_version': '2.0',
             'media_analysis_stats': {
@@ -1001,19 +1029,32 @@ def process_document(document_id: str):
         print(f"   - Raw HTML length: {len(raw_content)} chars")
         print(f"   - Media assets: {len(media_assets)}")
         
-        # Enqueue chunking job
+        # Update status: processing complete, moving to chunking
+        ChatStatusTracker.update(
+            chat_id,
+            status=ChatStatusTracker.STATUS_CHUNKING,
+            progress=60,
+            current_step="Creating chunks from content..."
+        )
+
+        # Enqueue chunking job - pass chat_id and document_id
         from workers.chunker_worker import chunk_document
-        chunk_document.send(document_id)
+        chunk_document.send(chat_id, document_id)
         
     except Exception as e:
-        print(f"❌ Error processing document {document_id}: {e}")
+        error_msg = f"Error processing document: {str(e)}"
+        print(f"❌ {error_msg}")
         import traceback
         traceback.print_exc()
         
+        # Update document status
         execute_update(
             "UPDATE documents SET processing_status = 'FAILED', updated_at = %s WHERE id = %s",
             (get_current_datetime().isoformat(), document_id)
         )
+        
+        # Mark chat as failed with full error
+        ChatStatusTracker.mark_failed(chat_id, error_msg)
         raise
 
 

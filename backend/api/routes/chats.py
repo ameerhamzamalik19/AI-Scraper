@@ -39,5 +39,45 @@ async def delete_chat(
     user_id: Optional[str] = Depends(get_user_id_from_header)
 ):
     """Delete a chat session for a user"""
+    user_id = os.getenv("HARDCODED_USER_ID")
     await ChatService.delete_chat(chat_id, user_id)
     return {"message": "Chat deleted successfully"}
+
+@router.get("/{chat_id}/crawled-urls")
+async def get_crawled_urls(chat_id: str):
+    """Get all crawled URLs for a chat."""
+    from database_sync import execute_query
+    
+    result = execute_query(
+        """
+        SELECT 
+            url,
+            page_title,
+            status,
+            error_message,
+            crawled_at
+        FROM crawled_urls
+        WHERE chat_id = %s
+        ORDER BY crawled_at ASC
+        """,
+        (chat_id,)
+    )
+    
+    return {
+        'chat_id': chat_id,
+        'total': len(result),
+        'completed': sum(1 for r in result if r['status'] == 'completed'),
+        'failed': sum(1 for r in result if r['status'] == 'failed'),
+        'pending': sum(1 for r in result if r['status'] == 'pending'),
+        'processing': sum(1 for r in result if r['status'] == 'processing'),
+        'urls': [
+            {
+                'url': r['url'],
+                'title': r['page_title'] or r['url'],
+                'status': r['status'],
+                'error': r['error_message'],
+                'crawled_at': r['crawled_at']
+            }
+            for r in result
+        ]
+    }

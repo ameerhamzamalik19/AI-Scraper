@@ -394,41 +394,206 @@ class Fetcher:
         self.user_agents = self.user_agents[1:] + [self.user_agents[0]]
 
     def _detect_login_required(self, html: str, url: str, status_code: int) -> tuple[bool, str]:
-        """Detect if the page requires login/authentication."""
+        """
+        Detect if the page requires login/authentication.
+        Uses an HTML parser (BeautifulSoup) for structural matching to avoid ReDoS.
+        """
         if not html:
             return False, ""
-
+        
+        # ============================================================
+        # 1. Input size guard (Issue #6)
+        # ============================================================
+        MAX_HTML_SIZE = 1_000_000  # 1MB
+        if len(html) > MAX_HTML_SIZE:
+            html = html[:MAX_HTML_SIZE]
+        
+        # ============================================================
+        # 2. Early status code check (Issue #7)
+        # ============================================================
+        if status_code in (401, 403):
+            return True, f"HTTP {status_code} - Authentication required"
+        
+        # ============================================================
+        # 3. Parse URL for path checking (Issue #5)
+        # ============================================================
+        from urllib.parse import urlparse, parse_qs
+        parsed_url = urlparse(url)
+        path_segments = [s for s in parsed_url.path.split('/') if s]
+        query = parsed_url.query.lower()
+        
+        LOGIN_PATH_INDICATORS = {
+            'login', 'signin', 'auth', 'log-in', 'sign-in',
+            'authenticate', 'session', 'sso', 'oauth', 'oidc', 'saml',
+            'account', 'login?redirect'
+        }
+        
+        # Check path segments individually
+        for segment in path_segments:
+            segment_lower = segment.lower()
+            for indicator in LOGIN_PATH_INDICATORS:
+                if indicator in segment_lower:
+                    return True, f"Login URL path detected: /{segment}"
+        
+        # Check for redirect=login in query params
+        if 'redirect=login' in query or 'returnurl' in query or 'returnurl' in query:
+            # Additional check - if it's not a whitelisted domain
+            from urllib.parse import urlparse
+            domain = urlparse(url).netloc.replace('www.', '')
+            if domain not in self.LOGIN_WHITELIST:
+                return True, "Login URL query parameter detected"
+        
+        # ============================================================
+        # 4. Whitelist check (Issue #1 & #4 - uses BeautifulSoup)
+        # ============================================================
+        from urllib.parse import urlparse
+        from bs4 import BeautifulSoup
+        
+        domain = urlparse(url).netloc.replace('www.', '')
+        LOGIN_WHITELIST = {
+            'samsung.com', 'apple.com', 'microsoft.com', 'amazon.com',
+            'ebay.com', 'google.com', 'facebook.com', 'twitter.com',
+            'linkedin.com', 'github.com', 'nvidia.com'
+        }
+        
+        if domain in LOGIN_WHITELIST:
+            # Use BeautifulSoup for structural parsing
+            soup = BeautifulSoup(html, 'html.parser')
+            
+            # Check for login forms
+            for form in soup.find_all('form'):
+                # Skip forms with region/country/select
+                action = form.get('action', '').lower()
+                if 'region' in action or 'country' in action or 'select' in action:
+                    continue
+                if 'search' in action or 'newsletter' in action:
+                    continue
+                
+                # Check for password field
+                password_inputs = form.find_all('input', {'type': 'password'})
+                if password_inputs:
+                    # Check if it's an actual login (has username field too)
+                    username_inputs = form.find_all('input', {'type': 'text', 'name': re.compile(r'user|email|login|username', re.I)})
+                    if username_inputs:
+                        return True, "Login form detected (username + password fields)"
+                    # If no username field, it might be a password change form
+                    # Check if the form is on a login path
+                    if any('login' in seg or 'auth' in seg for seg in path_segments):
+                        return True, "Login form detected on login path"
+            
+            # Check for login title (only if it's the main title)
+            title_tag = soup.find('title')
+            if title_tag:
+                title = title_tag.get_text().strip()
+                title_lower = title.lower()
+                # Only detect if the title is primarily about login
+                if any(title_lower.startswith(t) for t in ['login', 'sign in', 'log in', 'authentication']):
+                    # Sanitize the title (Issue #2)
+                    sanitized_title = self._sanitize_string(title)
+                    return True, f"Login page title detected: {sanitized_title[:100]}"
+            
+            # Check heading (only h1/h2 that are prominently about login)
+            for heading in soup.find_all(['h1', 'h2']):
+                heading_text = heading.get_text().strip().lower()
+                if any(t in heading_text for t in ['sign in', 'log in', 'login']):
+                    # Make sure it's a prominent heading (not buried in a small section)
+                    if len(heading.get_text(strip=True)) < 100:
+                        return True, "Login heading detected"
+            
+            return False, ""
+        
+        # ============================================================
+        # 5. Non-whitelisted domains - Full detection with BeautifulSoup
+        # ============================================================
+        soup = BeautifulSoup(html, 'html.parser')
+        
+        # Check for login forms using BeautifulSoup (Issue #1, #4)
+        for form in soup.find_all('form'):
+            action = form.get('action', '').lower()
+            
+            # Skip clearly non-login forms
+            if 'search' in action or 'region' in action or 'country' in action:
+                continue
+            if 'newsletter' in action or 'subscribe' in action:
+                continue
+            
+            # Check if form has both password and username fields
+            password_inputs = form.find_all('input', {'type': 'password'})
+            username_inputs = form.find_all('input', {'type': 'text', 'name': re.compile(r'user|email|login|username', re.I)})
+            
+            if password_inputs:
+                if username_inputs:
+                    return True, "Login form detected (username + password fields)"
+                # Only password field - could be password reset or login
+                # Check if it's on a login path
+                for seg in path_segments:
+                    if 'login' in seg or 'auth' in seg or 'reset' in seg:
+                        return True, "Password form on authentication path"
+        
+        # Check for login form action
+        for form in soup.find_all('form'):
+            action = form.get('action', '').lower()
+            if 'login' in action or 'signin' in action or 'auth' in action:
+                # Only if it's not a search/region form
+                if not any(x in action for x in ['search', 'region', 'country']):
+                    return True, "Login form action detected"
+        
+        # Check title (Issue #2 - sanitized)
+        title_tag = soup.find('title')
+        if title_tag:
+            title = title_tag.get_text().strip()
+            title_lower = title.lower()
+            if any(t in title_lower for t in ['login', 'sign in', 'log in', 'authentication']):
+                sanitized_title = self._sanitize_string(title)
+                return True, f"Login page title: {sanitized_title[:100]}"
+        
+        # Check heading (Issue #1 - fixed with BeautifulSoup)
+        for heading in soup.find_all(['h1', 'h2', 'h3']):
+            heading_text = heading.get_text().strip().lower()
+            if any(t in heading_text for t in ['login', 'sign in', 'log in']):
+                # Only if it's a dedicated login heading (not a small section)
+                if len(heading.get_text(strip=True)) < 100:
+                    return True, "Login heading detected"
+        
+        # Check for access denied messages (Issue #3 - consistent approach)
         html_lower = html.lower()
-
-        if re.search(r'<form[^>]*>.*?<input[^>]*type=["\']password["\']', html, re.IGNORECASE | re.DOTALL):
-            return True, "Login form detected (password field)"
-
-        if re.search(r'<form[^>]*action=["\'][^"\']*(?:login|signin|auth)[^"\']*["\']', html, re.IGNORECASE):
-            return True, "Login form action detected"
-
-        title_match = re.search(r'<title[^>]*>(.*?)</title>', html, re.IGNORECASE | re.DOTALL)
-        if title_match:
-            title = title_match.group(1).lower()
-            if re.search(r'\b(?:login|signin|authentication)\b|sign\s+in|log\s+in', title):
-                return True, f"Login page title: {title.strip()}"
-
-        if re.search(
-            r'<h[1-3][^>]*>.*?(?:login|sign\s+in|log\s+in).*?</h[1-3]>',
-            html, re.IGNORECASE | re.DOTALL
-        ):
-            return True, "Login heading detected"
-
         if re.search(
             r"access\s+denied|access\s+is\s+denied|you\s+don't\s+have\s+permission"
             r"|not\s+authorized|unauthorized\s+access",
             html_lower
         ):
             return True, "Access denied message detected"
-
-        if re.search(r'/(?:login|signin|auth|log-in|sign-in)(?:/|$|\?)', url.lower()):
-            return True, "Login URL path detected"
-
+        
+        # URL path check for non-whitelisted (Issue #5)
+        for segment in path_segments:
+            segment_lower = segment.lower()
+            if 'login' in segment_lower or 'signin' in segment_lower or 'auth' in segment_lower:
+                return True, f"Login URL path detected: /{segment}"
+        
         return False, ""
+
+    def _sanitize_string(self, text: str, max_length: int = 100) -> str:
+        """
+        Sanitize a string to prevent log injection and UI injection.
+        (Issue #2)
+        """
+        if not text:
+            return ""
+        
+        # Remove non-printable characters
+        import string
+        printable = set(string.printable)
+        sanitized = ''.join(c for c in text if c in printable)
+        
+        # Remove control characters
+        import re
+        sanitized = re.sub(r'[\x00-\x1f\x7f]', '', sanitized)
+        
+        # Truncate
+        if len(sanitized) > max_length:
+            sanitized = sanitized[:max_length] + "..."
+        
+        return sanitized
 
     def _get_site_key(self, url: str) -> str:
         """Return the domain key used to cache render strategy per website."""

@@ -8,12 +8,25 @@ logger = logging.getLogger(__name__)
 
 
 class EnhancedChunker:
-    """Structure-aware chunker that preserves headings and semantic blocks."""
+    """Structure-aware chunker that preserves headings and semantic blocks.
+    
+    SIMPLIFIED: Takes sections from content processor and creates chunks.
+    No aggressive cleaning - content is already cleaned by content processor.
+    """
 
     TARGET_TOKENS = 600
     MAX_TOKENS = 800
-    MIN_CHUNK_WORDS = 20
+    MIN_CHUNK_WORDS = 3  # Very low threshold - only filter completely empty chunks
     PARAGRAPH_OVERLAP_RATIO = 0.12
+
+    # Category weights for retrieval boosting
+    CATEGORY_WEIGHTS = {
+        'main_content': 1.0,
+        'header_nav': 0.75,
+        'footer': 0.65,
+        'sidebar': 0.5,
+        'excluded': 0.0
+    }
 
     @staticmethod
     def token_count(text: str) -> int:
@@ -28,18 +41,6 @@ class EnhancedChunker:
         elif text is None:
             text = ""
         return re.sub(r"\s+", " ", str(text) or "").strip()
-
-    @staticmethod
-    def dedupe_preserve_order(items: List[str]) -> List[str]:
-        seen = set()
-        deduped: List[str] = []
-        for item in items:
-            norm = EnhancedChunker.normalize_text(item)
-            if not norm or norm in seen:
-                continue
-            seen.add(norm)
-            deduped.append(norm)
-        return deduped
 
     @staticmethod
     def build_heading_path(section: Dict[str, Any], default_title: str) -> List[str]:
@@ -57,176 +58,27 @@ class EnhancedChunker:
         has_list = bool(chunk.get("content_structure", {}).get("has_list"))
         has_images = bool(chunk.get("content_structure", {}).get("has_images"))
 
-        relevance = min(1.0, (0.35 * min(heading_depth / 4, 1.0)) + (0.45 * min(words / 200, 1.0)) + (0.2 * (1.0 if has_table or has_list or has_images else 0.0)))
-        quality = min(1.0, (0.5 * min(words / 160, 1.0)) + (0.2 if has_table else 0.0) + (0.2 if has_list else 0.0) + (0.1 if content.strip() else 0.0))
+        # Category-based boost
+        category = chunk.get('chunk_category', 'main_content')
+        category_weight = EnhancedChunker.CATEGORY_WEIGHTS.get(category, 0.5)
+
+        relevance = min(1.0, (
+            (0.35 * min(heading_depth / 4, 1.0)) + 
+            (0.45 * min(words / 200, 1.0)) + 
+            (0.2 * (1.0 if has_table or has_list or has_images else 0.0))
+        )) * category_weight
+
+        quality = min(1.0, (
+            (0.5 * min(words / 160, 1.0)) + 
+            (0.2 if has_table else 0.0) + 
+            (0.2 if has_list else 0.0) + 
+            (0.1 if content.strip() else 0.0)
+        ))
 
         chunk["content_structure"]["relevance_score"] = round(relevance, 4)
         chunk["content_structure"]["quality_score"] = round(quality, 4)
+        chunk["category_weight"] = category_weight
         return chunk
-
-    @staticmethod
-    def _paragraph_overlap(text: str) -> str:
-        sentences = re.split(r"(?<=[.!?])\s+", text.strip())
-        if len(sentences) <= 1:
-            return text
-        overlap_count = max(1, min(2, len(sentences) // 5))
-        overlap = " ".join(sentences[-overlap_count:])
-        return overlap
-
-    @staticmethod
-    def _deduplicate_faq_content(content: str) -> str:
-        """Remove duplicate FAQ question/answer pairs."""
-        lines = content.split('\n')
-        
-        faq_patterns = [
-            r'^Q\s*[:.]',
-            r'^Question\s*[:.]',
-            r'^\d+\s*[.)]\s*',
-            r'^[A-Z]\s*[.)]\s*',
-            r'^What\s|^Where\s|^How\s|^Why\s|^When\s|^Can\s|^Does\s|^Is\s|^Are\s',
-        ]
-        
-        # Check if this looks like FAQ content
-        is_faq = False
-        for line in lines[:10]:
-            if line.strip():
-                for pattern in faq_patterns:
-                    if re.search(pattern, line.strip(), re.I):
-                        is_faq = True
-                        break
-            if is_faq:
-                break
-        
-        if not is_faq:
-            return content
-        
-        seen_questions = set()
-        cleaned_lines = []
-        
-        i = 0
-        while i < len(lines):
-            line = lines[i]
-            stripped = line.strip()
-            
-            if not stripped:
-                cleaned_lines.append(line)
-                i += 1
-                continue
-            
-            is_question = False
-            question_text = stripped
-            
-            for pattern in faq_patterns:
-                match = re.search(pattern, stripped, re.I)
-                if match:
-                    question_text = re.sub(pattern, '', stripped, flags=re.I).strip()
-                    is_question = True
-                    break
-            
-            if is_question and question_text:
-                normalized = re.sub(r'[^\w\s]', '', question_text).lower().strip()
-                
-                if normalized in seen_questions:
-                    i += 1
-                    while i < len(lines):
-                        next_line = lines[i].strip()
-                        if not next_line:
-                            i += 1
-                            break
-                        is_next_question = False
-                        for pattern in faq_patterns:
-                            if re.search(pattern, next_line, re.I):
-                                is_next_question = True
-                                break
-                        if is_next_question:
-                            break
-                        i += 1
-                    continue
-                
-                seen_questions.add(normalized)
-            
-            cleaned_lines.append(line)
-            i += 1
-        
-        return '\n'.join(cleaned_lines)
-
-    @staticmethod
-    def _clean_structural_text(content: str) -> str:
-        """Remove UI structural text that adds no semantic value."""
-        patterns = [
-            r'\[popover:\]',
-            r'Expand all\s*Collapse all',
-            r'\(Annual subscription-auto renews\)',
-            r'Price does not include tax',
-            r'Buy now\s*Try for free\s*See trial terms',
-            r'\$[\d,]+\s*(user/month|per user|/month)',
-            r'See trial terms\s*\d*',
-        ]
-        
-        for pattern in patterns:
-            content = re.sub(pattern, '', content, flags=re.I)
-        
-        content = re.sub(r'\n\s*\n', '\n\n', content)
-        content = re.sub(r'[ \t]+', ' ', content)
-        return content.strip()
-
-    @staticmethod
-    def _deduplicate_chunks(chunks: List[Dict]) -> List[Dict]:
-        """Remove duplicate chunks using content signatures."""
-        seen = set()
-        deduped = []
-        
-        for chunk in chunks:
-            content = chunk.get('content', '')
-            if not content:
-                continue
-            
-            # Create normalized signature
-            normalized = re.sub(r'\s+', ' ', content)
-            normalized = re.sub(r'[^\w\s]', '', normalized)
-            normalized = normalized.lower().strip()
-            
-            # Use first 300 chars as signature
-            signature = normalized[:300]
-            
-            if signature and signature not in seen:
-                seen.add(signature)
-                deduped.append(chunk)
-        
-        return deduped
-
-    @staticmethod
-    def _split_by_paragraphs(content: str, heading_path: List[str]) -> List[Dict]:
-        """Split long content into paragraph-level chunks."""
-        paragraphs = content.split('\n\n')
-        chunks = []
-        
-        for para in paragraphs:
-            para = para.strip()
-            if not para:
-                continue
-            if EnhancedChunker.token_count(para) < EnhancedChunker.MIN_CHUNK_WORDS:
-                continue
-            
-            chunks.append({
-                'content': para,
-                'heading_path': heading_path,
-                'chunk_type': 'text',
-                'token_count': EnhancedChunker.token_count(para),
-                'source_url': '',
-                'page_title': heading_path[0] if heading_path else '',
-                'content_structure': {
-                    'has_table': False,
-                    'has_list': False,
-                    'has_images': False,
-                    'has_code': False,
-                    'relevance_score': 0.0,
-                    'quality_score': 0.0,
-                },
-                'chunk_hash': hashlib.sha256(para.encode('utf-8')).hexdigest(),
-            })
-        
-        return chunks
 
     @staticmethod
     def _format_table_as_text(table: Dict) -> str:
@@ -238,7 +90,7 @@ class EnhancedChunker:
             parts.append("Headers: " + ", ".join(headers))
         
         rows = table.get('rows', [])
-        for row in rows[:20]:  # Limit to 20 rows
+        for row in rows[:20]:
             parts.append(", ".join(row))
         
         if len(rows) > 20:
@@ -252,119 +104,236 @@ class EnhancedChunker:
 
     @staticmethod
     def chunk_structure(structure: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Structure-aware chunking that preserves ALL content."""
+        """
+        Structure-aware chunking that preserves ALL content.
+        
+        SIMPLIFIED: Takes sections from content processor, creates chunks.
+        No cleaning - content is already clean from content processor.
+        """
         
         chunks: List[Dict[str, Any]] = []
         default_title = structure.get("page_title") or structure.get("metadata", {}).get("title") or "Untitled Page"
         chunk_index: int = 0
+        source_url = structure.get("source_url") or ""
         
-        # Process sections
-        for section in structure.get("sections", []):
-            content = EnhancedChunker.normalize_text(section.get("content", ""))
+        # ============================================================
+        # 1. Process MAIN CONTENT (full weight)
+        # ============================================================
+        main_content = structure.get("main_content", {})
+        
+        # Process sections - this is the main content
+        for section in main_content.get("sections", []):
+            # Get content directly - already has heading prefix like "[Heading]\n\nContent"
+            content = section.get("content", "")
+            
             if not content:
                 continue
             
-            # 🆕 Clean structural text
-            content = EnhancedChunker._clean_structural_text(content)
+            # Count words using simple split (more reliable)
+            word_count = len(content.split())
             
-            # 🆕 Deduplicate FAQ content
-            content = EnhancedChunker._deduplicate_faq_content(content)
-            
-            if EnhancedChunker.token_count(content) < EnhancedChunker.MIN_CHUNK_WORDS:
+            # Skip only if truly empty or just a few words
+            if word_count < EnhancedChunker.MIN_CHUNK_WORDS:
+                logger.debug(f"⏭️ Skipping section with {word_count} words (below {EnhancedChunker.MIN_CHUNK_WORDS})")
                 continue
             
-            heading_path = EnhancedChunker.build_heading_path(section, default_title)
+            # Get heading path
+            heading_path = section.get("heading_path", [])
+            if not heading_path:
+                heading = section.get("heading", default_title)
+                heading_path = [default_title, heading] if heading != default_title else [default_title]
             
-            # 🆕 Split long sections intelligently
-            if EnhancedChunker.token_count(content) > EnhancedChunker.MAX_TOKENS:
-                sub_chunks = EnhancedChunker._split_by_paragraphs(content, heading_path)
-                for sub in sub_chunks:
-                    sub['chunk_index'] = chunk_index
-                    chunks.append(EnhancedChunker.score_chunk(sub))
-                    chunk_index += 1
-            else:
-                chunk = {
-                    "content": content,
-                    "heading_path": heading_path,
-                    "chunk_type": "section",
-                    "token_count": EnhancedChunker.token_count(content),
-                    "source_url": section.get("source_url") or structure.get("source_url") or "",
-                    "page_title": structure.get("page_title") or default_title,
-                    "content_structure": {
-                        "has_table": False,
-                        "has_list": bool(section.get("content", "").lower().find("-") != -1 or "1." in section.get("content", "")),
-                        "has_images": False,
-                        "has_code": False,
-                        "relevance_score": 0.0,
-                        "quality_score": 0.0,
-                    },
-                    "chunk_hash": hashlib.sha256(content.encode("utf-8")).hexdigest(),
-                    "chunk_index": chunk_index,
-                }
-                chunks.append(EnhancedChunker.score_chunk(chunk))
-                chunk_index += 1
-        
-        # Process tables
-        for table in structure.get("tables", []) or []:
-            table_text = EnhancedChunker._format_table_as_text(table)
-            if table_text and EnhancedChunker.token_count(table_text) >= EnhancedChunker.MIN_CHUNK_WORDS:
-                chunk = {
-                    "content": table_text,
-                    "heading_path": table.get("heading_path") or [default_title],
-                    "chunk_type": "table",
-                    "token_count": EnhancedChunker.token_count(table_text),
-                    "source_url": structure.get("source_url") or "",
-                    "page_title": structure.get("page_title") or default_title,
-                    "content_structure": {
-                        "has_table": True,
-                        "has_list": False,
-                        "has_images": False,
-                        "has_code": False,
-                        "table_headers": table.get("headers", []),
-                        "table_rows": table.get("rows", [])[:10],
-                        "caption": table.get("caption"),
-                        "relevance_score": 0.0,
-                        "quality_score": 0.0,
-                    },
-                    "chunk_hash": hashlib.sha256(table_text.encode("utf-8")).hexdigest(),
-                    "chunk_index": chunk_index
-                }
-                chunk_index += 1
-                chunks.append(EnhancedChunker.score_chunk(chunk))
-        
-        # Process cards
-        for card in structure.get("cards", []) or []:
-            body = EnhancedChunker.normalize_text(card.get("description") or "")
-            if not body or EnhancedChunker.token_count(body) < EnhancedChunker.MIN_CHUNK_WORDS:
-                continue
-            
+            # Create chunk
             chunk = {
-                "content": body,
-                "heading_path": card.get("heading_path") or [default_title],
-                "chunk_type": "card",
-                "token_count": EnhancedChunker.token_count(body),
-                "source_url": structure.get("source_url") or "",
-                "page_title": structure.get("page_title") or default_title,
+                "content": content,
+                "heading_path": heading_path,
+                "chunk_type": section.get("chunk_type", "section"),
+                "chunk_category": "main_content",
+                "token_count": word_count,
+                "source_url": section.get("source_url") or source_url,
+                "page_title": default_title,
                 "content_structure": {
                     "has_table": False,
                     "has_list": False,
                     "has_images": False,
                     "has_code": False,
-                    "card_title": card.get("title"),
+                    "heading": section.get("heading", ""),
                     "relevance_score": 0.0,
                     "quality_score": 0.0,
                 },
-                "chunk_hash": hashlib.sha256(body.encode("utf-8")).hexdigest(),
+                "chunk_hash": hashlib.sha256(content.encode("utf-8")).hexdigest(),
+                "chunk_index": chunk_index,
+            }
+            
+            chunks.append(EnhancedChunker.score_chunk(chunk))
+            chunk_index += 1
+        
+        # Process tables
+        for table in main_content.get("tables", []) or []:
+            table_text = EnhancedChunker._format_table_as_text(table)
+            if table_text:
+                word_count = len(table_text.split())
+                if word_count >= EnhancedChunker.MIN_CHUNK_WORDS:
+                    chunk = {
+                        "content": table_text,
+                        "heading_path": table.get("heading_path") or [default_title],
+                        "chunk_type": "table",
+                        "chunk_category": "main_content",
+                        "token_count": word_count,
+                        "source_url": source_url,
+                        "page_title": default_title,
+                        "content_structure": {
+                            "has_table": True,
+                            "has_list": False,
+                            "has_images": False,
+                            "has_code": False,
+                            "table_headers": table.get("headers", []),
+                            "relevance_score": 0.0,
+                            "quality_score": 0.0,
+                        },
+                        "chunk_hash": hashlib.sha256(table_text.encode("utf-8")).hexdigest(),
+                        "chunk_index": chunk_index
+                    }
+                    chunk_index += 1
+                    chunks.append(EnhancedChunker.score_chunk(chunk))
+        
+        # Process lists
+        for list_item in main_content.get("lists", []) or []:
+            items = list_item.get("items", [])
+            if items:
+                list_text = f"{list_item.get('type', 'unordered')} list:\n" + "\n".join(f"- {item}" for item in items)
+                word_count = len(list_text.split())
+                if word_count >= EnhancedChunker.MIN_CHUNK_WORDS:
+                    chunk = {
+                        "content": list_text,
+                        "heading_path": [default_title],
+                        "chunk_type": "list",
+                        "chunk_category": "main_content",
+                        "token_count": word_count,
+                        "source_url": source_url,
+                        "page_title": default_title,
+                        "content_structure": {
+                            "has_table": False,
+                            "has_list": True,
+                            "has_images": False,
+                            "has_code": False,
+                            "list_type": list_item.get("type"),
+                            "relevance_score": 0.0,
+                            "quality_score": 0.0,
+                        },
+                        "chunk_hash": hashlib.sha256(list_text.encode("utf-8")).hexdigest(),
+                        "chunk_index": chunk_index
+                    }
+                    chunk_index += 1
+                    chunks.append(EnhancedChunker.score_chunk(chunk))
+        
+        # ============================================================
+        # 2. FALLBACK: If no chunks, use all_text
+        # ============================================================
+        if not chunks:
+            all_text = main_content.get("all_text", "")
+            if all_text:
+                word_count = len(all_text.split())
+                if word_count >= EnhancedChunker.MIN_CHUNK_WORDS:
+                    chunk = {
+                        "content": all_text[:5000],  # Limit size
+                        "heading_path": [default_title],
+                        "chunk_type": "content",
+                        "chunk_category": "main_content",
+                        "token_count": word_count,
+                        "source_url": source_url,
+                        "page_title": default_title,
+                        "content_structure": {
+                            "has_table": False,
+                            "has_list": False,
+                            "has_images": False,
+                            "has_code": False,
+                            "relevance_score": 0.0,
+                            "quality_score": 0.0,
+                        },
+                        "chunk_hash": hashlib.sha256(all_text.encode("utf-8")).hexdigest(),
+                        "chunk_index": chunk_index
+                    }
+                    chunk_index += 1
+                    chunks.append(EnhancedChunker.score_chunk(chunk))
+                    logger.info(f"✅ Created fallback chunk from all_text ({word_count} words)")
+        
+        # ============================================================
+        # 3. Process UI SUMMARY chunks (medium weight)
+        # ============================================================
+        ui_summary = structure.get("ui_summary", [])
+        
+        for summary_chunk in ui_summary:
+            content = summary_chunk.get("content", "")
+            if not content:
+                continue
+            
+            chunk_category = summary_chunk.get("chunk_category", "footer")
+            heading_path = summary_chunk.get("heading_path", [default_title])
+            
+            chunk = {
+                "content": content,
+                "heading_path": heading_path,
+                "chunk_type": "summary",
+                "chunk_category": chunk_category,
+                "token_count": EnhancedChunker.token_count(content),
+                "source_url": source_url,
+                "page_title": default_title,
+                "content_structure": {
+                    "has_table": False,
+                    "has_list": False,
+                    "has_images": False,
+                    "has_code": False,
+                    "source_type": summary_chunk.get("source_type", ""),
+                    "relevance_score": 0.0,
+                    "quality_score": 0.0,
+                },
+                "chunk_hash": hashlib.sha256(content.encode("utf-8")).hexdigest(),
                 "chunk_index": chunk_index
             }
             chunk_index += 1
             chunks.append(EnhancedChunker.score_chunk(chunk))
         
-        # 🆕 Final deduplication
-        chunks = EnhancedChunker._deduplicate_chunks(chunks)
+        # ============================================================
+        # 4. Final filtering
+        # ============================================================
+        # Filter out chunks that are too short
+        chunks = [c for c in chunks if len(c.get('content', '').split()) >= EnhancedChunker.MIN_CHUNK_WORDS]
         
-        # Filter out chunks that are too short after dedup
-        chunks = [c for c in chunks if EnhancedChunker.token_count(c.get('content', '')) >= EnhancedChunker.MIN_CHUNK_WORDS]
+        # Log statistics
+        category_counts = {}
+        for chunk in chunks:
+            cat = chunk.get('chunk_category', 'unknown')
+            category_counts[cat] = category_counts.get(cat, 0) + 1
         
-        logger.info("Created %s structure-aware chunks", len(chunks))
+        logger.info(f"Created {len(chunks)} chunks: {category_counts}")
+        
+        return chunks
+
+    @staticmethod
+    def chunk_from_processed_content(
+        processed_content: Dict[str, Any],
+        document_id: str,
+        page_version_id: str
+    ) -> List[Dict[str, Any]]:
+        """
+        Convenience method to chunk content from ContentProcessor output.
+        
+        Args:
+            processed_content: Output from ContentProcessor.process_html()
+            document_id: Document ID for the processed content
+            page_version_id: Page version ID
+        
+        Returns:
+            List of chunk dictionaries ready for database insertion
+        """
+        chunks = EnhancedChunker.chunk_structure(processed_content)
+        
+        # Add database fields
+        for chunk in chunks:
+            chunk['document_id'] = document_id
+            chunk['page_version_id'] = page_version_id
+            chunk['embedding_status'] = 'PENDING'
+            chunk['embedding'] = None
+        
         return chunks

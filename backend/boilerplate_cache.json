@@ -1,10 +1,80 @@
 {
-  "www.microsoft.com": {
-    "text_patterns": [],
+  "fixture-check.example": {
+    "text_patterns": [
+      "stand out with resume analyzer (beta). get tailored\n                            feedback to enhance ",
+      "\u00a9 magnus mage, all rights reserved",
+      "careers@magnusmage.com"
+    ],
+    "selectors": [
+      "p.MuiTypography-root.MuiTypography-body1.css-dzj7sv",
+      "p.MuiTypography-root.MuiTypography-body1.css-t3nev2"
+    ]
+  },
+  "www.bankofamerica.com": {
+    "text_patterns": [
+      "live chat survey chat"
+    ],
     "selectors": []
   },
-  "abc.xyz": {
-    "text_patterns": [],
-    "selectors": []
+  "www.nvidia.com": {
+    "text_patterns": [
+      "visit your regional nvidia website for local content, pricing, and where to buy partners specific to",
+      "sign up for nvidia news subscribe",
+      "company information about us investors venture capital (nventures) nvidia foundation research corpor",
+      "agentic ai\u2002|\u2002blog industrial software leaders build autonomous ai engineers secure, specialized agen",
+      "united states privacy policy your privacy choices terms of service accessibility corporate policies ",
+      "products cloud services dgx cloud nvidia\u2019s ai factory in the cloud nvidia apis explore, test, and de",
+      "quick links about nvidia nvidia gtc careers newsroom nvidia on-demand leaders nvidia in brief"
+    ],
+    "selectors": [
+      "div.page-footer",
+      "nav.global-nav",
+      "div.general-container-text",
+      "nav#meganavigation2469cb88_f14d_4c30_8942_5ad01b1c71d7",
+      "div.subscribe-container",
+      "nav.accordion-menu",
+      "header#main-header",
+      "div.cmp-teaser__action-container"
+    ]
+  },
+  "www.apple.com": {
+    "text_patterns": [
+      "shop and learn shop and learn store mac ipad iphone watch vision airpods tv & home airtag accessorie",
+      "apple footer \uf8ff apple leadership shop and learn shop and learn store mac ipad iphone watch vision air",
+      "\uf8ff apple leadership",
+      "apple leadership",
+      "apple store mac ipad iphone watch vision airpods tv & home entertainment accessories support 0 +"
+    ],
+    "selectors": [
+      "nav.no-js",
+      "nav.ac-gf-breadcrumbs",
+      "nav.globalnav.no-js",
+      "nav.ac-gf-directory.with-5-columns",
+      "footer#ac-globalfooter",
+      "footer.no-js",
+      "nav#ac-localnav",
+      "nav#globalnav"
+    ]
+  },
+  "www.samsung.com": {
+    "text_patterns": [
+      "search search cart number of products : log-in open my menu navigation global navigation bar back se",
+      "copyright\u00a9 1995-2026 samsung. all rights reserved. pakistan/english pakistan/english privacy legal s",
+      "home home home appliances home appliances washers and dryers washers and dryers all washers and drye",
+      "pakistan / english other countries",
+      "footer navigation shop open shop home buy direct get more smartphone ai living smartthings new and f",
+      "skip to content samsung and cookies this site uses cookies. by clicking accept or continuing to brow",
+      "my wishlist 1 my wishlist 2 my wishlist 3 my wishlist 4 my wishlist 5 my wishlist 6 my wishlist 7 my"
+    ],
+    "selectors": [
+      "div.footer-bottom",
+      "div.menu.filled",
+      "nav#component-id",
+      "nav.breadcrumb",
+      "div.menu",
+      "header#header",
+      "footer.footer",
+      "nav.nv00-gnb-v4.nv00-gnb-v4--text-type"
+    ]
   }
 }

@@ -44,7 +44,10 @@ def execute_query(query: str, params: tuple = ()) -> List[Dict[str, Any]]:
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=extras.RealDictCursor) as cur:
             cur.execute(query, params)
-            return cur.fetchall()
+            if cur.description is not None:
+                return cur.fetchall()
+            
+            return []
 
 
 def execute_one(query: str, params: tuple = ()) -> Optional[Dict[str, Any]]:

@@ -1,20 +1,21 @@
-fastapi==0.141.1
-uvicorn==0.52.1
-redis==8.1.0
+fastapi==0.115.12        # last stable before 0.14x; well-tested with pydantic 2.10.x
+uvicorn==0.34.3
+redis==5.2.1             # 8.x is very new; 5.x is the stable production line
 asyncpg==0.31.0
-dotenv==0.9.9
+python-dotenv==1.1.0     # "dotenv" is a dummy package — use python-dotenv instead ⚠️
 httpx==0.28.1
-playwright==1.62.0
-beautifulsoup4==4.15.0
-dramatiq==2.2.0
-markdownify==1.2.3
-psycopg2-binary==2.9.12
-requests==2.34.2
+playwright==1.49.0
 openai==3.1.0
-websockets==15.0.1
-# openrouter==1.1.77
-playwright-stealth==2.0.3
-h2==4.4.1
-brotli==1.2.0
-pillow==12.3.0
-ollama==0.6.2
+beautifulsoup4==4.13.3
+dramatiq==1.18.0         # 2.x is unreleased/pre-release
+markdownify==0.14.1
+psycopg2-binary==2.9.10
+requests==2.32.3
+websockets==14.2
+playwright-stealth==1.0.6
+h2==4.2.0
+brotli==1.1.0
+pillow==11.1.0
+ollama==0.4.7
+trafilatura==2.0.0
+readability-lxml==0.8.4.1

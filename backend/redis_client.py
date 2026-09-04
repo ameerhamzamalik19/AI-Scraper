@@ -1,12 +1,14 @@
 import json
 import redis
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 from config import settings
 from exceptions import RedisError
 from redis_config import JOB_TTL_SECONDS
 from utils.helpers import generate_uuid, get_iso_timestamp
+import logging
 
+logger = logging.getLogger(__name__)
 
 class RedisClient:
     """Redis client wrapper"""
@@ -31,6 +33,10 @@ class RedisClient:
     def is_available(self) -> bool:
         """Check if Redis is available"""
         return self.client is not None
+    
+    # ============================================================
+    # Job Queue Methods
+    # ============================================================
     
     def add_scraping_job(
             self, url: str, 
@@ -125,6 +131,169 @@ class RedisClient:
             print(f"Failed to get queue length: {e}")
             return 0
 
+    # ============================================================
+    # Pub/Sub Methods (for WebSocket broadcasting)
+    # ============================================================
+    
+    def publish(self, channel: str, message: str) -> int:
+        """Publish a message to a Redis channel."""
+        if not self.is_available():
+            logger.warning("Redis not available, cannot publish")
+            return 0
+        try:
+            return self.client.publish(channel, message)
+        except Exception as e:
+            logger.error(f"Failed to publish to Redis: {e}")
+            return 0
+
+    def pubsub(self):
+        """Get a Redis pubsub object."""
+        if not self.is_available():
+            logger.warning("Redis not available, cannot create pubsub")
+            return None
+        try:
+            return self.client.pubsub()
+        except Exception as e:
+            logger.error(f"Failed to create pubsub: {e}")
+            return None
+
+    # ============================================================
+    # Boilerplate Cache Methods
+    # ============================================================
+    
+    def set_boilerplate_patterns(self, domain: str, patterns: List[str]) -> bool:
+        """Store boilerplate patterns for a domain."""
+        if not self.is_available():
+            return False
+        try:
+            key = f"boilerplate_patterns:{domain}"
+            self.client.set(key, json.dumps(patterns))
+            logger.debug(f"💾 Stored {len(patterns)} patterns for {domain}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to store boilerplate patterns: {e}")
+            return False
+    
+    def get_boilerplate_patterns(self, domain: str) -> Optional[List[str]]:
+        """Get boilerplate patterns for a domain."""
+        if not self.is_available():
+            return None
+        try:
+            key = f"boilerplate_patterns:{domain}"
+            data = self.client.get(key)
+            if data:
+                return json.loads(data)
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get boilerplate patterns: {e}")
+            return None
+    
+    def delete_boilerplate_patterns(self, domain: Optional[str] = None) -> bool:
+        """Delete boilerplate patterns for a domain or all domains."""
+        if not self.is_available():
+            return False
+        try:
+            if domain:
+                key = f"boilerplate_patterns:{domain}"
+                self.client.delete(key)
+                logger.info(f"🧹 Deleted boilerplate patterns for {domain}")
+            else:
+                # Delete all boilerplate patterns
+                keys = self.client.keys("boilerplate_patterns:*")
+                if keys:
+                    self.client.delete(*keys)
+                logger.info("🧹 Deleted all boilerplate patterns")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to delete boilerplate patterns: {e}")
+            return False
+    
+    def set_processed_domain(self, domain: str) -> bool:
+        """Mark a domain as processed (first page learned)."""
+        if not self.is_available():
+            return False
+        try:
+            self.client.sadd("processed_domains", domain)
+            logger.debug(f"✅ Marked {domain} as processed")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to mark domain as processed: {e}")
+            return False
+    
+    def get_processed_domains(self) -> set:
+        """Get all processed domains."""
+        if not self.is_available():
+            return set()
+        try:
+            return self.client.smembers("processed_domains")
+        except Exception as e:
+            logger.error(f"Failed to get processed domains: {e}")
+            return set()
+    
+    def is_domain_processed(self, domain: str) -> bool:
+        """Check if a domain has been processed."""
+        if not self.is_available():
+            return False
+        try:
+            return self.client.sismember("processed_domains", domain)
+        except Exception as e:
+            logger.error(f"Failed to check processed domain: {e}")
+            return False
+
+    # ============================================================
+    # General Key-Value Methods
+    # ============================================================
+    
+    def get(self, key: str) -> Optional[str]:
+        """Get a value from Redis."""
+        if not self.is_available():
+            return None
+        try:
+            return self.client.get(key)
+        except Exception as e:
+            logger.error(f"Redis GET error: {e}")
+            return None
+    
+    def set(self, key: str, value: str, ex: int = None) -> bool:
+        """Set a value in Redis."""
+        if not self.is_available():
+            return False
+        try:
+            self.client.set(key, value, ex=ex)
+            return True
+        except Exception as e:
+            logger.error(f"Redis SET error: {e}")
+            return False
+    
+    def delete(self, *keys: str) -> int:
+        """Delete keys from Redis."""
+        if not self.is_available():
+            return 0
+        try:
+            return self.client.delete(*keys)
+        except Exception as e:
+            logger.error(f"Redis DELETE error: {e}")
+            return 0
+    
+    def keys(self, pattern: str) -> List[str]:
+        """Get keys matching a pattern."""
+        if not self.is_available():
+            return []
+        try:
+            return self.client.keys(pattern)
+        except Exception as e:
+            logger.error(f"Redis KEYS error: {e}")
+            return []
+    
+    def exists(self, key: str) -> bool:
+        """Check if a key exists in Redis."""
+        if not self.is_available():
+            return False
+        try:
+            return self.client.exists(key) > 0
+        except Exception as e:
+            logger.error(f"Redis EXISTS error: {e}")
+            return False
 
 # Singleton instance
 redis_client = RedisClient()
