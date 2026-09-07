@@ -7,8 +7,12 @@ from database_sync import execute_query, execute_update, execute_one
 from utils.helpers import get_current_datetime
 from redis_config import EMBEDDING_QUEUE_NAME
 from utils.chat_status_tracker import ChatStatusTracker
+from utils.progress_tracker import get_progress_tracker
+import logging
 
-print("✅ Embedder worker loaded")
+# logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+logging.info("✅ Embedder worker loaded")
 
 # NVIDIA NIM API Configuration - Using OpenAI-compatible endpoint
 NVIDIA_API_KEY = os.getenv("EMBEDDING_MODEL_API_KEY", "")
@@ -107,6 +111,8 @@ def get_embedding(text: str, max_retries: int = 3) -> List[float]:
     return [0.0] * EMBEDDING_DIMENSION
 
 
+# workers/embedder_worker.py - Fixed progress calculation
+
 @dramatiq.actor(
     queue_name=EMBEDDING_QUEUE_NAME,
     max_retries=3,
@@ -119,19 +125,18 @@ def embed_chunks(chat_id: str, document_id: str):
     if not NVIDIA_API_KEY or NVIDIA_API_KEY == "your-api-key-here":
         error_msg = "NVIDIA_API_KEY not set"
         print(f"❌ {error_msg}")
-        ChatStatusTracker.mark_failed(chat_id, error_msg)
+        # Use PipelineProgressTracker so progress is preserved, not reset to 0
+        get_progress_tracker(chat_id).mark_failed(error_msg)
         return 0
     
     print(f"🧠 Embedding chunks for document: {document_id} for chat: {chat_id}")
     
+    # Get progress tracker
+    tracker = get_progress_tracker(chat_id)
+    
     try:
-        # Update status: embedding started
-        ChatStatusTracker.update(
-            chat_id,
-            status=ChatStatusTracker.STATUS_EMBEDDING,
-            progress=80,
-            current_step="Starting embedding generation..."
-        )
+        # ✅ Update status: embedding started
+        tracker.update_stage('embedding', 0, "Starting embedding generation...")
 
         # Get all chunks for this document
         chunks = execute_query(
@@ -145,33 +150,59 @@ def embed_chunks(chat_id: str, document_id: str):
         if not chunks:
             error_msg = f"No chunks found for document {document_id}"
             print(f"❌ {error_msg}")
-            ChatStatusTracker.mark_failed(chat_id, error_msg)
+            tracker.mark_failed(error_msg)
             return 0
         
-        # Filter only PENDING chunks
+        # ✅ Filter only PENDING chunks (not PROCESSING or COMPLETED)
         pending_chunks = [c for c in chunks if c.get('embedding_status') == 'PENDING']
         total_pending = len(pending_chunks)
         total_chunks = len(chunks)
         
-        if total_pending == 0:
-            print(f"⚠️ No pending chunks for document {document_id}. All {total_chunks} chunks already processed.")
-            ChatStatusTracker.update(
-                chat_id,
-                status=ChatStatusTracker.STATUS_COMPLETED,
-                progress=100,
-                current_step=f"All {total_chunks} chunks already embedded"
+        # ✅ Also check for stuck PROCESSING chunks (stale from previous runs)
+        processing_chunks = [c for c in chunks if c.get('embedding_status') == 'PROCESSING']
+        if processing_chunks:
+            print(f"⚠️ Found {len(processing_chunks)} stale PROCESSING chunks, resetting to PENDING")
+            for chunk in processing_chunks:
+                execute_update(
+                    "UPDATE chunks SET embedding_status = 'PENDING', updated_at = %s WHERE id = %s",
+                    (get_current_datetime().isoformat(), chunk['id'])
+                )
+            # Re-query pending chunks
+            pending_chunks = execute_query(
+                """SELECT id, content, embedding_status, chunk_index 
+                   FROM chunks 
+                   WHERE document_id = %s AND embedding_status = 'PENDING'
+                   ORDER BY chunk_index""",
+                (document_id,)
             )
-            return total_chunks
+            total_pending = len(pending_chunks)
+        
+        if total_pending == 0:
+            # ✅ Check if all chunks are completed
+            completed_chunks = [c for c in chunks if c.get('embedding_status') == 'COMPLETED']
+            failed_chunks = [c for c in chunks if c.get('embedding_status') == 'FAILED']
+            
+            if completed_chunks and not failed_chunks:
+                print(f"✅ All {len(completed_chunks)} chunks already embedded")
+                tracker.mark_completed(f"All {len(completed_chunks)} chunks already embedded")
+                return len(completed_chunks)
+            elif completed_chunks and failed_chunks:
+                print(f"⚠️ {len(completed_chunks)} embedded, {len(failed_chunks)} failed")
+                tracker.mark_completed(f"Embedded {len(completed_chunks)} chunks, {len(failed_chunks)} failed")
+                return len(completed_chunks)
+            elif failed_chunks:
+                print(f"❌ All {len(failed_chunks)} chunks failed")
+                tracker.mark_failed(f"All {len(failed_chunks)} chunks failed to embed")
+                return 0
+            else:
+                print(f"⚠️ No pending chunks found for document {document_id}")
+                tracker.mark_failed("No chunks to embed")
+                return 0
         
         print(f"📊 Found {total_chunks} total chunks, {total_pending} pending")
         
-        # Update status with chunk count
-        ChatStatusTracker.update(
-            chat_id,
-            status=ChatStatusTracker.STATUS_EMBEDDING,
-            progress=82,
-            current_step=f"Embedding {total_pending} chunks..."
-        )
+        # ✅ Update status with chunk count (stage_progress = 10%)
+        tracker.update_stage('embedding', 10, f"Embedding {total_pending} chunks...")
         
         chunks_embedded = 0
         chunks_failed = 0
@@ -181,15 +212,16 @@ def embed_chunks(chat_id: str, document_id: str):
             chunk_index = chunk.get('chunk_index', i)
             
             try:
-                # Update status periodically
-                if i % 5 == 0:
-                    progress = 82 + int((i / total_pending) * 14)  # 82% to 96%
-                    ChatStatusTracker.update(
-                        chat_id,
-                        status=ChatStatusTracker.STATUS_EMBEDDING,
-                        progress=progress,
-                        current_step=f"Embedding chunk {i+1}/{total_pending}..."
-                    )
+                # ✅ Calculate stage progress as percentage of chunks processed
+                # stage_progress goes from 10 to 90 (leaving room for completion)
+                stage_progress = 10 + int(((i + 1) / total_pending) * 80)
+                
+                # ✅ Update status every chunk (not every 5)
+                tracker.update_stage(
+                    'embedding', 
+                    stage_progress, 
+                    f"Embedding chunk {i+1}/{total_pending}..."
+                )
                 
                 # Update chunk status to processing
                 now = get_current_datetime().isoformat()
@@ -228,23 +260,78 @@ def embed_chunks(chat_id: str, document_id: str):
                 )
                 chunks_failed += 1
         
+        # ✅ Final status update with proper partial failure handling
+                # ─── Decrement the shared counter and only mark_completed when ALL pages are done ───
+        def _decrement_and_maybe_complete(success_msg: str, failure_count: int = 0):
+            """
+            Atomically decrement pending_documents. Returns the new value so
+            this worker knows whether it is the last one to finish.
+            """
+            from database_sync import execute_one as _eo, execute_update as _eu
+
+            row = _eo(
+                """UPDATE chats
+                      SET pending_documents = pending_documents - 1
+                    WHERE id = %s
+                RETURNING pending_documents""",
+                (chat_id,)
+            )
+            remaining = row.get('pending_documents') if row else None
+            logger.info(
+                f"📊 Chat {chat_id}: pending_documents now {remaining} "
+                f"after document {document_id} finished"
+            )
+
+            if remaining == 0:
+                # This is the last document — safe to mark complete
+                tracker.mark_completed(success_msg)
+            elif remaining is not None and remaining < 0:
+                # Counter went negative — the increment in _crawl_page()
+                # did not run before this embedder finished. Log loudly;
+                # do NOT complete, because the page count is unknown.
+                logger.error(
+                    f"Chat {chat_id}: pending_documents is {remaining} (negative). "
+                    f"The per-page increment in _crawl_page() likely did not execute "
+                    f"before this embedder job ran. Check crawler/crawler.py Fix 2."
+                )
+            # else: other documents still in flight, leave status as-is
+
         # Final status update
-        if chunks_failed > 0:
-            ChatStatusTracker.update(
-                chat_id,
-                status=ChatStatusTracker.STATUS_COMPLETED,
-                progress=100,
-                current_step=f"Embedded {chunks_embedded} chunks, {chunks_failed} failed"
+        if chunks_failed > 0 and chunks_embedded == 0:
+            # All chunks failed for this document
+            print(f"❌ All {total_pending} chunks failed for document {document_id}")
+            _decrement_and_maybe_complete(
+                f"Pipeline complete (document {document_id}: all chunks failed)",
+                failure_count=chunks_failed
             )
-            print(f"⚠️ Completed with errors: {chunks_embedded} embedded, {chunks_failed} failed")
+            # If this was the last document and everything failed, mark as failed instead
+            from database_sync import execute_one as _eo2
+            row2 = _eo2("SELECT pending_documents FROM chats WHERE id = %s", (chat_id,))
+            if (row2 and row2.get('pending_documents') == 0):
+                # Check if any chunks at all completed across all documents
+                from database_sync import execute_one as _eo3
+                total_done = _eo3(
+                    """SELECT COUNT(*) AS n FROM chunks
+                         JOIN documents ON documents.id = chunks.document_id
+                        WHERE documents.id = %s
+                          AND chunks.embedding_status = 'COMPLETED'""",
+                    (document_id,)
+                )
+                if not total_done or total_done.get('n', 0) == 0:
+                    tracker.mark_failed(f"All {total_pending} chunks failed to embed")
+        elif chunks_failed > 0:
+            # Partial failure — still usable, complete gracefully with a note (Bug #6 fix)
+            print(f"⚠️ Document {document_id}: {chunks_embedded} embedded, {chunks_failed} failed")
+            _decrement_and_maybe_complete(
+                f"Pipeline complete ({chunks_embedded} chunks embedded, {chunks_failed} failed)",
+                failure_count=chunks_failed
+            )
         else:
-            ChatStatusTracker.update(
-                chat_id,
-                status=ChatStatusTracker.STATUS_COMPLETED,
-                progress=100,
-                current_step=f"All {chunks_embedded} chunks embedded!"
+            # Full success for this document
+            print(f"✅ Successfully embedded all {chunks_embedded} chunks for document {document_id}")
+            _decrement_and_maybe_complete(
+                f"All chunks embedded successfully"
             )
-            print(f"✅ Successfully embedded all {chunks_embedded} chunks")
         
         print(f"🧠 Embedding complete for document {document_id}: {chunks_embedded} embedded, {chunks_failed} failed")
         return chunks_embedded
@@ -255,7 +342,7 @@ def embed_chunks(chat_id: str, document_id: str):
         import traceback
         traceback.print_exc()
         
-        ChatStatusTracker.mark_failed(chat_id, error_msg)
+        tracker.mark_failed(error_msg)
         raise
 
 

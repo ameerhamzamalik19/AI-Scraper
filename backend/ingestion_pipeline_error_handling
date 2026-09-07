@@ -1,0 +1,88 @@
+# Ingestion Pipeline Error Handling
+
+## Short answer
+
+The ingestion pipeline does both: some failures are retried, and some failures only mark the job or chat as failed. There is no single retry policy for the entire pipeline.
+
+Retries happen at two levels:
+
+1. The crawler, processor, chunker, and embedder Dramatiq actors have configured actor-level retries.
+2. The HTTP fetcher and embedding API client have their own in-process retry attempts.
+
+Several expected data errors are caught and returned without raising an exception. Those errors do not trigger Dramatiq retries.
+
+## 1. API and queue setup
+
+`POST /api/process-link` creates the page and attempts to enqueue the scraping job in Redis.
+
+- If Redis is unavailable or `add_scraping_job` returns no job ID, the API marks the chat as `failed` with `Scraping service unavailable`. The request still returns an assistant message explaining that scraping is unavailable. No retry is scheduled by the API.
+- If page creation or queue setup raises an exception, the API marks the chat as `failed` with `Scraping setup error: ...` and returns an assistant message asking the user to try again later. No automatic retry is scheduled by the API.
+- If queue setup succeeds, `crawl_website` is sent to the Dramatiq scraping queue.
+
+## 2. Crawling
+
+The crawler actor is declared with `max_retries=3`. An uncaught exception from the crawl is therefore re-raised by `crawl_website`, the Redis job is marked `failed`, the chat is marked `failed`, and Dramatiq can retry the actor up to three times.
+
+A failure fetching an individual page is handled differently:
+
+- The fetch result is recorded as a failed page with its error.
+- The page is skipped.
+- The crawl continues with other URLs.
+- The crawl job can be marked `completed` even when `pages_failed` is greater than zero.
+- This page-level failure does not raise an exception and does not trigger a Dramatiq actor retry.
+
+The fetcher itself performs local retries:
+
+- It first tries HTTPX.
+- If the result indicates blocking or login is required, it tries Playwright.
+- If the request still fails, it rotates the user agent and tries HTTPX once more.
+
+## 3. Document processing
+
+The processor actor is declared with `max_retries=2`.
+
+- An unexpected processing exception marks the document `FAILED`, marks the chat `failed`, re-raises the exception, and can trigger Dramatiq retries.
+- If the document does not exist, the worker marks the chat `failed` and returns. It does not raise, so there is no actor retry.
+- If processing succeeds, the document is marked `COMPLETED` and a chunking job is queued.
+
+Failures from optional Ollama image/table analysis are generally converted to `None` or fallback data inside the processor. They do not necessarily fail the whole document or trigger a worker retry.
+
+## 4. Chunking
+
+The chunker actor is declared with `max_retries=2`.
+
+- An unexpected chunking exception marks the chat `failed`, re-raises the exception, and can trigger Dramatiq retries.
+- If the document does not exist, the worker marks the chat `failed` and returns. No retry occurs.
+- If there is no content available for fallback chunking, the worker marks the chat `failed` and returns. No retry occurs.
+- If chunks already exist, the worker skips reprocessing and sends the document to the embedder.
+- If no new chunks are inserted, the worker marks the chat `completed`; this is treated as a successful terminal result, not a retryable failure.
+
+## 5. Embedding
+
+The embedder actor is declared with `max_retries=3`.
+
+The embedding API call has an additional local retry policy:
+
+- `get_embedding` attempts each API call up to three times.
+- Between ordinary failed attempts it waits with exponential backoff: 1 second, then 2 seconds.
+- Input-length errors cause the text to be shortened and another attempt to be made.
+- If all local attempts fail, the exception is raised to the embedder worker.
+
+The embedder worker handles failures in three different ways:
+
+- If the embedding API key is missing, it marks the chat `failed` and returns. No Dramatiq retry occurs.
+- If there are no chunks, it marks the chat `failed` and returns. No Dramatiq retry occurs.
+- If one chunk fails during the embedding loop, that chunk is marked `FAILED`, processing continues for the remaining chunks, and the chat is marked `completed` with an error summary. The failed chunk is not automatically retried by this worker.
+- If an exception escapes the outer embedding process, the chat is marked `failed`, the exception is re-raised, and Dramatiq can retry the actor up to three times.
+
+## Final outcome
+
+The pipeline does not always fail the whole ingestion when one page or one chunk fails:
+
+- Failed page fetches are partial failures; the crawl continues.
+- Failed individual embeddings are partial failures; the embedding job continues and may finish as `completed` with failed chunks.
+- Missing records, missing configuration, and several validation/data conditions mark the chat failed and return without an automatic retry.
+- Unexpected worker exceptions are re-raised and are eligible for Dramatiq actor retries.
+- The API does not automatically retry failed queue setup. The user must submit the URL again in that case.
+
+One additional behavior in the current code: processing is dispatched both from `crawler/crawler.py` for each created page version and from `workers/crawler_worker.py` for the first crawled page. This can result in duplicate processing messages. The processor and chunker contain some idempotency checks, but this is separate from retry handling.

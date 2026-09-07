@@ -1,11 +1,12 @@
 from typing import Optional, List
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from services.chat_service import ChatService
 from api.deps import get_user_id_from_header
 from models import ChatResponse
 import logging
 import os
 from dotenv import load_dotenv
+from utils.chat_status_tracker import ChatStatusTracker
 
 load_dotenv() 
 
@@ -81,3 +82,44 @@ async def get_crawled_urls(chat_id: str):
             for r in result
         ]
     }
+
+@router.get("/{chat_id}/status")
+async def get_chat_status(chat_id: str):
+    """
+    Get the processing status of a chat.
+    Returns the current status, progress, and step information.
+    """
+    from database_sync import execute_one
+    
+    # First check if chat exists
+    chat = execute_one(
+        "SELECT id FROM chats WHERE id = %s",
+        (chat_id,)
+    )
+    
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat not found")
+    
+    # Get progress summary from ChatStatusTracker
+    status = ChatStatusTracker.get_progress_summary(chat_id)
+    
+    if not status:
+        # If no status found, return default
+        return {
+            'chat_id': chat_id,
+            'exists': True,
+            'status': 'pending',
+            'progress': 0,
+            'current_step': 'Initializing...',
+            'friendly_message': 'Waiting to start...',
+            'document_id': None,
+            'started_at': None,
+            'completed_at': None,
+            'error_message': None,
+            'is_ready': False,
+            'is_processing': True,
+            'is_failed': False,
+            'has_error': False
+        }
+    
+    return status

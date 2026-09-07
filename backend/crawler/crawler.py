@@ -192,6 +192,14 @@ class Crawler:
             )
 
             # Trigger processor worker
+            if self.chat_id:
+                from database_sync import execute_update as _eu
+                _eu(
+                    "UPDATE chats SET pending_documents = pending_documents + 1 WHERE id = %s",
+                    (self.chat_id,)
+                )
+
+            # Trigger processor worker
             process_document.send(self.chat_id, version['document_id'])
             
             print(f"📤 Triggered processor for document: {version['document_id']}")

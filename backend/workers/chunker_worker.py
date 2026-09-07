@@ -11,6 +11,7 @@ from utils.helpers import get_current_datetime
 from redis_config import CHUNKING_QUEUE_NAME
 from processors.chunker import EnhancedChunker
 from utils.chat_status_tracker import ChatStatusTracker
+from utils.progress_tracker import get_progress_tracker
 
 print("✅ Chunker worker loaded with EnhancedChunker")
 
@@ -206,14 +207,12 @@ def chunk_document(chat_id: str, document_id: str):
     """
     print(f"📦 Chunking document with EnhancedChunker: {document_id} for chat: {chat_id}")
     
+    # Get progress tracker
+    tracker = get_progress_tracker(chat_id)
+    
     try:
         # Update status: chunking started
-        ChatStatusTracker.update(
-            chat_id,
-            status=ChatStatusTracker.STATUS_CHUNKING,
-            progress=60,
-            current_step="Splitting content into chunks..."
-        )
+        tracker.update_stage('chunking', 0, "Splitting content into chunks...")
 
         # Get document
         doc = execute_one(
@@ -224,7 +223,7 @@ def chunk_document(chat_id: str, document_id: str):
         if not doc:
             error_msg = f"Document not found: {document_id}"
             print(f"❌ {error_msg}")
-            ChatStatusTracker.mark_failed(chat_id, error_msg)
+            tracker.mark_failed(error_msg)
             return
         
         page_version_id = doc['page_version_id']
@@ -239,24 +238,55 @@ def chunk_document(chat_id: str, document_id: str):
         else:
             metadata = metadata_raw or {}
         
-        # Check if this document already has chunks (to avoid reprocessing)
-        existing_chunks_count = execute_one(
-            "SELECT COUNT(*) as count FROM chunks WHERE document_id = %s",
+        # ✅ FIX: Check if this document already has chunks and their embedding status
+        existing_chunks = execute_query(
+            """SELECT id, embedding_status, chunk_index 
+               FROM chunks 
+               WHERE document_id = %s 
+               ORDER BY chunk_index""",
             (document_id,)
         )
         
-        if existing_chunks_count and existing_chunks_count['count'] > 0:
-            print(f"📊 Document {document_id} already has {existing_chunks_count['count']} chunks. Skipping reprocessing.")
-            ChatStatusTracker.update(
-                chat_id,
-                status=ChatStatusTracker.STATUS_CHUNKING,
-                progress=80,
-                current_step=f"Document already chunked ({existing_chunks_count['count']} chunks)"
-            )
-            # Still send to embedding if chunks exist
-            from workers.embedder_worker import embed_chunks
-            embed_chunks.send(chat_id, document_id)
-            return
+        if existing_chunks:
+            # ✅ Check if all existing chunks are embedded
+            pending_chunks = [c for c in existing_chunks if c.get('embedding_status') == 'PENDING']
+            processing_chunks = [c for c in existing_chunks if c.get('embedding_status') == 'PROCESSING']
+            completed_chunks = [c for c in existing_chunks if c.get('embedding_status') == 'COMPLETED']
+            failed_chunks = [c for c in existing_chunks if c.get('embedding_status') == 'FAILED']
+            
+            print(f"📊 Document {document_id} has {len(existing_chunks)} chunks: "
+                  f"{len(completed_chunks)} completed, {len(pending_chunks)} pending, "
+                  f"{len(processing_chunks)} processing, {len(failed_chunks)} failed")
+            
+            # ✅ If there are pending or processing chunks, send to embedder
+            if pending_chunks or processing_chunks:
+                print(f"📤 Sending {len(pending_chunks)} pending chunks to embedder")
+                tracker.update_stage('embedding', 0, f"Generating embeddings for {len(pending_chunks)} chunks...")
+                from workers.embedder_worker import embed_chunks
+                embed_chunks.send(chat_id, document_id)
+                return
+            
+            # ✅ If all chunks are completed, mark as completed
+            if completed_chunks and not pending_chunks and not processing_chunks and not failed_chunks:
+                tracker.mark_completed(f"All {len(completed_chunks)} chunks already embedded")
+                return
+            
+            # ✅ If there are failed chunks and no pending ones, handle partial failure
+            if failed_chunks and not pending_chunks and not processing_chunks:
+                if completed_chunks:
+                    # Partial success - mark completed with warning
+                    tracker.mark_completed(f"Embedded {len(completed_chunks)} chunks, {len(failed_chunks)} failed")
+                    # Store failure count in metadata
+                    execute_update(
+                        """UPDATE chats 
+                           SET metadata = jsonb_set(COALESCE(metadata, '{}'::jsonb), '{embedding_failures}', %s) 
+                           WHERE id = %s""",
+                        (json.dumps(len(failed_chunks)), chat_id)
+                    )
+                else:
+                    # All chunks failed
+                    tracker.mark_failed(f"All {len(failed_chunks)} chunks failed to embed")
+                return
         
         # Extract structure from metadata (created by ContentProcessor in processor_worker)
         document_structure = metadata.get('document_structure', {})
@@ -280,7 +310,7 @@ def chunk_document(chat_id: str, document_id: str):
             if not content:
                 error_msg = "No content available for document"
                 print(f"⚠️ {error_msg}")
-                ChatStatusTracker.mark_failed(chat_id, error_msg)
+                tracker.mark_failed(error_msg)
                 return
             
             # Use cleaned_content for plain text chunking
@@ -291,25 +321,15 @@ def chunk_document(chat_id: str, document_id: str):
             print(f"📋 Using structured content for: {url}")
             print(f"📊 Structure contains: {len(document_structure.get('sections', []))} sections, {len(document_structure.get('tables', []))} tables, {len(document_structure.get('cards', []))} cards")
             
-            # Update progress
-            ChatStatusTracker.update(
-                chat_id,
-                status=ChatStatusTracker.STATUS_CHUNKING,
-                progress=65,
-                current_step="Analyzing document structure..."
-            )
+            # Update progress: analyzing structure
+            tracker.update_stage('chunking', 30, "Analyzing document structure...")
             
             # 🎯 USE NEW ENHANCED CHUNKER
             chunks = EnhancedChunker.chunk_structure(full_structure)
             print(f"✨ EnhancedChunker created {len(chunks)} structure-aware chunks")
         
-        # Update progress
-        ChatStatusTracker.update(
-            chat_id,
-            status=ChatStatusTracker.STATUS_CHUNKING,
-            progress=70,
-            current_step=f"Storing {len(chunks)} chunks..."
-        )
+        # Update progress: storing chunks
+        tracker.update_stage('chunking', 60, f"Storing {len(chunks)} chunks...")
         
         # Store chunks with ON CONFLICT to handle duplicates gracefully
         now = get_current_datetime().isoformat()
@@ -369,28 +389,50 @@ def chunk_document(chat_id: str, document_id: str):
         
         print(f"✅ Document {document_id}: inserted {inserted_count} chunks, skipped {skipped_count} duplicates")
         
-        # Update status: chunking complete
-        ChatStatusTracker.update(
-            chat_id,
-            status=ChatStatusTracker.STATUS_EMBEDDING,
-            progress=80,
-            current_step=f"Generating embeddings for {len(chunks)} chunks..."
-        )
-        
-        # Enqueue embedding job
+        # ✅ FIX: Only move to embedding if we have new chunks
         if chunk_ids:
+            # Update status: chunking complete, move to embedding
+            tracker.update_stage('embedding', 0, f"Generating embeddings for {len(chunks)} chunks...")
+            
+            # Enqueue embedding job
             from workers.embedder_worker import embed_chunks
             embed_chunks.send(chat_id, document_id)
             print(f"📤 Sent {len(chunk_ids)} chunks to embedder")
         else:
-            print(f"⚠️ No new chunks to embed for document {document_id}")
-            # If no new chunks, mark as completed
-            ChatStatusTracker.update(
-                chat_id,
-                status=ChatStatusTracker.STATUS_COMPLETED,
-                progress=100,
-                current_step="No new chunks to embed"
+            # ✅ FIX: Check if there are any existing chunks that need embedding
+            existing_chunks = execute_query(
+                """SELECT id, embedding_status 
+                   FROM chunks 
+                   WHERE document_id = %s""",
+                (document_id,)
             )
+            
+            if existing_chunks:
+                pending = [c for c in existing_chunks if c.get('embedding_status') == 'PENDING']
+                processing = [c for c in existing_chunks if c.get('embedding_status') == 'PROCESSING']
+                failed = [c for c in existing_chunks if c.get('embedding_status') == 'FAILED']
+                completed = [c for c in existing_chunks if c.get('embedding_status') == 'COMPLETED']
+                
+                if pending or processing:
+                    # Send to embedder if there are pending chunks
+                    print(f"📤 Found {len(pending)} pending chunks, sending to embedder")
+                    tracker.update_stage('embedding', 0, f"Generating embeddings for {len(pending)} chunks...")
+                    from workers.embedder_worker import embed_chunks
+                    embed_chunks.send(chat_id, document_id)
+                    return
+                elif failed and not pending and not processing:
+                    if completed:
+                        tracker.mark_completed(f"Embedded {len(completed)} chunks, {len(failed)} failed")
+                    else:
+                        tracker.mark_failed(f"All {len(failed)} chunks failed to embed")
+                    return
+                elif completed:
+                    tracker.mark_completed(f"All {len(completed)} chunks already embedded")
+                    return
+            
+            # If we get here, there are truly no chunks
+            print(f"⚠️ No chunks found for document {document_id}")
+            tracker.mark_failed("No chunks were created for this document")
         
         return chunk_ids
         
@@ -400,7 +442,8 @@ def chunk_document(chat_id: str, document_id: str):
         import traceback
         traceback.print_exc()
         
-        ChatStatusTracker.mark_failed(chat_id, error_msg)
+        # Mark chat as failed using progress tracker
+        tracker.mark_failed(error_msg)
         raise
 
 

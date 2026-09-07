@@ -13,8 +13,9 @@ from utils.helpers import get_iso_timestamp, generate_uuid
 from exceptions import NotFoundError
 from redis_client import redis_client
 from api.routes.retrieval_pipeline import answer_user_question
-from websocket_manager import chat_connection_manager  # 🆕 Add this
+from websocket_manager import chat_connection_manager
 from utils.chat_status_tracker import ChatStatusTracker
+from utils.progress_tracker import get_progress_tracker
 
 router = APIRouter(prefix="/api", tags=["process"])
 
@@ -71,10 +72,14 @@ async def process_link(request: LinkRequest):
             is_new_chat = True
             print(f"Created new chat: {chat_id}")
             
-            # 🆕 Initialize chat status tracking
+            # ✅ Initialize chat status tracking using progress tracker
             ChatStatusTracker.initialize(chat_id)
             
-            # 🆕 Broadcast new chat creation
+            # ✅ Get progress tracker and set initial stage
+            tracker = get_progress_tracker(chat_id)
+            tracker.update_stage('pending', 0, "Initializing...")
+            
+            # Broadcast new chat creation
             await chat_connection_manager.send_status(chat_id)
         
         # --- VALIDATION: First message in a new chat MUST be a URL ---
@@ -126,7 +131,7 @@ async def process_link(request: LinkRequest):
         )
         print(f"Created user message: {user_message['id']}")
         
-        # 🆕 Broadcast user message via WebSocket
+        # Broadcast user message via WebSocket
         await chat_connection_manager.send_message(chat_id, user_message)
         
         # Generate response based on detection
@@ -149,13 +154,9 @@ async def process_link(request: LinkRequest):
                 page_id = page['id']
                 print(f"✅ Created page: {page_id}")
                 
-                # 🆕 Update chat status to crawling
-                ChatStatusTracker.update(
-                    chat_id,
-                    status=ChatStatusTracker.STATUS_CRAWLING,
-                    progress=5,
-                    current_step=f"Starting crawl for {url}..."
-                )
+                # ✅ Update progress to crawling stage
+                tracker = get_progress_tracker(chat_id)
+                tracker.update_stage('crawling', 0, f"Starting crawl for {url}...")
                 await chat_connection_manager.send_status(chat_id)
                 
                 # Enqueue scraping job to Redis
@@ -179,8 +180,9 @@ async def process_link(request: LinkRequest):
                     print("⚠️ Redis returned no job ID - job not enqueued")
                     response_content = f"I've received your URL: **{url}**\n\n⚠️ Scraping service is currently unavailable. Please try again later."
                     
-                    # 🆕 Update status to failed
-                    ChatStatusTracker.mark_failed(chat_id, "Scraping service unavailable")
+                    # ✅ Mark as failed using progress tracker
+                    tracker = get_progress_tracker(chat_id)
+                    tracker.mark_failed("Scraping service unavailable")
                     await chat_connection_manager.send_status(chat_id)
                     
             except Exception as e:
@@ -191,20 +193,17 @@ async def process_link(request: LinkRequest):
                 url = detection['urls'][0]
                 response_content = f"I've received your URL: **{url}**\n\n⚠️ There was an error setting up the scraping job. Please try again later."
                 
-                # 🆕 Update status to failed
-                ChatStatusTracker.mark_failed(chat_id, f"Scraping setup error: {str(e)}")
+                # ✅ Mark as failed using progress tracker
+                tracker = get_progress_tracker(chat_id)
+                tracker.mark_failed(f"Scraping setup error: {str(e)}")
                 await chat_connection_manager.send_status(chat_id)
         else:
-            # It's a question - acknowledge
+            # It's a question - process it
             response_content = f"I received your question: \"{content}\"\n\nOnce I've processed the website content, I'll be able to answer your questions. (RAG search coming soon!)"
             
-            # 🆕 Update status to processing
-            ChatStatusTracker.update(
-                chat_id,
-                status=ChatStatusTracker.STATUS_PROCESSING,
-                progress=50,
-                current_step="Processing your question..."
-            )
+            # ✅ Update progress to processing stage
+            tracker = get_progress_tracker(chat_id)
+            tracker.update_stage('processing', 0, "Processing your question...")
             await chat_connection_manager.send_status(chat_id)
             
             response_content = await asyncio.to_thread(
@@ -219,8 +218,9 @@ async def process_link(request: LinkRequest):
             if response_content is None:
                 response_content = "I couldn't process your question. Please try again."
             
-            # 🆕 Mark as answered
-            ChatStatusTracker.mark_answered(chat_id)
+            # ✅ Mark as answered
+            tracker = get_progress_tracker(chat_id)
+            tracker.mark_completed("Answer generated!")
             await chat_connection_manager.send_status(chat_id)
         
         # Save assistant response
@@ -233,7 +233,7 @@ async def process_link(request: LinkRequest):
         )
         print(f"Created assistant message: {assistant_message['id']}")
         
-        # 🆕 Broadcast assistant message via WebSocket
+        # Broadcast assistant message via WebSocket
         await chat_connection_manager.send_message(chat_id, assistant_message)
         
         # Return response

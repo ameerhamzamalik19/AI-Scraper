@@ -926,3 +926,42 @@ body {
     font-size: 10px;
   }
 }
+
+/* ✅ Disabled Input State */
+.chat-input.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #3a3b42;
+  color: #8e8ea0;
+}
+
+.chat-input.disabled::placeholder {
+  color: #6b6b7a;
+}
+
+.send-button.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #4a4b59;
+}
+
+.send-button.disabled:hover {
+  background: #4a4b59;
+}
+
+/* ✅ Processing indicator in footer */
+.ws-status-text {
+  font-size: 11px;
+  color: #8e8ea0;
+  margin-left: 12px;
+}
+
+.ws-status-text.processing {
+  color: #f59e0b;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}

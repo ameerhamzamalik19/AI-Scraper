@@ -15,6 +15,7 @@ from utils.helpers import get_current_datetime
 from redis_config import PROCESSING_QUEUE_NAME
 from crawler.content_processor import ContentProcessor
 from utils.chat_status_tracker import ChatStatusTracker
+from utils.progress_tracker import get_progress_tracker
 
 
 logger = logging.getLogger(__name__)
@@ -869,18 +870,16 @@ def process_document(chat_id: str, document_id: str):
     """Process raw HTML document with enhanced content extraction and status tracking"""
     print(f"📄 Processing document: {document_id} for chat: {chat_id}")
     
+    # ✅ Get progress tracker
+    tracker = get_progress_tracker(chat_id)
+    
     try:
-        # Update status: processing started
-        ChatStatusTracker.update(
-            chat_id,
-            status=ChatStatusTracker.STATUS_PROCESSING,
-            progress=25,
-            current_step="Extracting content from HTML..."
-        )
+        # ✅ Update status: processing started
+        tracker.update_stage('processing', 0, "Extracting content from HTML...")
 
         # Get document
         doc = execute_one(
-            """SELECT d.id, d.page_version_id, d.content, d.metadata, p.url
+            """SELECT d.id, d.page_version_id, d.content, d.metadata, d.processing_status, p.url
                 FROM documents d
                 JOIN page_versions pv ON pv.id = d.page_version_id
                 JOIN pages p ON p.id = pv.page_id
@@ -891,7 +890,7 @@ def process_document(chat_id: str, document_id: str):
         if not doc:
             error_msg = f"Document not found: {document_id}"
             print(f"❌ {error_msg}")
-            ChatStatusTracker.mark_failed(chat_id, error_msg)
+            tracker.mark_failed(error_msg)
             return
         
         html = doc['content']
@@ -910,17 +909,24 @@ def process_document(chat_id: str, document_id: str):
         print(f"📋 Processing HTML for: {url}")
         print(f"📄 Raw HTML size: {len(html)} chars")
 
-        # Update progress
-        ChatStatusTracker.update(
-            chat_id,
-            status=ChatStatusTracker.STATUS_PROCESSING,
-            progress=40,
-            current_step="Cleaning and extracting content..."
-        )
+        # ✅ Update progress: content extraction
+        tracker.update_stage('processing', 20, "Cleaning and extracting content...")
         
         # Check if already processed
-        if doc.get('processing_status') == 'COMPLETED':
-            print(f"⚠️ Document {document_id} already processed")
+        doc_status = doc.get('processing_status')
+        if doc_status == 'COMPLETED':
+            # Document already processed — skip reprocessing but still
+            # forward to chunker so pending_documents gets decremented.
+            print(f"⚠️ Document {document_id} already processed, forwarding to chunker")
+            tracker.update_stage('chunking', 0, "Content already extracted, creating chunks...")
+            from workers.chunker_worker import chunk_document
+            chunk_document.send(chat_id, document_id)
+            return
+
+        # If it's already processing, skip (avoid duplicate work).
+        # The active worker will reach the chunker naturally.
+        if doc_status == 'PROCESSING':
+            print(f"⚠️ Document {document_id} is already being processed")
             return
         
         # Update status to processing
@@ -959,13 +965,8 @@ def process_document(chat_id: str, document_id: str):
             sample = raw_content[:500] + "..." if len(raw_content) > 500 else raw_content
             print(f"🧾 Raw HTML sample: {sample}")
 
-        # Update progress
-        ChatStatusTracker.update(
-            chat_id,
-            status=ChatStatusTracker.STATUS_PROCESSING,
-            progress=50,
-            current_step="Extracting images and tables..."
-        )
+        # ✅ Update progress: media extraction
+        tracker.update_stage('processing', 50, "Extracting images and tables...")
 
         # Step 2: Extract media assets with intelligent analysis
         media_assets = DocumentProcessor.extract_media(html, url)
@@ -1029,13 +1030,8 @@ def process_document(chat_id: str, document_id: str):
         print(f"   - Raw HTML length: {len(raw_content)} chars")
         print(f"   - Media assets: {len(media_assets)}")
         
-        # Update status: processing complete, moving to chunking
-        ChatStatusTracker.update(
-            chat_id,
-            status=ChatStatusTracker.STATUS_CHUNKING,
-            progress=60,
-            current_step="Creating chunks from content..."
-        )
+        # ✅ Update progress: processing complete, move to chunking
+        tracker.update_stage('chunking', 0, "Creating chunks from content...")
 
         # Enqueue chunking job - pass chat_id and document_id
         from workers.chunker_worker import chunk_document
@@ -1053,8 +1049,8 @@ def process_document(chat_id: str, document_id: str):
             (get_current_datetime().isoformat(), document_id)
         )
         
-        # Mark chat as failed with full error
-        ChatStatusTracker.mark_failed(chat_id, error_msg)
+        # ✅ Mark chat as failed using progress tracker
+        tracker.mark_failed(error_msg)
         raise
 
 

@@ -435,6 +435,6 @@
 -- CREATE INDEX IF NOT EXISTS idx_media_assets_page_version_id ON media_assets(page_version_id);
 
 -- SELECT * FROM chunks WHERE content LIKE '%backend%' ORDER BY created_at DESC LIMIT 5;
-docker exec -it backend-postgres-1 pg_dump -U postgres -d universal_scraper --schema-only > universal_scraper_schema.sql
+-- docker exec -it backend-postgres-1 pg_dump -U postgres -d universal_scraper --schema-only > universal_scraper_schema.sql
 
--- docker exec -it backend-postgres-1 psql -U postgres -d universal_scraper --schema-only > universal_scraper_schema.sql
+docker exec -it backend-postgres-1 psql -U postgres -d universal_scraper -c "ALTER TABLE chats ADD COLUMN pending_documents integer NOT NULL DEFAULT 0;"

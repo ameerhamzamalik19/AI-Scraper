@@ -322,7 +322,8 @@ def answer_user_question(
     chat_id: str,
     project_id: str = None,
     page_id: str = None,
-    chat_history: List[Dict[str, Any]] = None
+    chat_history: List[Dict[str, Any]] = None,
+    attempt: int = 1
 ) -> str:
     """
     Complete RAG pipeline: embed question, retrieve relevant chunks, generate answer.
@@ -335,6 +336,9 @@ def answer_user_question(
     """
     if not user_question or not user_question.strip():
         return "Please provide a valid question."
+
+    if attempt > 3:
+        return "I'm having trouble processing your question. Please try again later."
 
     try:
         # Step 1: Rewrite follow-up questions for context-independent retrieval
@@ -371,6 +375,8 @@ def answer_user_question(
         # Step 4: Generate natural response with the original history
         response = generate_response(standalone_question, chunks, chat_history)
         print("✅ Generated response:", response)
+        if not response or not response.strip():
+            answer_user_question(user_question, chat_id, project_id, page_id, chat_history, attempt + 1)
         return response
 
     except Exception as e:

@@ -13,6 +13,9 @@ function App() {
   const [error, setError] = useState(null);
   const [wsStatus, setWsStatus] = useState('disconnected');
   
+  // Track if input should be disabled
+  const [isInputDisabled, setIsInputDisabled] = useState(false);
+  
   // Processing status state
   const [processingStatus, setProcessingStatus] = useState({
     status: 'idle',
@@ -39,6 +42,12 @@ function App() {
     pending: 0,
     processing: 0
   });
+  
+  // Track if we're in the crawling phase
+  const [isCrawlingPhase, setIsCrawlingPhase] = useState(false);
+  
+  // ✅ Track if chat is completed to prevent URL progress from overriding
+  const [isChatCompleted, setIsChatCompleted] = useState(false);
   
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -75,7 +84,6 @@ function App() {
       if (!existing) {
         urlMap.set(url.url, url);
       } else {
-        // Priority: completed > processing > pending > failed
         const statusPriority = { 'completed': 4, 'processing': 3, 'pending': 2, 'failed': 1 };
         const existingPriority = statusPriority[existing.status] || 0;
         const newPriority = statusPriority[url.status] || 0;
@@ -87,6 +95,64 @@ function App() {
     return Array.from(urlMap.values());
   };
 
+  // Calculate progress based on crawled URLs (max 95% until backend says complete)
+  const calculateProgressFromUrls = (urls, stats) => {
+    if (!urls || urls.length === 0) {
+      return { progress: 0, status: 'idle', step: 'Waiting to start...' };
+    }
+
+    const total = stats.total || urls.length;
+    const completed = stats.completed || 0;
+    const failed = stats.failed || 0;
+    const processing = stats.processing || 0;
+    const pending = stats.pending || 0;
+
+    // If all pages are completed or failed
+    if (completed + failed === total && total > 0) {
+      return { 
+        progress: 95,  // Max 95% until backend sends complete
+        status: 'crawling', 
+        step: `All ${total} pages crawled, processing content...` 
+      };
+    }
+
+    // Calculate progress: completed pages get full credit, processing gets half credit
+    const completedWeight = completed;
+    const processingWeight = processing * 0.5;
+    const totalWeight = total;
+    
+    let progress = Math.round(((completedWeight + processingWeight) / totalWeight) * 95);
+    progress = Math.min(progress, 95); // Cap at 95% until processing is complete
+    
+    return {
+      progress: progress,
+      status: 'crawling',
+      step: `Crawling ${completed + processing}/${total} pages...`
+    };
+  };
+
+  // ✅ FIXED: Only update progress when NOT completed
+  useEffect(() => {
+    if (isChatCompleted) {
+      console.log('✅ Chat is completed, skipping URL-based progress update');
+      return;
+    }
+    
+    if (crawledUrls.length > 0 && crawlStats.total > 0) {
+      const { progress, status, step } = calculateProgressFromUrls(crawledUrls, crawlStats);
+      
+      setProcessingStatus(prev => ({
+        ...prev,
+        status: status,
+        progress: progress,
+        current_step: step,
+        friendly_message: `Found ${crawlStats.total} pages, crawling...`,
+        is_processing: true,
+        is_ready: false
+      }));
+    }
+  }, [crawledUrls, crawlStats, isChatCompleted]);
+
   const fetchCrawledUrls = async (chatId) => {
     if (!chatId) return;
     try {
@@ -95,13 +161,20 @@ function App() {
       
       const dedupedUrls = deduplicateUrls(response.data.urls || []);
       setCrawledUrls(dedupedUrls);
-      setCrawlStats({
+      
+      const stats = {
         total: response.data.total || 0,
         completed: response.data.completed || 0,
         failed: response.data.failed || 0,
         pending: response.data.pending || 0,
         processing: response.data.processing || 0
-      });
+      };
+      setCrawlStats(stats);
+      
+      if (dedupedUrls.length > 0) {
+        setIsCrawlingPhase(true);
+      }
+      
       console.log('Set crawled URLs:', dedupedUrls.length);
     } catch (error) {
       console.error('Error fetching crawled URLs:', error);
@@ -138,6 +211,15 @@ function App() {
     } catch {
       return '';
     }
+  };
+
+  const cleanUrl = (url) => {
+    if (!url) return '';
+    let cleaned = url;
+    cleaned = cleaned.replace(/^https?:\/\//, '');
+    cleaned = cleaned.replace(/^www\./, '');
+    cleaned = cleaned.replace(/\/$/, '');
+    return cleaned;
   };
 
   const truncateText = (text, maxLength = 50) => {
@@ -236,6 +318,23 @@ function App() {
     scrollToBottom();
   }, [messages]);
 
+  // Effect to manage input disabled state based on processing status
+  useEffect(() => {
+    const processingStates = ['pending', 'crawling', 'processing', 'chunking', 'embedding'];
+    
+    if (processingStatus.is_processing || processingStates.includes(processingStatus.status)) {
+      setIsInputDisabled(true);
+    } else if (processingStatus.is_failed) {
+      setIsInputDisabled(true);
+    } else if (processingStatus.is_ready || processingStatus.status === 'completed' || processingStatus.status === 'answered') {
+      setIsInputDisabled(false);
+    } else if (currentChatId && messages.length === 0) {
+      setIsInputDisabled(true);
+    } else {
+      setIsInputDisabled(false);
+    }
+  }, [processingStatus, currentChatId, messages.length]);
+
   // Fetch crawled URLs when chat changes
   useEffect(() => {
     if (currentChatId) {
@@ -243,6 +342,8 @@ function App() {
     } else {
       setCrawledUrls([]);
       setCrawlStats({ total: 0, completed: 0, failed: 0, pending: 0, processing: 0 });
+      setIsCrawlingPhase(false);
+      setIsChatCompleted(false);
     }
   }, [currentChatId]);
 
@@ -271,11 +372,11 @@ function App() {
       }
       setWsStatus('disconnected');
       setProcessingStatus(prev => ({ ...prev, status: 'idle', is_processing: false }));
+      setIsChatCompleted(false);
     }
   }, [currentChatId]);
 
   const connectWebSocket = useCallback((chatId) => {
-    // Disconnect existing
     if (websocketRef.current) {
       websocketRef.current.disconnect();
       websocketRef.current = null;
@@ -289,7 +390,6 @@ function App() {
 
     console.log(`🔌 Creating WebSocket for chat: ${chatId}`);
 
-    // Create new ChatWebSocket instance
     const ws = new ChatWebSocket(chatId, {
       onMessage: (message) => {
         console.log('💬 New message:', message);
@@ -309,24 +409,68 @@ function App() {
       onStatusUpdate: (data) => {
         console.log('📊 Status update received:', data);
         
-        // Update processing status - this drives the progress bar
-        const newStatus = {
-          status: data.status || 'idle',
-          progress: data.progress || 0,
-          current_step: data.current_step || '',
-          friendly_message: data.friendly_message || '',
-          is_ready: data.is_ready || false,
-          is_processing: data.is_processing || false,
-          is_failed: data.is_failed || false,
-          has_error: data.has_error || false,
-          error_message: data.error_message || null,
-          document_id: data.document_id || null,
-          started_at: data.started_at || null,
-          completed_at: data.completed_at || null
-        };
+        // ✅ FIRST: Check if status is completed or answered - THIS SHOULD ALWAYS SET TO 100%
+        if (data.status === 'completed' || data.status === 'answered') {
+          console.log('✅ Chat is completed, setting progress to 100%');
+          setIsChatCompleted(true);
+          setIsCrawlingPhase(false);
+          setIsInputDisabled(false);
+          
+          setProcessingStatus({
+            status: data.status,
+            progress: 100,
+            current_step: data.current_step || 'Ready!',
+            friendly_message: data.friendly_message || 'Ready for questions!',
+            is_ready: true,
+            is_processing: false,
+            is_failed: false,
+            has_error: false,
+            error_message: null,
+            document_id: data.document_id || null,
+            started_at: data.started_at || null,
+            completed_at: data.completed_at || null
+          });
+          return;
+        }
         
-        console.log('Setting processing status:', newStatus);
-        setProcessingStatus(newStatus);
+        // ✅ SECOND: Check for failed status
+        if (data.is_failed || data.status === 'failed') {
+          setProcessingStatus({
+            status: 'failed',
+            progress: 0,
+            current_step: 'Failed',
+            friendly_message: 'Processing failed',
+            is_ready: false,
+            is_processing: false,
+            is_failed: true,
+            has_error: true,
+            error_message: data.error_message || 'Unknown error',
+            document_id: null,
+            started_at: data.started_at || null,
+            completed_at: null
+          });
+          setIsInputDisabled(true);
+          return;
+        }
+        
+        // ✅ THIRD: Only update crawl progress if NOT completed
+        if (!isCrawlingPhase || crawledUrls.length === 0) {
+          const newStatus = {
+            status: data.status || 'idle',
+            progress: data.progress || 0,
+            current_step: data.current_step || '',
+            friendly_message: data.friendly_message || '',
+            is_ready: data.is_ready || false,
+            is_processing: data.is_processing || false,
+            is_failed: data.is_failed || false,
+            has_error: data.has_error || false,
+            error_message: data.error_message || null,
+            document_id: data.document_id || null,
+            started_at: data.started_at || null,
+            completed_at: data.completed_at || null
+          };
+          setProcessingStatus(newStatus);
+        }
         
         if (data.error_message) {
           setError(data.error_message);
@@ -336,14 +480,16 @@ function App() {
       onCrawlProgress: (data) => {
         console.log('🕷️ Crawl progress received:', data);
         
-        // Update crawled URLs
+        if (isChatCompleted) {
+          console.log('⏭️ Skipping crawl progress - chat already completed');
+          return;
+        }
+        
         if (data.urls) {
           const dedupedUrls = deduplicateUrls(data.urls);
-          console.log('Setting crawled URLs:', dedupedUrls.length);
           setCrawledUrls(dedupedUrls);
         }
         
-        // Update crawl stats
         const stats = {
           total: data.total || 0,
           completed: data.completed || 0,
@@ -351,17 +497,21 @@ function App() {
           pending: data.pending || 0,
           processing: data.processing || 0
         };
-        console.log('Setting crawl stats:', stats);
         setCrawlStats(stats);
+        setIsCrawlingPhase(true);
         
-        // Update processing status to show crawling progress
+        // Calculate progress from URLs
         if (data.total > 0) {
-          const progress = Math.round((data.completed / data.total) * 100);
+          const { progress, status, step } = calculateProgressFromUrls(
+            deduplicateUrls(data.urls || []), 
+            stats
+          );
+          
           setProcessingStatus(prev => ({
             ...prev,
-            status: 'crawling',
-            progress: Math.min(progress, 95),
-            current_step: `Crawling ${data.completed}/${data.total} pages...`,
+            status: status,
+            progress: progress,
+            current_step: step,
             friendly_message: `Found ${data.total} pages, crawling...`,
             is_processing: true,
             is_ready: false
@@ -371,6 +521,11 @@ function App() {
       
       onCrawlSummary: (data) => {
         console.log('📊 Crawl summary received:', data);
+        
+        if (isChatCompleted) {
+          console.log('⏭️ Skipping crawl summary - chat already completed');
+          return;
+        }
         
         if (data.urls) {
           const dedupedUrls = deduplicateUrls(data.urls);
@@ -385,12 +540,11 @@ function App() {
           processing: 0
         });
         
-        // Update processing status - crawl is complete
         setProcessingStatus(prev => ({
           ...prev,
           status: 'crawling',
           progress: 95,
-          current_step: `Crawled ${data.total_pages_crawled || 0} pages`,
+          current_step: `Crawled ${data.total_pages_crawled || 0} pages, processing content...`,
           friendly_message: 'Crawl complete, processing content...',
           is_processing: true,
           is_ready: false
@@ -417,7 +571,6 @@ function App() {
         console.log('✅ WebSocket connected');
         setWsStatus('connected');
         reconnectAttemptsRef.current = 0;
-        // Refresh crawled URLs when WebSocket connects
         if (currentChatId) {
           fetchCrawledUrls(currentChatId);
         }
@@ -435,6 +588,10 @@ function App() {
       
       onComplete: (data) => {
         console.log('✅ Processing complete:', data);
+        setIsChatCompleted(true);
+        setIsCrawlingPhase(false);
+        setIsInputDisabled(false);
+        
         setProcessingStatus(prev => ({
           ...prev,
           status: 'completed',
@@ -465,15 +622,107 @@ function App() {
     ws.connect();
     setWsStatus('connecting');
     
-  }, [currentChatId]);
+  }, [currentChatId, isCrawlingPhase, crawledUrls, isChatCompleted]);
 
   const loadChat = async (chatId) => {
     try {
+      // Load messages
       const response = await axios.get(`${API_URL}/api/chats/${chatId}`);
       setMessages(response.data.messages || []);
       setCurrentChatId(chatId);
       setError(null);
+      
+      // Fetch crawled URLs
       await fetchCrawledUrls(chatId);
+      
+      // ✅ Try to fetch chat status (if endpoint exists)
+      try {
+        const statusResponse = await axios.get(`${API_URL}/api/chats/${chatId}/status`);
+        const statusData = statusResponse.data;
+        console.log('📊 Loaded chat status:', statusData);
+        
+        // If status is completed or answered, set to 100%
+        if (statusData.status === 'completed' || statusData.status === 'answered') {
+          setIsChatCompleted(true);
+          setIsCrawlingPhase(false);
+          setIsInputDisabled(false);
+          
+          setProcessingStatus({
+            status: statusData.status,
+            progress: 100,
+            current_step: statusData.current_step || 'Ready!',
+            friendly_message: statusData.friendly_message || 'Ready for questions!',
+            is_ready: true,
+            is_processing: false,
+            is_failed: false,
+            has_error: false,
+            error_message: null,
+            document_id: statusData.document_id || null,
+            started_at: statusData.started_at || null,
+            completed_at: statusData.completed_at || null
+          });
+          return;
+        }
+        // If chat is processing, set progress
+        else if (statusData.is_processing) {
+          setProcessingStatus({
+            status: statusData.status || 'processing',
+            progress: statusData.progress || 0,
+            current_step: statusData.current_step || 'Processing...',
+            friendly_message: statusData.friendly_message || 'Processing...',
+            is_ready: false,
+            is_processing: true,
+            is_failed: false,
+            has_error: false,
+            error_message: null,
+            document_id: statusData.document_id || null,
+            started_at: statusData.started_at || null,
+            completed_at: null
+          });
+          setIsInputDisabled(true);
+          return;
+        }
+        // If chat failed
+        else if (statusData.is_failed) {
+          setProcessingStatus({
+            status: 'failed',
+            progress: 0,
+            current_step: 'Failed',
+            friendly_message: 'Processing failed',
+            is_ready: false,
+            is_processing: false,
+            is_failed: true,
+            has_error: true,
+            error_message: statusData.error_message || 'Unknown error',
+            document_id: null,
+            started_at: statusData.started_at || null,
+            completed_at: null
+          });
+          setIsInputDisabled(true);
+          return;
+        }
+      } catch (statusError) {
+        // Status endpoint might not exist, that's okay
+        console.log('Status endpoint not available, using URL-based progress');
+      }
+      
+      // If no status set, use URL-based progress
+      if (crawledUrls.length > 0 && crawlStats.total > 0) {
+        const allDone = crawlStats.completed + crawlStats.failed === crawlStats.total;
+        if (allDone) {
+          setProcessingStatus(prev => ({
+            ...prev,
+            status: 'crawling',
+            progress: 95,
+            current_step: `All ${crawlStats.total} pages crawled, processing content...`,
+            friendly_message: 'Crawl complete, processing content...',
+            is_processing: true,
+            is_ready: false
+          }));
+          setIsInputDisabled(true);
+        }
+      }
+      
     } catch (error) {
       console.error('Error loading chat:', error);
       setError('Failed to load chat');
@@ -482,7 +731,8 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!inputValue.trim()) return;
+    
+    if (isInputDisabled || !inputValue.trim()) return;
 
     const userMessage = {
       role: 'user',
@@ -563,6 +813,9 @@ function App() {
     setError(null);
     setWsStatus('disconnected');
     setCrawledUrls([]);
+    setIsInputDisabled(false);
+    setIsCrawlingPhase(false);
+    setIsChatCompleted(false);
     setCrawlStats({ total: 0, completed: 0, failed: 0, pending: 0, processing: 0 });
     setProcessingStatus({
       status: 'idle',
@@ -602,6 +855,9 @@ function App() {
         setCurrentChatId(null);
         setWsStatus('disconnected');
         setCrawledUrls([]);
+        setIsInputDisabled(false);
+        setIsCrawlingPhase(false);
+        setIsChatCompleted(false);
         setCrawlStats({ total: 0, completed: 0, failed: 0, pending: 0, processing: 0 });
         setProcessingStatus({
           status: 'idle',
@@ -689,7 +945,7 @@ function App() {
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M2 4h12M2 8h8M2 12h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                   </svg>
-                  <span title={chat.title}>{truncateText(chat.title, 30)}</span>
+                  <span title={chat.title}>{cleanUrl(truncateText(chat.title, 30))}</span>
                 </div>
                 <button 
                   className="delete-chat-btn"
@@ -755,7 +1011,7 @@ function App() {
                   <div key={`${url.url}-${index}`} className={`crawled-page-item ${url.status}`}>
                     <span className="url-status">{getUrlStatusIcon(url.status)}</span>
                     <span className="url-title" title={url.url}>
-                      {url.url}
+                      {cleanUrl(url.url)}
                     </span>
                     <span className="url-status-label">{getUrlStatusLabel(url.status)}</span>
                   </div>
@@ -777,9 +1033,7 @@ function App() {
                 >
                   {getStatusLabel(processingStatus.status)}
                 </span>
-                {processingStatus.progress > 0 && (
-                  <span className="status-percent">{processingStatus.progress}%</span>
-                )}
+                <span className="status-percent">{processingStatus.progress}%</span>
               </div>
               {processingStatus.started_at && (
                 <span className="status-time">
@@ -789,14 +1043,12 @@ function App() {
             </div>
             
             {/* Progress bar */}
-            {processingStatus.progress > 0 && processingStatus.progress < 100 && (
-              <div className="progress-track">
-                <div 
-                  className="progress-fill"
-                  style={{ width: `${processingStatus.progress}%` }}
-                />
-              </div>
-            )}
+            <div className="progress-track">
+              <div 
+                className="progress-fill"
+                style={{ width: `${processingStatus.progress}%` }}
+              />
+            </div>
             
             {processingStatus.current_step && (
               <div className="status-step">
@@ -917,16 +1169,16 @@ function App() {
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Paste a link or type a message..."
-              className="chat-input"
-              disabled={isLoading}
+              placeholder={isInputDisabled ? "⏳ Processing... Please wait" : "Paste a link or type a message..."}
+              className={`chat-input ${isInputDisabled ? 'disabled' : ''}`}
+              disabled={isInputDisabled || isLoading}
             />
             <button 
               type="submit" 
-              className="send-button"
-              disabled={isLoading || !inputValue.trim()}
+              className={`send-button ${isInputDisabled || isLoading || !inputValue.trim() ? 'disabled' : ''}`}
+              disabled={isInputDisabled || isLoading || !inputValue.trim()}
             >
-              {isLoading ? '⏳' : '➤'}
+              {isInputDisabled ? '⏳' : isLoading ? '⏳' : '➤'}
             </button>
           </form>
           <div className="input-footer">
@@ -936,7 +1188,7 @@ function App() {
                 : 'New conversation'}
             </span>
             <span className="ws-status-text">
-              {wsStatus === 'connected' ? '● Live' : wsStatus === 'connecting' ? '◐ Connecting...' : wsStatus === 'error' ? '⚠️ Error' : '○ Disconnected'}
+              {isInputDisabled ? '⏳ Processing...' : wsStatus === 'connected' ? '● Live' : '○ Disconnected'}
             </span>
           </div>
         </div>

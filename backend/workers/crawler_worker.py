@@ -6,6 +6,7 @@ from crawler.crawler import Crawler
 from config import crawler_settings, settings
 from database import close_db_pool
 from utils.chat_status_tracker import ChatStatusTracker
+from utils.progress_tracker import get_progress_tracker
 
 logger = logging.getLogger(__name__)
 
@@ -36,14 +37,11 @@ def crawl_website(job_id: str):
     # Update status to processing (Redis)
     redis_client.update_job_status(job_id, "processing")
     
-    # Update chat status if chat_id exists
+    # ✅ Get progress tracker
+    tracker = None
     if chat_id:
-        ChatStatusTracker.update(
-            chat_id,
-            status=ChatStatusTracker.STATUS_CRAWLING,
-            progress=10,
-            current_step=f"Starting crawl of {url}..."
-        )
+        tracker = get_progress_tracker(chat_id)
+        tracker.update_stage('crawling', 5, f"Starting crawl of {url}...")
     
     crawler = None
     
@@ -67,14 +65,20 @@ def crawl_website(job_id: str):
         
         # Run the async crawler
         results = asyncio.run(run_crawler())
+
+        crawled_pages = results.get('crawled_pages', [])
+        pages_crawled = results.get('pages_crawled', 0)
         
-        # Update chat status: crawling complete
-        if chat_id:
-            ChatStatusTracker.update(
-                chat_id,
-                status=ChatStatusTracker.STATUS_CRAWLING,
-                progress=20,
-                current_step=f"Found {results.get('pages_discovered', 0)} pages, crawling content..."
+        # ✅ Update progress: crawling complete with page discovery
+        if chat_id and tracker:
+            pages_discovered = results.get('pages_discovered', 0)
+            pages_crawled = results.get('pages_crawled', 0)
+            
+            # Update crawling progress - show we've found pages
+            tracker.update_stage(
+                'crawling', 
+                50,  # 50% through crawling stage (halfway through 5-30% range)
+                f"Found {pages_discovered} pages, crawled {pages_crawled}"
             )
         
         # Update job status to completed (Redis)
@@ -91,24 +95,28 @@ def crawl_website(job_id: str):
         print(f"📄 Crawled pages for job {job_id}: {results.get('crawled_pages', [])}")
         print(f"📊 Results: {results}")
         
-        # If chat_id exists and we have crawled pages, update status
-        if chat_id and results.get('crawled_pages'):
-            crawled_pages = results.get('crawled_pages', [])
-            if crawled_pages and len(crawled_pages) > 0:
-                first_page = crawled_pages[0]
-                document_id = first_page.get('document_id')
-                if document_id:
-                    ChatStatusTracker.update(
-                        chat_id,
-                        document_id=document_id,
-                        status=ChatStatusTracker.STATUS_CRAWLING,
-                        progress=30,
-                        current_step="Content extracted, starting processing..."
-                    )
-                    
-                    # Trigger processing worker
-                    from workers.processor_worker import process_document
-                    process_document.send(chat_id, document_id)
+        # ✅ If chat_id exists and we have crawled pages, move to processing stage
+                # ✅ Set pending_documents counter so the embedder knows when ALL pages are done.
+        # Crawler._crawl_page() already dispatched process_document for every page,
+        # so we must NOT send it again here for the first page (Bug #1 fix).
+        
+        # if chat_id and tracker and results.get('crawled_pages'):
+        #     crawled_pages = results.get('crawled_pages', [])
+        #     n_pages = len(crawled_pages)
+        #     if n_pages > 0:
+        #         from database_sync import execute_update as _eu
+        #         _eu(
+        #             "UPDATE chats SET pending_documents = %s WHERE id = %s",
+        #             (n_pages, chat_id)
+        #         )
+        #         logger.info(f"📊 Set pending_documents = {n_pages} for chat {chat_id}")
+        #         tracker.update_stage(
+        #             'processing',
+        #             0,
+        #             f"Processing {n_pages} page(s)..."
+        #         )
+        if chat_id and tracker and results.get('crawled_pages'):
+            tracker.update_stage('processing', 0, f"Processing {len(results['crawled_pages'])} page(s)...")
         
         # Broadcast final crawl summary via WebSocket
         if chat_id and crawler:
@@ -121,7 +129,7 @@ def crawl_website(job_id: str):
                     'total_pages_crawled': results.get('pages_crawled', 0),
                     'total_pages_discovered': results.get('pages_discovered', 0),
                     'total_pages_failed': results.get('pages_failed', 0),
-                    'urls': crawler.crawled_url_records
+                    'urls': crawler.crawled_url_records if hasattr(crawler, 'crawled_url_records') else []
                 }
                 WebSocketPubSub.publish(chat_id, summary)
                 logger.info(f"📡 Broadcasted crawl summary for chat {chat_id}")
@@ -141,8 +149,11 @@ def crawl_website(job_id: str):
             error=str(e)
         )
         
-        # Update chat status if chat_id exists
-        if chat_id:
+        # ✅ Update chat status using progress tracker
+        if chat_id and tracker:
+            tracker.mark_failed(error_msg)
+        elif chat_id:
+            # Fallback if tracker wasn't created
             ChatStatusTracker.mark_failed(chat_id, error_msg)
             
             # Broadcast failure via WebSocket

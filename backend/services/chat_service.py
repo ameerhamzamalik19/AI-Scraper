@@ -86,6 +86,7 @@ class ChatService:
     @staticmethod
     async def get_chat(chat_id: str, user_id: str) -> dict:
         """Get a specific chat with messages"""
+        print(f"IN get_chat: chat_id={chat_id}, user_id={user_id}")
         try:
             async with get_db_connection() as conn:
                 chat = await conn.fetchrow(
