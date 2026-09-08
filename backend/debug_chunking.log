@@ -1,0 +1,112 @@
+=== CHUNKING DEBUG LOG ===
+Started: 2026-09-08T12:45:11.318958
+================================================================================
+
+
+================================================================================
+[2026-09-08T12:45:11.323874] 🧩 CHUNK_STRUCTURE START
+{
+  "content_type": "ContentType.ARTICLE",
+  "structure_keys": [
+    "page_title",
+    "source_url",
+    "main_content",
+    "ui_summary"
+  ],
+  "page_title": "web-scraping.dev login",
+  "source_url": "https://web-scraping.dev/login"
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:11.375822] 📊 INPUT STRUCTURE STATS
+{
+  "sections_count": 1,
+  "tables_count": 0,
+  "lists_count": 0,
+  "has_all_text": false
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:11.407007] 📋 SECTION PROCESSING COMPLETE
+{
+  "total_sections": 1,
+  "processed": 1,
+  "empty_skipped": 0,
+  "chunks_created": 1
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:11.436617] 📊 TABLE PROCESSING COMPLETE
+{
+  "total_tables": 0,
+  "chunks_created": 0
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:11.460569] 📋 LIST PROCESSING COMPLETE
+{
+  "total_lists": 0,
+  "chunks_created": 0
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:11.490347] 📊 UI SUMMARY PROCESSING COMPLETE
+{
+  "total_ui_chunks": 0,
+  "chunks_created": 0
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:11.523818] 🔍 FINAL FILTERING
+{
+  "before_filter": 1,
+  "after_filter": 1,
+  "removed": 0
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:11.572674] ✅ CHUNK_STRUCTURE COMPLETE
+{
+  "total_chunks": 1,
+  "total_words": 67,
+  "category_counts": {
+    "main_content": 1
+  },
+  "entity_counts": {
+    "faq": 1
+  },
+  "sample_chunk": {
+    "content": "[web-scraping.dev login]\n\nweb-scraping.dev\n\nDocs\n\nAPI\n\nGraphql\n\nProducts\n\nReviews\n\nTestimonials\n\nFile Download\n\nMCP Tools\n\nlogin\n\n0\n\nClear\n\nContinue\n\nLogin to web-scraping.dev\n\nUsername\n\nPassword\n\nSubmit\n\nAuth Credentials\n\nDownload ToS PDF\n\nDownload EULA PDF\n\nConfigure\n\nCookie Popup\n\nPrefill Credentials\n\nreload\n\nCookie Info\n\nWe use cookies for this educational website to function. This is also an exercise for how to handle modal popups when scraping - how would you do it?",
+    "heading_path": [
+      "web-scraping.dev login"
+    ],
+    "chunk_type": "section",
+    "chunk_category": "main_content",
+    "entity_type": "faq",
+    "token_count": 67,
+    "source_url": "https://web-scraping.dev/login",
+    "page_title": "web-scraping.dev login",
+    "content_structure": {
+      "has_table": false,
+      "has_list": false,
+      "has_images": false,
+      "has_code": false,
+      "heading": "web-scraping.dev login",
+      "relevance_score": 0.3493,
+      "quality_score": 0.325
+    },
+    "chunk_hash": "3271f5d28d5b8a2a78f28392d2e3059b382c2c0a79f79328f3a55c9d78895c88",
+    "chunk_index": 0,
+    "category_weight": 1.0,
+    "entity_boost": 1.4,
+    "information_density": 67.0
+  }
+}
+================================================================================

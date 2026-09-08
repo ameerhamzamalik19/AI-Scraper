@@ -1,0 +1,161 @@
+=== CONTENT PROCESSING DEBUG LOG ===
+Started: 2026-09-08T12:45:01.213998
+URL: https://web-scraping.dev/login
+HTML Length: 15451
+================================================================================
+
+
+================================================================================
+[2026-09-08T12:45:01.307364] 🌐 PROCESS_HTML START
+{
+  "source_url": "https://web-scraping.dev/login",
+  "page_title": "web-scraping.dev login",
+  "html_length": 15451,
+  "html_preview": "<!DOCTYPE html><html lang=\"en\"><head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\">\n    <link rel=\"stylesheet\" href=\"https://web-scraping.dev/assets/css/main.css\">\n    <link rel=\"stylesheet\" href=\"https://web-scraping.dev/assets/css/bootstrap.min.css\">\n    <link rel=\"stylesheet\" href=\"https://web-scraping.dev/assets/css/bootstrap-icons.css\">\n    <link rel=\"stylesheet\" href=\"https://web-scraping.dev/assets/css/highlight-nord.css\">\n    <link rel=\"icon\" href=\"https://web-scraping.dev/assets/media/icon.png\" type=\"image/png\">\n    <script src=\"https://web-scraping.dev/assets/js/cash.min.js\"></script>\n    <script src=\"https://web-scraping.dev/assets/js/main.js\"></script>\n    <script src=\"https://web-scraping.dev/assets/js/bootstrap.js\"></script>\n    \n\n\n<title>web-scraping.dev login</title>\n<meta name=\"description\" content=\"Mock login page for web scraper testing\">\n<meta name=\"keywords\" content=\"webscraping,mock,login,web ..."
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:01.391950] 📄 HTML PARSED
+{
+  "total_elements": 148,
+  "div_count": 25,
+  "p_count": 0,
+  "heading_count": 2
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:01.407764] 🗑️ NON-CONTENT TAGS REMOVED
+{
+  "removed_tags": [
+    "script",
+    "style",
+    "noscript",
+    "iframe",
+    "svg"
+  ],
+  "remaining_text_length": 702
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:01.448680] 🏷️ TITLE RESOLVED
+{
+  "title": "web-scraping.dev login"
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:01.595224] 📋 PAGE CLASSIFIED
+{
+  "page_type": "article"
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:01.614119] 📰 EXTRACT_ARTICLE_CONTENT START
+{
+  "url": "https://web-scraping.dev/login",
+  "page_title": "web-scraping.dev login",
+  "html_length": 15451
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:01.823626] ✅ Trafilatura extracted
+{
+  "length": 425,
+  "word_count": 65,
+  "preview": "web-scraping.dev\nDocs\nAPI\nGraphql\nProducts\nReviews\nTestimonials\nFile Download\nMCP Tools\nlogin\n0\nClear\nContinue\nLogin to web-scraping.dev\nUsername\nPassword\nSubmit\nAuth Credentials\nDownload ToS PDF\nDownload EULA PDF\nConfigure\nCookie Popup\nPrefill Credentials\nreload\nCookie Info\nWe use cookies for this educational website to function. This is also an exercise for how to handle modal popups when scraping - how would you do it?"
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:01.910024] 📰 EXTRACT_ARTICLE_CONTENT RESULT
+{
+  "method": "Trafilatura",
+  "original_html_length": 15451,
+  "extracted_length": 425,
+  "word_count": 65
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:02.023254] ✂️ SPLIT_INTO_SECTIONS START
+{
+  "content_length": 425,
+  "word_count": 65,
+  "page_title": "web-scraping.dev login",
+  "url": "https://web-scraping.dev/login"
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:02.220922] ✂️ SPLIT_INTO_SECTIONS RESULT
+{
+  "total_lines": 26,
+  "empty_lines": 0,
+  "headings_found": 0,
+  "junk_skipped": 0,
+  "sections_created": 1,
+  "sample_section": {
+    "heading": "web-scraping.dev login",
+    "heading_path": [
+      "web-scraping.dev login"
+    ],
+    "content": "[web-scraping.dev login]\n\nweb-scraping.dev\n\nDocs\n\nAPI\n\nGraphql\n\nProducts\n\nReviews\n\nTestimonials\n\nFile Download\n\nMCP Tools\n\nlogin\n\n0\n\nClear\n\nContinue\n\nLogin to web-scraping.dev\n\nUsername\n\nPassword\n\nSubmit\n\nAuth Credentials\n\nDownload ToS PDF\n\nDownload EULA PDF\n\nConfigure\n\nCookie Popup\n\nPrefill Credentials\n\nreload\n\nCookie Info\n\nWe use cookies for this educational website to function. This is also an exercise for how to handle modal popups when scraping - how would you do it?",
+    "source_url": "https://web-scraping.dev/login",
+    "chunk_category": "main_content"
+  }
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:02.316139] 📄 SECTIONS EXTRACTED
+{
+  "count": 1,
+  "sample": {
+    "heading": "web-scraping.dev login",
+    "heading_path": [
+      "web-scraping.dev login"
+    ],
+    "content": "[web-scraping.dev login]\n\nweb-scraping.dev\n\nDocs\n\nAPI\n\nGraphql\n\nProducts\n\nReviews\n\nTestimonials\n\nFile Download\n\nMCP Tools\n\nlogin\n\n0\n\nClear\n\nContinue\n\nLogin to web-scraping.dev\n\nUsername\n\nPassword\n\nSubmit\n\nAuth Credentials\n\nDownload ToS PDF\n\nDownload EULA PDF\n\nConfigure\n\nCookie Popup\n\nPrefill Credentials\n\nreload\n\nCookie Info\n\nWe use cookies for this educational website to function. This is also an exercise for how to handle modal popups when scraping - how would you do it?",
+    "source_url": "https://web-scraping.dev/login",
+    "chunk_category": "main_content"
+  }
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:02.389881] 📊 FINAL STATS
+{
+  "sections_count": 1,
+  "all_text_length": 450,
+  "total_words": 65,
+  "has_content": true,
+  "page_type": "article"
+}
+================================================================================
+
+================================================================================
+[2026-09-08T12:45:02.444675] ✅ PROCESS_HTML COMPLETE
+{
+  "result_keys": [
+    "page_title",
+    "source_url",
+    "page_type",
+    "main_content",
+    "ui_summary",
+    "ui_regions",
+    "metadata",
+    "document_structure",
+    "is_first_page",
+    "has_content",
+    "text_stats"
+  ],
+  "has_content": true,
+  "section_count": 1,
+  "total_chars": 450
+}
+================================================================================

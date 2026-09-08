@@ -437,4 +437,4 @@
 -- SELECT * FROM chunks WHERE content LIKE '%backend%' ORDER BY created_at DESC LIMIT 5;
 -- docker exec -it backend-postgres-1 pg_dump -U postgres -d universal_scraper --schema-only > universal_scraper_schema.sql
 
-docker exec -it backend-postgres-1 psql -U postgres -d universal_scraper -c "ALTER TABLE page_versions ADD CONSTRAINT chk_fetch_method CHECK (fetch_method IN ('httpx', 'playwright', 'unknown', 'brightdata'));"
+docker exec -it backend-postgres-1 psql -U postgres -d universal_scraper -c "UPDATE chunks SET content_tsv = to_tsvector('english', content) "

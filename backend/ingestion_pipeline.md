@@ -1,691 +1,533 @@
-# Ingestion Pipeline: From Link Submission to DB Embeddings
+# Ingestion Pipeline
 
-This document describes the full ingestion flow for a user-submitted link in this backend. It is meant to help a future agent understand the exact runtime path, the state transitions, and the places where the system can be extended safely.
+## Scope
 
-The pipeline is implemented across:
+This document describes the implemented URL-ingestion path in the backend, from an HTTP request reaching FastAPI through crawling, persistence, content processing, chunking, and embedding. It also records the technologies, strategies, configuration, and verified implementation risks.
 
-- API route: api/routes/process.py
-- Redis queue setup: redis_client.py and redis_config.py
-- Crawl worker: workers/crawler_worker.py
-- Fetcher: crawler/fetcher.py
-- Crawler orchestration: crawler/crawler.py
-- Storage layer: crawler/storage.py
-- Processor worker: workers/processor_worker.py
-- Chunker worker: workers/chunker_worker.py
-- Embedder worker: workers/embedder_worker.py
-- Retrieval layer: api/routes/retrieval_pipeline.py
-
----
-
-## 1. Big Picture
-
-When a user sends a URL through `/api/process-link`, the backend does the following:
-
-1. Validates the request and creates or loads the user/project/chat.
-2. Persists a page record for the chat.
-3. Enqueues a Redis scraping job.
-4. The crawl worker runs asynchronously and fetches the site.
-5. Each crawled page is stored as a page version and raw document.
-6. A processor worker cleans raw HTML into markdown and extracts media metadata.
-7. A chunker worker splits the cleaned content into semantic chunks.
-8. An embedder worker generates vector embeddings for each chunk and stores them in PostgreSQL.
-9. Later, retrieval code can embed the user question and search the stored chunks.
-
-This is the ingestion path that turns a public website into searchable vector data for RAG.
-
----
-
-## 2. Entry Point: `/api/process-link`
-
-The API entry point is `process_link` in `api/routes/process.py`.
-
-### What it does
-
-- Accepts a `LinkRequest` payload.
-- Validates that content is not empty.
-- Detects whether the input is a URL or a natural-language question using `InputDetector`.
-- If a URL is detected, validates it with `is_valid_url_for_scraping`.
-- Ensures a user exists and a default project exists.
-- Ensures there is a chat context for the conversation.
-- Rejects invalid first-message behavior:
-  - first message in a new chat must be a URL
-  - existing chats cannot receive a second URL
-- Saves the user message in the `messages` table.
-- For a URL, creates a page and enqueues a scraping job.
-- For a non-URL question, it may ask retrieval code to answer using previously ingested content.
-
-### Important logic
-
-The critical branch is:
-
-```python
-if detection['has_url']:
-    page = await PageService.create_page_for_chat(...)
-    scraping_job_id = redis_client.add_scraping_job(
-        url=url,
-        project_id=project_id,
-        user_id=user_id,
-        chat_id=chat_id,
-        message_id=user_message['id']
-    )
-```
-
-This means the route does not crawl the site directly. It creates the page metadata record and then schedules the scrape asynchronously via Redis.
-
-### Data created immediately
-
-The route creates:
-
-- user (if needed)
-- default project (if needed)
-- chat (if needed)
-- user message
-- page row for the URL
-
-The page row is not the scraped content itself; it is the logical association between the chat and the URL.
-
----
-
-## 3. Redis Queue Job Creation
-
-The job creation is handled by `redis_client.RedisClient.add_scraping_job()` in `redis_client.py`.
-
-### What happens
-
-- Creates a unique `job_id`
-- Stores a JSON payload in Redis under a prefixed key like `scraping_job:<job_id>`
-- Pushes the same payload onto the configured scraping queue
-- Sends a Dramatiq task to `crawl_website`
-
-### Payload structure
-
-The job payload contains:
-
-- `job_id`
-- `url`
-- `project_id`
-- `user_id`
-- `chat_id`
-- `message_id`
-- `page_id`
-- `status`
-- `created_at`
-
-This is the handoff between the API layer and the crawl worker.
-
-### Important note
-
-The queue is intentionally decoupled from the API request so the HTTP layer returns quickly and the heavy work happens asynchronously.
-
----
-
-## 4. Crawl Worker: `crawl_website`
-
-The worker is defined in `workers/crawler_worker.py`.
-
-### Trigger
-
-When `add_scraping_job` runs, it also does:
-
-```python
-from workers.crawler_worker import crawl_website
-crawl_website.send(job_id)
-```
-
-This schedules a Dramatiq job against the configured queue (`settings.SCRAPING_QUEUE_NAME`).
-
-### Worker responsibilities
-
-The worker:
-
-- fetches the job data from Redis by `job_id`
-- marks the job as `processing`
-- runs an async crawler with `Crawler(...)`
-- updates the Redis job status to `completed` or `failed`
-
-### Why this is the scrape entry point
-
-This is the first actual crawl stage. It does not parse content itself; it delegates to the crawler classes.
-
----
-
-## 5. Crawler Orchestration
-
-The main orchestration class is `Crawler` in `crawler/crawler.py`.
-
-### How it works
-
-- Initializes:
-  - a URL frontier
-  - a Fetcher
-  - result counters for pages crawled/discovered/failed
-- Loops while there are URLs in the frontier and the page limit has not been reached
-- For each URL:
-  - calls `fetcher.fetch(url)`
-  - if successful, parses the HTML
-  - extracts links
-  - stores the fetched page and raw HTML in the DB
-  - triggers `process_document.send(version['document_id'])`
-  - continues traversing additional internal URLs
-
-### The key step
-
-This is the important “handoff” from crawl to processing:
-
-```python
-process_document.send(version['document_id'])
-```
-
-This means the crawler stores the raw source data first, then sends the document ID to the processing queue, which handles HTML cleanup and conversion.
-
----
-
-## 6. Fetching the Page
-
-The fetch logic is implemented in `crawler/fetcher.py`.
-
-### Strategy
-
-The fetcher tries a hybrid approach:
-
-- fast HTTPX fetch first
-- fall back to Playwright when the system decides that a page likely requires JavaScript rendering
-- detect render mode based on heuristics and HTML patterns
-
-### Render decision heuristics
-
-The fetcher uses site strategy detection to decide whether browser rendering is needed. This can be based on:
-
-- domain-level render mode cache
-- page URL patterns
-- HTML markers like `__next`, `data-reactroot`, script bundles, or JS-heavy patterns
-
-The code also includes Cloudflare detection and browser fallbacks for pages that may challenge automated requests.
-
-### Why this matters
-
-The system is designed to support both:
-
-- static sites fetched by HTTPX
-- JS-heavy sites rendered by Playwright
-
-The fetched HTML is then sanitized and stored as raw page content.
-
----
-
-## 7. Parsing and Storage of Raw HTML
-
-The raw page data is stored by `CrawlerStorage` in `crawler/storage.py`.
-
-### Storage path
-
-For every crawled page, the system creates:
-
-1. a new row in the `pages` table
-2. a new row in the `page_versions` table
-3. a new row in the `documents` table with raw HTML content
-
-### Page/version/document data model
-
-#### `pages`
-Represents the logical page/chat URL association.
-
-#### `page_versions`
-Stores the fetched snapshot of a page:
-
-- `status_code`
-- `content_type`
-- `content_hash`
-- `fetch_method` (`httpx` or `playwright`)
-- `response_size`
-- `fetched_at`
-
-#### `documents`
-Stores the raw page content used for downstream processing:
-
-- `page_version_id`
-- `content`
-- `content_format`
-- `metadata`
-- `processing_status`
-
-### Important behavior
-
-The storage layer sanitizes HTML before saving it by stripping null bytes and invalid control characters, then hashing the content.
-
-This gives a clean and hashable raw source before the processor worker modifies it.
-
----
-
-## 8. Processor Worker: Clean HTML into Markdown
-
-The document processing stage is implemented in `workers/processor_worker.py`.
-
-### Trigger
-
-The crawler emits:
-
-```python
-process_document.send(version['document_id'])
-```
-
-The `process_document` Dramatiq actor then loads the document row and processes it.
-
-### What it does
-
-- Retrieves the raw HTML document plus related page metadata
-- Marks the document as `PROCESSING`
-- Calls `DocumentProcessor.html_to_markdown(html)`
-- Strips script/style/nav/header/footer boilerplate
-- Converts HTML to markdown via `markdownify`
-- Extracts metadata from HTML tags
-- Merges page metadata with extracted metadata
-- Saves the cleaned markdown into `cleaned_content`
-- Updates document status to `COMPLETED`
-- Extracts media assets (images and tables) and saves them in `media_assets`
-- Sends a chunking job
-
-### Cleaner behavior
-
-`DocumentProcessor.clean_html()` removes:
-
-- script tags
-- style tags
-- noscript
-- iframe
-- header
-- footer
-- nav
-- common boilerplate selectors like `.nav`, `.sidebar`, `.cookie-banner`, `.comments`, etc.
-
-This is the first real “content cleanup” step: turning noisy HTML into more usable text.
-
-### Media handling
-
-The processor also extracts:
-
-- images
-- table data
-- descriptive metadata for them
-
-These are stored alongside the document and also appended into the markdown as searchable artifact descriptions.
-
-### Important handoff
-
-At the end of processing, it sends the document to the chunker:
-
-```python
-from workers.chunker_worker import chunk_document
-chunk_document.send(document_id)
-```
-
----
-
-## 9. Chunking Stage
-
-The chunking logic lives in `workers/chunker_worker.py`.
-
-### Why chunking is needed
-
-A website can be very large. We need the retrieval layer to search a much smaller set of relevant text blocks rather than one giant document.
-
-### How chunking works
-
-`SemanticChunker.chunk_text()`:
-
-- removes boilerplate lines
-- splits text by markdown headings and paragraphs
-- records the heading hierarchy path while chunking
-- merges related content under headings
-- splits oversize chunks into smaller pieces
-- filters out useless fragments, navigation text, and duplicates
-
-### Output
-
-Each chunk created by the chunker is a dictionary with fields like:
-
-- `content`
-- `heading_path`
-- `heading`
-- `chunk_index`
-- `token_count`
-
-### DB insertion
-
-The chunker writes rows into the `chunks` table.
-
-Columns include:
-
-- `id`
-- `page_version_id`
-- `document_id`
-- `chunk_index`
-- `chunk_type`
-- `content`
-- `heading_path`
-- `token_count`
-- `chunk_hash`
-- `embedding_status`
-- timestamps
-
-### Duplicate protection
-
-It computes a SHA-256 hash of each chunk content and checks:
-
-```python
-chunk_exists(page_version_id, content_hash)
-```
-
-If the same content already exists for that page version, the chunk is skipped to avoid duplicates.
-
-### Important handoff
-
-After chunk insert, the chunker sends the created chunk IDs to the embedders:
-
-```python
-from workers.embedder_worker import embed_chunks
-embed_chunks.send(chunk_ids)
-```
-
----
-
-## 10. Embedding Stage
-
-The embedding pipeline is implemented in `workers/embedder_worker.py`.
-
-### What it does
-
-For each chunk that is still `PENDING`:
-
-- updates the chunk status to `PROCESSING`
-- sends the chunk content to the embedding model
-- stores the resulting embedding in the `chunks` table as a `vector`
-- sets `embedding_status = 'COMPLETED'`
-- records `embedding_model` and `embedding_dimension`
-
-### Model used
-
-This project currently uses NVIDIA’s OpenAI-compatible embedding API:
-
-- model: `nvidia/llama-nemotron-embed-vl-1b-v2`
-- dimension: `2048`
-
-The code wraps the API via the OpenAI Python client:
-
-```python
-client = OpenAI(
-    api_key=NVIDIA_API_KEY,
-    base_url=NVIDIA_BASE_URL
-)
-```
-
-### Output format
-
-If the API returns a vector shorter than 2048, the code pads it with zeros. If it is longer, it truncates to 2048.
-
-This is important because the retrieval layer later compares vectors via PostgreSQL `pgvector` operators.
-
-### Failure handling
-
-If the API key is missing, it marks all chunks as `FAILED` instead of embedding them. If a single chunk fails during a request, that chunk is updated to `FAILED` and the rest continue.
-
----
-
-## 11. Database State Flow
-
-The ingestion pipeline moves content through a sequence of database states.
-
-### Pages and versions
-
-A crawl creates rows in these tables:
-
-- `pages`
-- `page_versions`
-- `documents`
-
-### Document lifecycle
-
-A document begins as raw HTML and then transitions through processing states:
-
-- `PENDING`
-- `PROCESSING`
-- `COMPLETED`
-- `FAILED`
-
-### Chunk lifecycle
-
-A chunk begins as text content and transitions through:
-
-- `PENDING`
-- `PROCESSING`
-- `COMPLETED`
-- `FAILED`
-
-### Retrieval readiness
-
-Only chunks that are both:
-
-- `embedding_status = 'COMPLETED'`
-- `embedding IS NOT NULL`
-
-are considered good retrieval candidates.
-
----
-
-## 12. End-to-End Sequence
-
-This is the runtime path in one compact sequence:
+The system is a queue-driven website-to-RAG ingestion pipeline:
 
 ```text
-User submits URL
-  -> /api/process-link
-  -> validate URL and state
-  -> create/get user/project/chat
-  -> create page record
-  -> enqueue Redis scraping job
-  -> Redis stores job metadata and pushes queue item
-  -> Dramatiq crawl_website(job_id)
-  -> Crawler fetches page using Fetcher
-  -> HTMLParser extracts metadata and links
-  -> CrawlerStorage saves page + page_version + raw document
-  -> process_document.send(document_id)
-  -> DocumentProcessor cleans HTML to markdown
-  -> document processing status goes COMPLETED
-  -> chunk_document.send(document_id)
-  -> SemanticChunker creates semantic chunks
-  -> chunks inserted into DB
-  -> embed_chunks.send(chunk_ids)
-  -> OpenAI-compatible NVIDIA embedding model generates vectors
-  -> chunks updated with embedding and embedding_status=COMPLETED
-  -> question-answer retrieval can now search the vectorized content
+HTTP URL request
+  -> FastAPI validation and chat/project setup
+  -> PostgreSQL page record
+  -> Redis job metadata + Dramatiq crawl actor
+  -> BFS same-domain crawler
+  -> HTTPX / Playwright / optional Bright Data fetch
+  -> page version + raw document in PostgreSQL
+  -> processing actor
+  -> cleaned text, structure, media, metadata
+  -> chunking actor
+  -> PostgreSQL chunks
+  -> embedding actor
+  -> vector embeddings and searchable corpus
 ```
 
----
+## 1. Application startup
 
-## 13. Where the RAG Layer Connects
+`main.py` creates the FastAPI application and registers the chat, process, scraping, user, and WebSocket routers. The application starts with Uvicorn on port `8000` when run directly.
 
-The ingestion pipeline feeds retrieval later in the stack via the retrieval route in `api/routes/retrieval_pipeline.py`.
+During the FastAPI lifespan:
 
-The retrieval path is:
+1. The running asyncio event loop is captured for thread-safe WebSocket/Redis publishing.
+2. The WebSocket connection manager initializes Redis.
+3. On shutdown, the database pool is closed and WebSocket connections are closed.
 
-1. embed the incoming user question
-2. run a vector similarity query against the stored chunk embeddings
-3. fetch the closest matching chunks
-4. build a prompt from them
-5. call the LLM to answer the user
+The service uses CORS configured by `CORS_ORIGINS`. The root and health endpoints only report service health; they do not perform ingestion.
 
-This is the reason the ingestion pipeline is so important: without clean, chunked, and embedded content, the final answer would be low quality or impossible.
+Main technologies at this layer:
 
----
+- Python and FastAPI
+- Uvicorn
+- Asyncio
+- Redis for status/pub-sub support
+- PostgreSQL through async and synchronous database helpers
+- WebSockets for live progress updates
 
-## 14. Key Files and Their Roles
+## 2. URL request enters the backend
 
-### API layer
+The URL enters through `POST /api/process-link`, implemented in `api/routes/process.py`. The request is represented by `LinkRequest` and the response by `ProcessLinkResponse`.
 
-- `api/routes/process.py`
-  - accepts input, validates, creates chat context, enqueues scrape
+The endpoint performs these steps:
 
-### Redis and queue layer
+1. Rejects empty input.
+2. Gets or creates a user with `UserService`.
+3. Gets or creates the default project with `ProjectService`.
+4. Uses `InputDetector.detect_input_type()` to determine whether the content contains a URL.
+5. Validates a detected URL with `is_valid_url_for_scraping()`.
+6. Gets the supplied chat or creates a new chat with `ChatService`.
+7. Initializes the in-memory progress tracker for a new chat.
+8. Enforces the conversation rule that the first message must contain a URL.
+9. Rejects a second URL in an existing conversation.
+10. Loads recent chat history and persists the user message with `MessageService`.
+11. Broadcasts the user message through the WebSocket manager.
 
-- `redis_client.py`
-  - stores job data and pushes to queue
-- `redis_config.py`
-  - names queue topics and TTL settings
+A URL is therefore associated with a user, project, chat, and user message before crawling starts.
 
-### Crawl layer
+### URL-specific setup
 
-- `crawler/fetcher.py`
-  - decides HTTPX vs Playwright strategy
-- `crawler/crawler.py`
-  - orchestrates a crawl over the site
-- `crawler/parser.py`
-  - extracts metadata and links
-- `crawler/storage.py`
-  - inserts page/version/document records
+For a URL message, the endpoint:
 
-### Worker layer
+1. Creates a page row through `PageService.create_page_for_chat()`.
+2. Changes progress to the `crawling` stage.
+3. Publishes the status to connected WebSocket clients.
+4. Calls `redis_client.add_scraping_job()` with the URL, project ID, user ID, chat ID, and message ID.
+5. Returns an assistant message saying that the URL was received and queued.
 
-- `workers/crawler_worker.py`
-  - worker that runs the crawl job
-- `workers/processor_worker.py`
-  - cleans HTML and triggers chunking
-- `workers/chunker_worker.py`
-  - splits cleaned content into chunks
-- `workers/embedder_worker.py`
-  - generates vector embeddings for chunks
+The HTTP request does not wait for the website to be crawled. The API response only confirms setup and queueing. The assistant response is saved as a normal chat message and returned to the client.
 
-### Retrieval layer
+If Redis is unavailable or job creation fails, the endpoint marks the progress tracker as failed and returns a warning message rather than raising a queue-specific error.
 
-- `api/routes/retrieval_pipeline.py`
-  - retrieves relevant chunks and builds the answer
+### Non-URL input
 
----
+A non-URL message in an existing chat follows the retrieval path instead of ingestion. `answer_user_question()` is run in a worker thread, and the answer is stored and broadcast. A new chat cannot begin with a question.
 
-## 15. What an Agent Should Know Before Changing This Pipeline
+## 3. Queue and worker dispatch
 
-If you are extending or fixing the ingestion flow, keep these invariants in mind:
+`RedisClient.add_scraping_job()` creates a UUID job ID and stores JSON job metadata under:
 
-### 1. The API route should stay thin
-The route is meant to validate and enqueue, not to perform actual scraping logic.
+```text
+scraping_job:<job_id>
+```
 
-### 2. Scraping is asynchronous by design
-The user does not wait for a long crawl to complete. The job is stored in Redis and executed by a worker.
+The metadata contains the URL, project ID, user ID, chat ID, message ID, status, and creation timestamp. The key uses a configured TTL.
 
-### 3. Crawl, process, chunk, and embed are separate concerns
-Each stage has a clear responsibility:
+The method also:
 
-- crawl = fetch raw content
-- process = clean and structure content
-- chunk = split into retrieval units
-- embed = vectorize them
+- Pushes serialized job data into the Redis `scraping_queue` list.
+- Sends the job ID to the Dramatiq `crawl_website` actor.
 
-### 4. The DB is the durable source of truth
-The ingestion pipeline is not just in memory; each stage persists its progress in PostgreSQL.
+The crawler actor is configured with:
 
-### 5. Retrieval quality depends on chunk quality
-If the cleaned content is noisy or chunk boundaries are poor, the final answer quality drops.
+- Queue: `SCRAPING_QUEUE_NAME`, normally `scraping_queue`
+- Maximum retries: 3
+- Time limit: 600,000 ms
 
----
+The worker reads the job metadata from Redis, marks it `processing`, creates a `Crawler`, runs its async crawl with `asyncio.run()`, and finally closes the worker's database pool.
 
-## 16. Known Gaps and Extension Points
+The distributed execution model is:
 
-This is a useful list for future work:
+- FastAPI handles request validation and immediate response.
+- Redis stores job state and provides messaging infrastructure.
+- Dramatiq executes crawl, processing, chunking, and embedding jobs.
+- PostgreSQL is the durable source of ingestion data.
 
-### For crawl reliability
+## 4. Crawl orchestration
 
-- add better deduplication across pages
-- add domain-level crawl rate limiting
-- track crawl depth properly instead of a flat frontier
-- handle robots.txt and anti-bot policies more formally
-- maintain crawl job status in the database as well as Redis
+`crawler/crawler.py` owns the crawl. A `Crawler` is initialized with the URL, project, user, chat, page, and maximum page count. The configured default is `MAX_PAGES_PER_CRAWL = 5`.
 
-### For processing quality
+The crawler creates:
 
-- stronger boilerplate detection
-- better main-content extraction beyond basic tag stripping
-- support for PDFs, images, docs, and non-HTML content
-- process metadata more consistently
+- A `URLFrontier`
+- A hybrid `Fetcher`
+- An in-memory list of crawled URL records
+- Result counters for crawled, discovered, and failed pages
 
-### For chunk quality
+At the start, the seed URL is recorded as `pending` in the `crawled_urls` table and in memory.
 
-- semantic chunk boundaries by heading tree or sentence similarity
-- preserve table/list/code blocks better
-- tune chunk size and overlap for the model used downstream
+The crawl loop continues while the frontier has a URL and the visited count is below the page limit:
 
-### For embedding quality
+1. Pop the next URL from the frontier.
+2. Wait `REQUEST_DELAY` seconds between requests after the first page.
+3. Fetch the URL.
+4. Parse metadata and internal links.
+5. Persist the page and page version.
+6. Create or persist the raw document.
+7. Increment the chat's pending-document counter.
+8. Dispatch `process_document` for the document.
+9. Mark the URL visited.
+10. Add discovered links to the frontier.
+11. Record the URL as completed and broadcast progress.
 
-- add retry logic with exponential backoff
-- support multiple embedding models
-- add a per-chunk metadata quality score
-- degrade gracefully when the embedding API is unavailable
+Failed fetches and exceptions are recorded as failed URL records and increment `pages_failed`. The crawler continues to other queued URLs when possible.
 
-### For retrieval quality
+At the end it closes the fetcher, publishes final crawl progress, and returns crawl statistics to the crawler worker. The worker stores those statistics in Redis and publishes a crawl summary over Redis pub/sub/WebSockets.
 
-- filter low-signal chunks before retrieval
-- rank by multiple signals beyond cosine similarity
-- integrate query rewriting or route-based retrieval
+### Frontier strategy
 
----
+`URLFrontier` implements breadth-first search (BFS):
 
-## 17. Debugging Tips
+- The seed URL is depth 0.
+- URLs are held in a FIFO list.
+- A visited set prevents repeated crawls.
+- A queued set prevents duplicate queue entries.
+- Only links with the same exact `scheme://netloc` are accepted.
+- Fragments and trailing path slashes are removed for deduplication.
+- Common image, media, document, archive, feed, CSS, and JavaScript extensions are skipped.
+- A page contributes at most 100 links to the crawler, even though the parser can return up to 500.
 
-When something fails in the ingestion pipeline, these are the first places to check:
+The configuration contains `MAX_CRAWL_DEPTH = 3`, but the current crawler does not enforce it. The crawl is limited by page count instead.
 
-### 1. API request path
-Check whether the route accepted the request and enqueued a Redis job.
+### URL parsing strategy
 
-### 2. Redis queue state
-Confirm the job exists in Redis and the status changes from `pending` to `processing` to `completed`.
+`HTMLParser` uses BeautifulSoup with the built-in `html.parser` backend. It:
 
-### 3. Database state
-Inspect:
+- Resolves relative links with `urljoin()`.
+- Drops fragments.
+- Rejects `javascript:` and `mailto:` links.
+- Keeps same-domain links.
+- Extracts title, description, keywords, and canonical URL metadata.
+- Can remove scripts, styles, noscript, iframe, header, footer, and navigation tags for basic text extraction.
 
-- `pages`
-- `page_versions`
-- `documents`
-- `chunks`
+The crawler currently uses metadata and links, while full content cleanup is deferred to the processor worker.
 
-Look for missing rows or stuck statuses.
+## 5. Fetching strategies
 
-### 4. Worker logs
-The workers print messages like:
+`crawler/fetcher.py` uses a hybrid strategy:
 
-- `Starting crawl for job: ...`
-- `Document {id} processed successfully`
-- `Created {n} chunks`
-- `Embedded {n} chunks`
+```text
+HTTPX fast request
+  -> if blocked, thin, failed, or JavaScript-dependent:
+Playwright browser rendering
+  -> if still unsuccessful and configured:
+Bright Data Web Unlocker
+  -> rotate HTTP user agent and retry HTTPX
+```
 
-These logs are useful to localize the stage where the pipeline gets stuck.
+### HTTPX
 
-### 5. Missing embeddings
-If retrieval returns nothing, the most likely cause is that chunks never reached `embedding_status = 'COMPLETED'` or the embedding API key is unset.
+HTTPX is the preferred first request method because it is fast and lightweight. The async client uses:
 
----
+- Followed redirects, up to five redirects
+- HTTP/2
+- A 30-second request timeout by default
+- Rotating browser-like user-agent values
+- Browser-style accept and fetch headers
+- Gzip/deflate/Brotli response handling where available
+- Charset detection from Content-Type and HTML meta tags
+- UTF-8, then Latin-1, decoding fallbacks
+- HTML cleanup for null bytes and invalid control characters
 
-## 18. Practical Implementation Summary
+The fetcher rejects or escalates responses that are not successful HTML responses.
 
-The ingestion design in this repo is a standard “queue + worker” pipeline:
+### Blocking, login, and JavaScript detection
 
-- API validates and enqueues
-- Redis is the transport layer
-- Dramatiq workers execute each processing stage
-- PostgreSQL stores durable state
-- vectors enable search and retrieval
+The fetcher detects:
 
-That architecture is intentionally modular. Each stage can be independently improved without rewriting the rest of the system.
+- HTTP 401 and 403
+- Cloudflare challenge indicators
+- CAPTCHA and reCAPTCHA markup
+- Rate limiting and retry headers
+- Amazon WAF and CloudFront challenge signals
+- Common access-denied and bot-detection phrases
+- Login/authentication paths and page messages
+- Empty SPA roots such as `__next`, `__nuxt`, `root`, and `app`
+- Empty tables/lists that suggest AJAX loading
+- Thin pages containing multiple fetch/XHR/Axios patterns
 
----
+A first page with useful visible text is cached as an HTTPX site strategy. A JavaScript shell or thin page selects Playwright for the site. The site strategy is cached by scheme and network location for the lifetime of the `Fetcher` instance.
 
-## 19. Final Mental Model
+### Playwright
 
-Think of ingestion as a pipeline that converts a URL into structured, searchable knowledge:
+Playwright is used for JavaScript-rendered or blocked pages. The implementation:
 
-- URL in -> page metadata tracked
-- HTML fetched -> stored as raw snapshot
-- HTML cleaned -> markdown document
-- markdown segmented -> searchable chunks
-- chunks embedded -> vector database
+- Runs Chromium headlessly in a separate spawned process.
+- Keeps the browser alive during a crawl.
+- Uses a fresh browser context for each URL.
+- Waits for `networkidle`.
+- Waits for a body with more than 100 characters when possible.
+- Adds a two-second safety wait.
+- Applies `playwright-stealth` when installed.
+- Masks several automation indicators such as `navigator.webdriver`.
+- Uses a 60-second browser timeout by default.
+- Closes the browser process after the crawl.
 
-Once that is complete, the system can answer questions grounded in the content that was crawled and embedded.
+The fetcher accepts a force-Playwright domain set, but the current set is empty.
 
-This is the core of your RAG ingestion workflow.
+### Bright Data Web Unlocker
+
+Bright Data is optional and enabled only when both `BRIGHTDATA_API_KEY` and `BRIGHTDATA_ZONE_NAME` are configured. It is attempted after Playwright fails. The request uses:
+
+- Bright Data's `/request` endpoint
+- A configured zone
+- Raw response format
+- Rendering enabled
+- Optional country targeting
+
+The fetcher records that Bright Data has been tried per site and can switch the site strategy to Playwright after a Bright Data failure.
+
+### Politeness and limitations
+
+The crawler adds a one-second delay between page requests, but it does not currently show a robots.txt fetch or robots policy enforcement. The crawler also uses a fixed maximum page count and does not persist its in-memory frontier as a durable crawl frontier.
+
+## 6. Persistence after fetching
+
+For a successful page, `CrawlerStorage` performs two main database operations.
+
+### Page
+
+`get_or_create_page()` currently always creates a new page UUID. It stores:
+
+- Project ID
+- Chat ID
+- Original URL
+- Normalized URL value supplied by the caller
+- Creation and update timestamps
+
+Despite its name, it does not currently look up and reuse an existing page.
+
+### Page version and raw document
+
+`create_page_version()`:
+
+1. Sanitizes HTML by removing null bytes and invalid control characters.
+2. Calculates a SHA-256 content hash.
+3. Inserts a `page_versions` row with status code, content type, fetch method, response size, and timestamps.
+4. Inserts a `documents` row containing the raw HTML, initially with `content_format = 'html'` and `processing_status = 'PENDING'`.
+5. Returns both the page-version ID and document ID.
+
+The document is the handoff point to the processing pipeline.
+
+## 7. Document processing
+
+`workers/processor_worker.py` registers `process_document` on `processing_queue`. It has two retries and a 600,000 ms time limit.
+
+For each document, the worker:
+
+1. Loads raw HTML, document metadata, processing status, and source page URL.
+2. Marks the progress stage as `processing`.
+3. Skips duplicate processing if the document is already completed and forwards it to chunking.
+4. Marks the document `PROCESSING`.
+5. Extracts page metadata with `DocumentProcessor.extract_metadata_from_html()`.
+6. Runs `ContentProcessor.process_html()` to create structured content.
+7. Extracts images and tables with media heuristics.
+8. Classifies the page using URL patterns and `ContentClassifier`.
+9. Adds media descriptions and selected structured media data to searchable text.
+10. Merges raw metadata, extracted metadata, structure, source URL, content type, and analysis statistics.
+11. Stores cleaned/searchable text in `documents.cleaned_content`.
+12. Stores merged JSON metadata and marks the document `COMPLETED`.
+13. Stores media rows in `media_assets`.
+14. Dispatches `chunk_document(chat_id, document_id)`.
+
+### Content extraction strategies
+
+The processor preserves more than plain text. Its output can include:
+
+- Page title and source URL
+- Heading and section hierarchy
+- Paragraphs
+- Lists
+- Tables, headers, rows, and summaries
+- Image descriptions
+- Visible image text and extracted entities
+- Content-type metadata
+- UI/document structure
+
+### Media analysis
+
+Media analysis is deliberately selective:
+
+- Ollama vision is disabled when `OLLAMA_API_KEY` is absent.
+- Small images and likely icons/decorations are skipped.
+- Images without alt text or surrounding context are commonly skipped.
+- Larger, contextual images and likely charts/screenshots may be analyzed.
+- Cleanly parseable tables are converted without an LLM.
+- Complex tables may be sent to Ollama vision/text analysis.
+- The default configured vision model is `gemma4:31b-cloud` through the Ollama cloud endpoint.
+
+This reduces external model calls and preserves useful visual information for retrieval.
+
+## 8. Chunking
+
+`workers/chunker_worker.py` registers `chunk_document` on `chunking_queue`. It prefers `EnhancedChunker` from `processors/chunker.py` and has a plain-text `SemanticChunker` fallback.
+
+### Structure-aware path
+
+When structured metadata is usable, the worker builds a structure containing:
+
+- Page title
+- Source URL
+- Sections
+- Tables
+- Lists
+- All extracted text
+- Product data where present
+- UI summary data
+
+`EnhancedChunker` creates chunks that preserve:
+
+- Heading paths
+- Section boundaries
+- Tables
+- Lists
+- Product details
+- Content type and entity type
+- Source URL and page title
+- Token/word counts
+- Chunk hashes
+- Content structure flags
+- Relevance and quality scores
+
+Content types include documentation, article, ecommerce, data table, and card/listing-style content. Entity and category metadata can later boost retrieval ranking.
+
+### Fallback path
+
+If structure is missing or does not contain enough text, `SemanticChunker`:
+
+- Removes common standalone footer/navigation lines.
+- Splits around headings and paragraphs.
+- Uses a nominal 500-word chunk size with 50-word overlap for long text.
+- Adds heading paths and token counts.
+- Removes short, low-value, duplicate, or boilerplate chunks.
+
+### Chunk persistence
+
+Each chunk is inserted into PostgreSQL with:
+
+- Page version and document IDs
+- Chunk index and type
+- Text content
+- Heading path
+- Token count
+- SHA-256 content hash
+- Entity type and section metadata
+- Information-density fields
+- `embedding_status = 'PENDING'`
+
+The database uses `ON CONFLICT (document_id, chunk_index) DO NOTHING` to avoid duplicate indexes on repeated chunk jobs.
+
+## 9. Embedding generation
+
+`workers/embedder_worker.py` registers `embed_chunks` on `embedding_queue`. It uses the OpenAI Python client against NVIDIA's OpenAI-compatible API:
+
+- Base URL: `https://integrate.api.nvidia.com/v1`
+- Model: `nvidia/llama-nemotron-embed-vl-1b-v2`
+- Expected dimension: 2048
+- API key environment variable: `EMBEDDING_MODEL_API_KEY`
+
+For each pending chunk, the worker:
+
+1. Marks the chunk `PROCESSING`.
+2. Estimates tokens from character count and truncates oversized input.
+3. Calls the embeddings endpoint with text modality and query input type.
+4. Retries up to three times with exponential delays.
+5. Pads or truncates the returned vector to 2048 values.
+6. Stores the vector, model, dimension, and `COMPLETED` status.
+7. Marks individual failures as `FAILED`.
+8. Decrements the chat's `pending_documents` counter after the document finishes.
+9. Marks the chat complete when the counter reaches zero.
+
+If the embedding key is missing, the worker marks the overall progress as failed and returns without embedding. The `get_embedding()` helper itself has a zero-vector fallback, but the actor rejects missing credentials before it reaches that fallback.
+
+## 10. Post-ingestion retrieval readiness
+
+After successful embedding, retrieval in `api/routes/retrieval_pipeline.py` can use the chat's corpus:
+
+1. A follow-up question may be rewritten into a standalone question by an Ollama model while preserving named entities.
+2. The question is embedded using the same embedding helper.
+3. Vector search uses pgvector distance and filters by chat and completed embedding status.
+4. PostgreSQL full-text search uses `content_tsv` and English `tsquery`.
+5. Vector and keyword results are fused using Reciprocal Rank Fusion (RRF).
+6. Category and entity boosts adjust ranking.
+7. Confidence thresholds reject weak or ambiguous retrieval results.
+8. The selected chunk text is supplied to an Ollama generation model with a prompt that prohibits unsupported external knowledge.
+
+Ingestion is complete only when the processed document has useful chunks and the chunks have usable embeddings. A raw page or processed document alone is not sufficient for semantic retrieval.
+
+## 11. Technologies and strategies summary
+
+### Core services
+
+- FastAPI and Uvicorn for HTTP API hosting
+- PostgreSQL for users, projects, chats, pages, versions, documents, media, chunks, and embeddings
+- pgvector/halfvec for vector similarity search
+- Redis for job metadata, queues, status, and pub/sub
+- Dramatiq for background actors and retries
+- WebSockets for crawl and pipeline progress
+
+### Crawling and parsing
+
+- HTTPX async client for fast fetching
+- Playwright Chromium for JavaScript rendering
+- `playwright-stealth` and browser fingerprint masking
+- Optional Bright Data Web Unlocker for difficult sites
+- BeautifulSoup for HTML parsing
+- BFS same-domain crawling
+- URL normalization and duplicate filtering
+- User-agent rotation and request delay
+- Cloudflare, WAF, CAPTCHA, login, and SPA detection
+- Charset and compression handling
+
+### Processing and AI
+
+- Custom content processor and semantic extractor
+- Content-type classification
+- Markdown/structured document representations
+- Selective media analysis
+- Ollama cloud vision/text models
+- NVIDIA embedding model through an OpenAI-compatible API
+- Heading-aware and content-type-aware chunking
+- SHA-256 content hashes and duplicate protection
+- Hybrid vector plus PostgreSQL full-text retrieval
+
+## 12. Verified bugs, inconsistencies, and operational risks
+
+The following issues are visible in the current implementation and should be treated as engineering follow-up items.
+
+### High impact
+
+1. **Keyword search index is not populated by the chunk insert path.** Retrieval requires `c.content_tsv IS NOT NULL` and searches it with `plainto_tsquery`, but `chunk_document()` does not insert or update `content_tsv`. Unless the live database has a trigger or generated column not shown in this repository, newly ingested chunks have no keyword-search representation. A manual SQL update has been used to backfill it, which indicates this is currently operationally significant. Add a generated column/trigger or update `content_tsv` during insertion and migration.
+
+2. **Embedding configuration is inconsistent across code and schema history.** The embedding worker expects 2048 dimensions and retrieval casts to `halfvec`, while the base schema and historical migration comments contain `vector(1536)`, then `vector(2048)`, then `halfvec(2048)`. The live database must be treated as the authority and migrations should be consolidated. A mismatch can make inserts or vector queries fail.
+
+3. **A processing failure can leave the chat permanently incomplete.** `process_document()` marks the document failed and the progress tracker failed, but it does not decrement `pending_documents`. The counter is decremented by the embedder, so a failed processing or chunking path can leave the shared counter above zero and prevent normal completion accounting.
+
+4. **Missing embedding credentials also leave document accounting incomplete.** `embed_chunks()` marks progress failed and returns immediately when `EMBEDDING_MODEL_API_KEY` is absent. It does not decrement `pending_documents`, so multi-page jobs can remain in an inconsistent state.
+
+### Medium impact
+
+5. **The page ID is not passed into the Redis scraping job.** The API creates `page_id`, but the call to `add_scraping_job()` omits its `page_id` argument. The crawler later receives `page_id=None`. The crawler currently creates its own page rows, so this can produce duplicate page records and disconnect the initial API-created page from the crawled version.
+
+6. **The queue is written twice through different mechanisms.** `add_scraping_job()` manually `LPUSH`es the JSON job onto `scraping_queue` and also calls `crawl_website.send()`. Dramatiq itself manages actor messages. If another consumer reads the raw list, the job may be duplicated; if no consumer reads it, the list is misleading dead data. One queue mechanism should be authoritative.
+
+7. **The configured crawl depth is not enforced.** `MAX_CRAWL_DEPTH` exists but is unused. `_crawl_page()` sets `current_depth = 0` for every page and always adds links at depth 1. The actual behavior is a page-count-limited BFS, not a depth-limited crawl.
+
+8. **Scheme-sensitive and subdomain-sensitive domain checks may omit expected pages.** `https://example.com` and `http://example.com` are different domains to the frontier, and `www.example.com` is not considered the same as `example.com`. This is stricter than many users expect.
+
+9. **The crawler always creates a page rather than reusing one.** `CrawlerStorage.get_or_create_page()` explicitly always inserts a new row. The method name and the API's earlier page creation imply reuse, but duplicate ingestion can create multiple page records for the same chat and URL.
+
+10. **The fetch strategy cache is per fetcher/crawl, not persistent.** Site strategy decisions are lost after the crawl. The repository contains Redis helpers for processed domains and boilerplate patterns, but the fetcher does not persist its HTTPX/Playwright/Bright Data decision there.
+
+11. **Bright Data strategy helpers are only partially used.** `_should_use_brightdata()` and `_should_use_brightdata_for_url()` exist, but the main `fetch()` path primarily checks whether Bright Data has been tried and invokes it as a generic fallback. The intended cached Bright Data strategy is not consistently used as a first-choice strategy for later pages.
+
+12. **No robots.txt policy is enforced.** The code has request delay but no visible robots.txt retrieval or allow/disallow evaluation. This can cause the crawler to request pages that the site has excluded for automated clients.
+
+### Lower impact and maintainability risks
+
+13. **Playwright treats only HTTP 200 as successful.** Pages returning other successful status codes, such as 204 or 206 where applicable, are marked unsuccessful even if they contain usable content.
+
+14. **The HTTPX/Brotli handling is defensive but difficult to verify.** HTTPX commonly decompresses responses automatically, while the code conditionally attempts Brotli decompression based on a first-byte check. This can produce avoidable warnings or fail on unusual responses, although the fallback generally preserves the request path.
+
+15. **The SQL entity filter is interpolated into query text.** Retrieval builds an `entity_clause` with an f-string containing `entity_filter`. If this parameter becomes user-controlled, it is a SQL-injection risk. It should be parameterized.
+
+16. **Embedding vectors are silently padded or truncated.** The worker changes returned vectors to the configured 2048 dimensions instead of rejecting an unexpected model dimension. Padding or truncating a model vector can reduce retrieval quality and conceal a deployment/configuration error.
+
+17. **The crawler persists raw HTML before processing, but the original API page row is not the same row used by crawler storage.** This split makes page/version relationships harder to reason about and complicates idempotent retries.
+
+18. **The current automated fetcher tests cover strategy selection only.** `tests/test_fetcher_site_strategy.py` checks Playwright strategy reuse and SPA detection, but there are no equivalent end-to-end tests covering Redis enqueueing, page persistence, processing failure accounting, `content_tsv` population, chunking, or embedding completion.
+
+## 13. Recommended correctness checks
+
+Before relying on ingestion in production, verify:
+
+1. A new chunk receives a non-null `content_tsv` automatically.
+2. The live `chunks.embedding` type is exactly compatible with both the 2048-value writer and the retrieval cast.
+3. A processing failure transitions the chat and all counters to a terminal state.
+4. A missing embedding key produces an explicit failed job without leaving pending counters.
+5. Replaying the same Dramatiq message does not create duplicate pages or decrement counters twice.
+6. The initial page created by the API and the page/version created by the crawler have an intentional relationship.
+7. The deployment has separate, clearly named Dramatiq queues for crawling, processing, chunking, and embedding.
+8. Crawl scope, robots policy, redirects, subdomains, and URL query parameters match the product's intended policy.
+
+## 14. End state
+
+A successful ingestion produces:
+
+- A completed Redis crawl job with crawl statistics.
+- Page and page-version records.
+- A processed document with cleaned searchable content and metadata.
+- Optional media asset records and AI-generated descriptions.
+- One or more chunk records with heading/type metadata.
+- Completed embeddings stored in PostgreSQL.
+- WebSocket progress and completion notifications.
+
+At that point, questions in the same chat can use hybrid retrieval over the ingested website corpus.

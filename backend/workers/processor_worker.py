@@ -16,6 +16,8 @@ from redis_config import PROCESSING_QUEUE_NAME
 from crawler.content_processor import ContentProcessor
 from utils.chat_status_tracker import ChatStatusTracker
 from utils.progress_tracker import get_progress_tracker
+from utils.content_classifier import ContentType, ContentClassifier
+
 # workers/processor_worker.py  (at module load, before actors)
 import asyncio
 import threading
@@ -836,6 +838,20 @@ class DocumentProcessor:
                         image.get('title', '')
                     )
                 
+                # Determine image type based on heuristics
+                image_type = "decorative"
+                if should_analyze:
+                    if any(indicator in source_url.lower() for indicator in ['product', 'item', 'sku']):
+                        image_type = "product"
+                    elif any(indicator in source_url.lower() for indicator in ['chart', 'graph', 'plot', 'diagram']):
+                        image_type = "diagram"
+                    elif any(indicator in source_url.lower() for indicator in ['screenshot', 'screen-shot']):
+                        image_type = "screenshot"
+                    elif any(indicator in source_url.lower() for indicator in ['infographic', 'info-graphic']):
+                        image_type = "infographic"
+                    else:
+                        image_type = "content"
+                
                 assets.append({
                     'media_type': 'image',
                     'source_url': source_url,
@@ -845,8 +861,32 @@ class DocumentProcessor:
                     'width': width,
                     'height': height,
                     'was_analyzed': should_analyze,
-                    'structured_data': structured_data
+                    'structured_data': structured_data,
+                    'image_type': image_type,
+                    'alt_text': image.get('alt', ''),
+                    'caption': None,  # Will be filled from figcaption if found
+                    'surrounding_text': None,  # Will be filled from context
+                    'section_heading': None,  # Will be filled from parent heading
                 })
+                
+                # Try to find caption
+                figcaption = image.find_parent('figure')
+                if figcaption:
+                    cap = figcaption.find('figcaption')
+                    if cap:
+                        assets[-1]['caption'] = cap.get_text(strip=True)
+                
+                # Try to find section heading
+                parent = image.parent
+                for _ in range(5):
+                    if parent:
+                        heading = parent.find(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+                        if heading:
+                            assets[-1]['section_heading'] = heading.get_text(strip=True)
+                            break
+                        parent = parent.parent
+                    else:
+                        break
                 
             except Exception as e:
                 logger.warning('Unable to process image %s: %s', source_url, e)
@@ -872,16 +912,53 @@ class DocumentProcessor:
                 logger.debug(f"⏭️ Skipping table analysis: {reason}")
                 description = DocumentProcessor.describe_table(table_text)
             
+            # Extract table headers and rows
+            headers = []
+            rows_data = []
+            thead = table.find('thead')
+            if thead:
+                for th in thead.find_all(['th', 'td']):
+                    headers.append(th.get_text(strip=True))
+            if not headers:
+                first_row = table.find('tr')
+                if first_row:
+                    for th in first_row.find_all(['th', 'td']):
+                        headers.append(th.get_text(strip=True))
+            for tr in table.find_all('tr'):
+                cells = []
+                for td in tr.find_all(['td', 'th']):
+                    cells.append(td.get_text(strip=True))
+                if cells:
+                    rows_data.append(cells)
+            
             assets.append({
                 'media_type': 'table',
                 'source_url': page_url,
                 'mime_type': 'text/html',
                 'data_base64': base64.b64encode(str(table).encode('utf-8')).decode('ascii'),
                 'description': description,
-                'was_analyzed': should_analyze
+                'was_analyzed': should_analyze,
+                'table_headers': headers,
+                'table_rows': rows_data[:50],  # Limit rows
+                'table_summary': description,
             })
         
         return assets
+
+
+def _infer_content_type_from_url(url: str) -> Optional[ContentType]:
+    """Infer content type from URL patterns."""
+    if not url:
+        return None
+    if '/docs/' in url or '/documentation/' in url or '/api/' in url or '/reference/' in url:
+        return ContentType.DOCUMENTATION
+    if '/blog/' in url or '/news/' in url or '/post/' in url or '/article/' in url:
+        return ContentType.ARTICLE
+    if '/product/' in url or '/item/' in url or '/p/' in url or '/shop/' in url:
+        return ContentType.ECOMMERCE
+    if '/pricing/' in url or '/compare/' in url or '/features/' in url:
+        return ContentType.DATA_TABLE
+    return None
 
 
 @dramatiq.actor(
@@ -962,7 +1039,7 @@ def process_document(chat_id: str, document_id: str):
         # Step 1: Extract metadata from HTML
         extracted_metadata = DocumentProcessor.extract_metadata_from_html(html)
 
-        # Process content structure
+        # Step 2: Process content structure
         processor_result = ContentProcessor.process_html(
             html,
             source_url=url,
@@ -975,7 +1052,10 @@ def process_document(chat_id: str, document_id: str):
             )
         )
 
-        raw_content = processor_result.get('all_text', '')
+        print("Processor result keys:", processor_result)
+
+        # raw_content = processor_result.get('all_text', '')
+        raw_content = processor_result.get('main_content', {}).get('all_text', '')
         print(f"📄 Raw HTML length: {len(raw_content)} chars")
 
         document_structure = processor_result.get('document_structure', {})
@@ -991,7 +1071,7 @@ def process_document(chat_id: str, document_id: str):
         # ✅ Update progress: media extraction
         tracker.update_stage('processing', 50, "Extracting images and tables...")
 
-        # Step 2: Extract media assets with intelligent analysis
+        # Step 3: Extract media assets with intelligent analysis
         media_assets = DocumentProcessor.extract_media(html, url)
         
         # Log media processing stats
@@ -999,6 +1079,26 @@ def process_document(chat_id: str, document_id: str):
         analyzed_tables = sum(1 for a in media_assets if a.get('was_analyzed') and a['media_type'] == 'table')
         print(f"📊 Media assets: {len(media_assets)} total (Images analyzed: {analyzed_images}, Tables analyzed: {analyzed_tables})")
         
+        # ✅ Step 4: Infer content type for type-aware chunking
+        content_type = _infer_content_type_from_url(url)
+        
+        # Use ContentClassifier for more accurate classification if available
+        try:
+            from bs4 import BeautifulSoup
+            classifier = ContentClassifier()
+            soup = BeautifulSoup(html, 'html.parser')
+            detected_type = classifier.classify(soup, url)
+            if detected_type:
+                content_type = detected_type
+                print(f"📋 ContentClassifier detected: {content_type.value}")
+        except Exception as e:
+            logger.warning(f"ContentClassifier failed, using URL inference: {e}")
+        
+        # Store content_type in metadata
+        if content_type:
+            extracted_metadata['content_type'] = content_type.value
+        
+        # Process media assets to add to raw_content
         for asset in media_assets:
             raw_content += f"\n\nMedia asset: {asset['media_type']} - {asset['description']}"
             
@@ -1010,8 +1110,13 @@ def process_document(chat_id: str, document_id: str):
                 if structured.get('entities'):
                     for entity in structured.get('entities', []):
                         raw_content += f"\nEntity: {entity.get('name', '')} ({entity.get('type', '')}) - {entity.get('value', '')}"
+            
+            # Add table data if present
+            if asset['media_type'] == 'table' and asset.get('table_headers') and asset.get('table_rows'):
+                raw_content += f"\nTable headers: {', '.join(asset['table_headers'])}"
+                raw_content += f"\nTable rows: {asset['table_rows'][:5]}"
 
-        # Step 3: Merge metadata
+        # Step 5: Merge metadata
         merged_metadata = {
             **metadata,
             **extracted_metadata,
@@ -1022,41 +1127,62 @@ def process_document(chat_id: str, document_id: str):
                 'total_assets': len(media_assets),
                 'analyzed_images': analyzed_images,
                 'analyzed_tables': analyzed_tables,
-            }
+            },
+            'content_type': content_type.value if content_type else None,
         }
 
-        # Step 4: Update document
+        # Step 6: Update document with content_type
         execute_update(
             """UPDATE documents 
                SET cleaned_content = %s, 
                    metadata = %s::jsonb,
                    processing_status = 'COMPLETED',
                    processed_at = %s,
-                   updated_at = %s
+                   updated_at = %s,
+                   content_type = %s
                WHERE id = %s""",
-            (raw_content, json.dumps(merged_metadata), now, now, document_id)
+            (raw_content, json.dumps(merged_metadata), now, now, 
+             content_type.value if content_type else None, document_id)
         )
 
-        # Step 5: Store media assets with structured data
+        # Step 7: Store media assets with enhanced metadata
         for asset in media_assets:
             execute_update(
                 """INSERT INTO media_assets
                 (page_version_id, document_id, media_type, source_url,
-                    mime_type, data_base64, description, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
-                (doc['page_version_id'], document_id, asset['media_type'],
-                asset['source_url'], asset['mime_type'], asset['data_base64'],
-                asset['description'], now)
+                 mime_type, data_base64, description, created_at,
+                 image_type, alt_text, caption, surrounding_text, 
+                 section_heading, processing_status, vision_model)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                (
+                    doc['page_version_id'], 
+                    document_id, 
+                    asset['media_type'],
+                    asset['source_url'], 
+                    asset['mime_type'], 
+                    asset['data_base64'],
+                    asset['description'], 
+                    now,
+                    asset.get('image_type', 'unknown') if asset['media_type'] == 'image' else None,
+                    asset.get('alt_text', '') if asset['media_type'] == 'image' else None,
+                    asset.get('caption') if asset['media_type'] == 'image' else None,
+                    asset.get('surrounding_text') if asset['media_type'] == 'image' else None,
+                    asset.get('section_heading') if asset['media_type'] == 'image' else None,
+                    'COMPLETED',
+                    'gemma4:31b-cloud' if asset.get('was_analyzed') else None
+                )
             )
 
         print(f"✅ Document {document_id} processed successfully")
         print(f"   - Raw HTML length: {len(raw_content)} chars")
         print(f"   - Media assets: {len(media_assets)}")
+        if content_type:
+            print(f"   - Content type: {content_type.value}")
         
-        # ✅ Update progress: processing complete, move to chunking
+        # ✅ Update progress: processing complete, move to chunking with content type
         tracker.update_stage('chunking', 0, "Creating chunks from content...")
 
-        # Enqueue chunking job - pass chat_id and document_id
+        # ✅ Enqueue chunking job with chat_id and document_id
         from workers.chunker_worker import chunk_document
         chunk_document.send(chat_id, document_id)
         

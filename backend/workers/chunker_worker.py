@@ -5,19 +5,23 @@ import hashlib
 import json
 import re
 import uuid
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+
 from database_sync import execute_query, execute_update, execute_one
 from utils.helpers import get_current_datetime
 from redis_config import CHUNKING_QUEUE_NAME
 from processors.chunker import EnhancedChunker
 from utils.chat_status_tracker import ChatStatusTracker
 from utils.progress_tracker import get_progress_tracker
+from utils.content_classifier import ContentType, ContentClassifier
 
 print("✅ Chunker worker loaded with EnhancedChunker")
+
 
 class SemanticChunker:
     """
     Split text into semantic chunks using heading hierarchy and paragraphs.
+    This is the fallback chunker for plain text without structure.
     """
     
     def __init__(self, chunk_size: int = 500, chunk_overlap: int = 50):
@@ -195,6 +199,30 @@ def chunk_exists(page_version_id: str, chunk_hash: str) -> bool:
     return result is not None
 
 
+def _infer_content_type_from_metadata(metadata: Dict[str, Any]) -> Optional[ContentType]:
+    """Infer content type from metadata if available."""
+    # Check if already classified
+    content_type_str = metadata.get('content_type')
+    if content_type_str:
+        try:
+            return ContentType(content_type_str)
+        except ValueError:
+            pass
+    
+    # Fallback: try to infer from url
+    url = metadata.get('url', '')
+    classifier = ContentClassifier()
+    # We don't have soup here, but we can use URL patterns
+    if '/docs/' in url or '/documentation/' in url or '/api/' in url:
+        return ContentType.DOCUMENTATION
+    if '/blog/' in url or '/news/' in url or '/post/' in url:
+        return ContentType.ARTICLE
+    if '/product/' in url or '/item/' in url or '/p/' in url:
+        return ContentType.ECOMMERCE
+    
+    return None
+
+
 @dramatiq.actor(
     queue_name=CHUNKING_QUEUE_NAME,
     max_retries=2,
@@ -202,7 +230,7 @@ def chunk_exists(page_version_id: str, chunk_hash: str) -> bool:
 )
 def chunk_document(chat_id: str, document_id: str):
     """
-    Chunk processed document using new EnhancedChunker with structure-aware logic.
+    Chunk processed document using EnhancedChunker with structure-aware logic.
     Uses document_structure from metadata for semantic understanding.
     """
     print(f"📦 Chunking document with EnhancedChunker: {document_id} for chat: {chat_id}")
@@ -228,7 +256,7 @@ def chunk_document(chat_id: str, document_id: str):
         
         page_version_id = doc['page_version_id']
         
-        # Parse metadata to get document_structure
+        # Parse metadata
         metadata_raw = doc['metadata']
         if isinstance(metadata_raw, str):
             try:
@@ -238,7 +266,16 @@ def chunk_document(chat_id: str, document_id: str):
         else:
             metadata = metadata_raw or {}
         
-        # ✅ FIX: Check if this document already has chunks and their embedding status
+        # ============================================================
+        # ✅ Infer content type for type-aware chunking
+        # ============================================================
+        content_type = _infer_content_type_from_metadata(metadata)
+        if content_type:
+            print(f"📋 Inferred content type: {content_type.value}")
+        else:
+            print("📋 No content type inferred, using generic chunking")
+        
+        # ✅ Check if this document already has chunks
         existing_chunks = execute_query(
             """SELECT id, embedding_status, chunk_index 
                FROM chunks 
@@ -248,7 +285,6 @@ def chunk_document(chat_id: str, document_id: str):
         )
         
         if existing_chunks:
-            # ✅ Check if all existing chunks are embedded
             pending_chunks = [c for c in existing_chunks if c.get('embedding_status') == 'PENDING']
             processing_chunks = [c for c in existing_chunks if c.get('embedding_status') == 'PROCESSING']
             completed_chunks = [c for c in existing_chunks if c.get('embedding_status') == 'COMPLETED']
@@ -258,7 +294,6 @@ def chunk_document(chat_id: str, document_id: str):
                   f"{len(completed_chunks)} completed, {len(pending_chunks)} pending, "
                   f"{len(processing_chunks)} processing, {len(failed_chunks)} failed")
             
-            # ✅ If there are pending or processing chunks, send to embedder
             if pending_chunks or processing_chunks:
                 print(f"📤 Sending {len(pending_chunks)} pending chunks to embedder")
                 tracker.update_stage('embedding', 0, f"Generating embeddings for {len(pending_chunks)} chunks...")
@@ -266,17 +301,13 @@ def chunk_document(chat_id: str, document_id: str):
                 embed_chunks.send(chat_id, document_id)
                 return
             
-            # ✅ If all chunks are completed, mark as completed
             if completed_chunks and not pending_chunks and not processing_chunks and not failed_chunks:
                 tracker.mark_completed(f"All {len(completed_chunks)} chunks already embedded")
                 return
             
-            # ✅ If there are failed chunks and no pending ones, handle partial failure
             if failed_chunks and not pending_chunks and not processing_chunks:
                 if completed_chunks:
-                    # Partial success - mark completed with warning
                     tracker.mark_completed(f"Embedded {len(completed_chunks)} chunks, {len(failed_chunks)} failed")
-                    # Store failure count in metadata
                     execute_update(
                         """UPDATE chats 
                            SET metadata = jsonb_set(COALESCE(metadata, '{}'::jsonb), '{embedding_failures}', %s) 
@@ -284,16 +315,14 @@ def chunk_document(chat_id: str, document_id: str):
                         (json.dumps(len(failed_chunks)), chat_id)
                     )
                 else:
-                    # All chunks failed
                     tracker.mark_failed(f"All {len(failed_chunks)} chunks failed to embed")
                 return
         
         # ============================================================
-        # ✅ FIX: Extract and check structure BEFORE building full_structure
+        # ✅ Extract and check structure
         # ============================================================
         document_structure = metadata.get('document_structure', {})
         
-        # Extract sections, tables, and all_text
         sections = document_structure.get('sections', [])
         tables = document_structure.get('tables', [])
         all_text = metadata.get('all_text', '')
@@ -305,11 +334,10 @@ def chunk_document(chat_id: str, document_id: str):
         elif all_text:
             print(f"📊 all_text preview: {all_text[:150]}...")
         
-        # ✅ Check for usable content — sections OR all_text
         has_structure = bool(sections or tables)
         has_fallback_text = bool(all_text and len(all_text.split()) >= 10)
         
-        # ✅ Determine which chunking path to use based on actual content
+        # ✅ Determine which chunking path to use
         if not document_structure or (not has_structure and not has_fallback_text):
             print(f"⚠️ No usable content in metadata, falling back to cleaned_content")
             content = doc.get('cleaned_content', '')
@@ -319,13 +347,12 @@ def chunk_document(chat_id: str, document_id: str):
                 tracker.mark_failed(error_msg)
                 return
             
-            # Use cleaned_content for plain text chunking
             chunker = SemanticChunker(chunk_size=500, chunk_overlap=50)
             chunks = chunker.chunk_text(content)
             print(f"📝 Plain text chunker created {len(chunks)} chunks")
             
         else:
-            # ✅ Build full_structure ONLY if we have usable content
+            # ✅ Build full_structure with content type
             full_structure = {
                 'page_title': metadata.get('page_title') or document_structure.get('page_title', ''),
                 'source_url': metadata.get('url') or document_structure.get('source_url', ''),
@@ -335,25 +362,27 @@ def chunk_document(chat_id: str, document_id: str):
                     'lists': document_structure.get('lists', []),
                     'all_text': all_text,
                     'has_content': has_structure,
+                    'product_data': document_structure.get('product_data', {}),
                 },
                 'ui_summary': metadata.get('ui_summary', []),
             }
 
             url = metadata.get('url', '')
             print(f"📋 Using structured content for: {url}")
-            print(f"📊 Structure contains: {len(sections)} sections, {len(tables)} tables, {len(document_structure.get('lists', []))} lists")
+            print(f"📊 Structure contains: {len(sections)} sections, {len(tables)} tables, "
+                  f"{len(document_structure.get('lists', []))} lists")
             
-            # Update progress: analyzing structure
             tracker.update_stage('chunking', 30, "Analyzing document structure...")
             
-            # 🎯 USE NEW ENHANCED CHUNKER
-            chunks = EnhancedChunker.chunk_structure(full_structure)
+            # 🎯 USE ENHANCED CHUNKER WITH CONTENT TYPE
+            chunks = EnhancedChunker.chunk_structure(full_structure, content_type)
             print(f"✨ EnhancedChunker created {len(chunks)} structure-aware chunks")
         
-        # Update progress: storing chunks
         tracker.update_stage('chunking', 60, f"Storing {len(chunks)} chunks...")
         
-        # Store chunks with ON CONFLICT to handle duplicates gracefully
+        # ============================================================
+        # ✅ Store chunks with ON CONFLICT
+        # ============================================================
         now = get_current_datetime().isoformat()
         chunk_ids = []
         skipped_count = 0
@@ -367,23 +396,28 @@ def chunk_document(chat_id: str, document_id: str):
             
             heading_path = json.dumps(chunk_data.get('heading_path', []))
             chunk_type = chunk_data.get('chunk_type', 'text')
+            entity_type = chunk_data.get('entity_type', 'content')
             
-            # Map new chunk types to schema-compatible ones
+            # Map to schema-compatible types
             chunk_type_map = {
                 'section': 'text',
                 'table': 'table',
                 'card': 'mixed',
                 'paragraph_group': 'text',
+                'product': 'text',
+                'code': 'code',
+                'list': 'list',
+                'summary': 'text',
             }
             db_chunk_type = chunk_type_map.get(chunk_type, 'text')
             
-            # Use ON CONFLICT to skip duplicates without error
             result = execute_update(
                 """INSERT INTO chunks 
                    (id, page_version_id, document_id, chunk_index, chunk_type, 
                     content, heading_path, token_count, chunk_hash,
+                    entity_type, section_title, position_in_page, information_density,
                     embedding_status, created_at, updated_at) 
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                    ON CONFLICT (document_id, chunk_index) DO NOTHING""",
                 (
                     chunk_id,
@@ -395,13 +429,16 @@ def chunk_document(chat_id: str, document_id: str):
                     heading_path,
                     chunk_data.get('token_count', 0),
                     content_hash,
+                    entity_type,
+                    chunk_data.get('section_title', ''),
+                    chunk_data.get('position', 0.0),
+                    chunk_data.get('information_density', 1.0),
                     'PENDING',
                     now,
                     now
                 )
             )
             
-            # Check if insert was successful (result is the number of rows affected)
             if result == 0:
                 skipped_count += 1
                 print(f"⏭️ Skipped duplicate chunk index {chunk_index}")
@@ -411,17 +448,16 @@ def chunk_document(chat_id: str, document_id: str):
         
         print(f"✅ Document {document_id}: inserted {inserted_count} chunks, skipped {skipped_count} duplicates")
         
-        # ✅ FIX: Only move to embedding if we have new chunks
+        # ============================================================
+        # ✅ Trigger embedding if we have new chunks
+        # ============================================================
         if chunk_ids:
-            # Update status: chunking complete, move to embedding
             tracker.update_stage('embedding', 0, f"Generating embeddings for {len(chunks)} chunks...")
-            
-            # Enqueue embedding job
             from workers.embedder_worker import embed_chunks
             embed_chunks.send(chat_id, document_id)
             print(f"📤 Sent {len(chunk_ids)} chunks to embedder")
         else:
-            # ✅ FIX: Check if there are any existing chunks that need embedding
+            # Check if there are any existing chunks that need embedding
             existing_chunks = execute_query(
                 """SELECT id, embedding_status 
                    FROM chunks 
@@ -436,7 +472,6 @@ def chunk_document(chat_id: str, document_id: str):
                 completed = [c for c in existing_chunks if c.get('embedding_status') == 'COMPLETED']
                 
                 if pending or processing:
-                    # Send to embedder if there are pending chunks
                     print(f"📤 Found {len(pending)} pending chunks, sending to embedder")
                     tracker.update_stage('embedding', 0, f"Generating embeddings for {len(pending)} chunks...")
                     from workers.embedder_worker import embed_chunks
@@ -452,7 +487,6 @@ def chunk_document(chat_id: str, document_id: str):
                     tracker.mark_completed(f"All {len(completed)} chunks already embedded")
                     return
             
-            # If we get here, there are truly no chunks
             print(f"⚠️ No chunks found for document {document_id}")
             tracker.mark_failed("No chunks were created for this document")
         
@@ -464,7 +498,6 @@ def chunk_document(chat_id: str, document_id: str):
         import traceback
         traceback.print_exc()
         
-        # Mark chat as failed using progress tracker
         tracker.mark_failed(error_msg)
         raise
 
