@@ -25,7 +25,8 @@ class ContentProcessor:
 
     @staticmethod
     def _count_cards(soup: BeautifulSoup) -> int:
-        """Count product/item cards in the DOM."""
+        """Count product/item cards OR any generic repeated data containers."""
+        # Existing e-commerce selectors
         card_selectors = [
             '[data-product]', '[data-item]', '[data-model]',
             '.product-card', '.item-card', '.pd-item',
@@ -37,32 +38,52 @@ class ContentProcessor:
             if len(found) > 2:
                 logger.debug(f"🃏 Card selector '{selector}' matched {len(found)} elements")
                 return len(found)
+
+        # ✅ NEW: Generic repeated container detection
+        # Find the most-repeated non-trivial class on block elements
+        from collections import Counter
+        class_counts = Counter()
+        for el in soup.find_all(['div', 'li', 'article', 'section', 'tr'], class_=True):
+            for cls in el.get('class', []):
+                # Skip generic layout/utility classes
+                if cls in {'col', 'row', 'container', 'wrapper', 'flex', 'grid',
+                        'active', 'hidden', 'clearfix', 'pull-left', 'pull-right'}:
+                    continue
+                if len(cls) < 3:
+                    continue
+                # Only count elements with actual text content
+                if len(el.get_text(strip=True)) > 20:
+                    class_counts[cls] += 1
+
+        if class_counts:
+            top_class, top_count = class_counts.most_common(1)[0]
+            if top_count >= 5:
+                logger.debug(f"🃏 Generic repeated container detected: '.{top_class}' × {top_count}")
+                return top_count
+
         return 0
 
     @classmethod
     def _classify_page_type(cls, url: str, soup: BeautifulSoup) -> str:
-        """
-        Classify page as 'listing', 'detail', or 'article'.
-        Order matters: check URL first, then DOM signals.
-        """
         path = urlparse(url).path.lower()
         logger.debug(f"🔍 Classifying page type for path: '{path}'")
-        
-        # URL-based listing signals
+
         listing_url_signals = [
             '/all-', '/explore-', '/shop/', '/category/',
             '/products/', '/collection/', '/search',
             '/smartphones', '/tablets', '/tvs', '/monitors',
-            '/appliances', '/watches', '/earbuds'
+            '/appliances', '/watches', '/earbuds',
+            # ✅ NEW: generic listing path patterns
+            '/pages/', '/list', '/index', '/browse',
+            '/directory', '/catalog', '/items', '/entries',
         ]
-        
-        # URL-based detail signals
+
         detail_url_signals = [
             '/buy', r'-sm-[a-z]\d+', r'/[a-z]+-\d{3,}',
             '/detail', '/product/', '/item/',
             '/p/', '/dp/'
         ]
-        
+
         for signal in listing_url_signals:
             if signal in path:
                 card_count = cls._count_cards(soup)
@@ -70,37 +91,37 @@ class ContentProcessor:
                 if card_count > 2:
                     logger.info(f"📋 Page classified as LISTING (signal='{signal}', cards={card_count})")
                     return 'listing'
-                else:
-                    logger.debug(f"🔍 Listing signal matched but card count too low ({card_count}), continuing checks")
-        
+
         for signal in detail_url_signals:
             if re.search(signal, path, re.I):
                 logger.info(f"🔎 Page classified as DETAIL (signal='{signal}')")
                 return 'detail'
-        
-        # DOM-only card detection (no URL signal)
+
+        # DOM-only card detection (no URL signal needed)
         card_count = cls._count_cards(soup)
         if card_count > 4:
             logger.info(f"📋 Page classified as LISTING via DOM only (cards={card_count})")
             return 'listing'
-        
-        logger.info(f"📰 Page classified as ARTICLE (default, no matching signals, cards={card_count})")
-        return 'article'  # default — Readability handles this well
 
+        logger.info(f"📰 Page classified as ARTICLE (default, no matching signals, cards={card_count})")
+        return 'article'
+    
     @classmethod
     def _extract_cards(cls, soup: BeautifulSoup, url: str, page_title: str) -> List[Dict]:
         """
-        Extract product/item cards from listing pages.
-        Each card becomes its own chunk for retrieval.
-        Returns list of section dicts compatible with EnhancedChunker.
+        Extract cards from listing pages — works for both e-commerce
+        and generic repeated data containers (country lists, team stats, etc.)
         """
+        from collections import Counter
+
+        # First try specific e-commerce selectors (existing logic)
         card_selectors = [
             '[data-product]', '[data-item]', '[data-model]',
             '.product-card', '.item-card', '.pd-item',
             '.product-item', '[class*="product-card"]',
             '[class*="item-card"]', 'li.product', 'div.product'
         ]
-        
+
         card_elements = []
         matched_selector = None
         for selector in card_selectors:
@@ -109,71 +130,101 @@ class ContentProcessor:
                 card_elements = found
                 matched_selector = selector
                 break
-        
+
+        # ✅ NEW: Fall back to most-repeated container class
+        if not card_elements:
+            class_counts = Counter()
+            candidates = {}
+            for el in soup.find_all(['div', 'li', 'article', 'section'], class_=True):
+                for cls in el.get('class', []):
+                    if cls in {'col', 'row', 'container', 'wrapper', 'flex', 'grid',
+                            'active', 'hidden', 'clearfix', 'pull-left', 'pull-right'}:
+                        continue
+                    if len(cls) < 3:
+                        continue
+                    if len(el.get_text(strip=True)) > 20:
+                        class_counts[cls] += 1
+                        if cls not in candidates:
+                            candidates[cls] = []
+                        candidates[cls].append(el)
+
+            if class_counts:
+                top_class, top_count = class_counts.most_common(1)[0]
+                if top_count >= 5:
+                    card_elements = candidates[top_class]
+                    matched_selector = f'.{top_class} (auto-detected)'
+                    logger.info(f"🃏 Auto-detected card container: '.{top_class}' × {top_count}")
+
         if not card_elements:
             logger.warning(f"🃏 No card elements found for listing page: {url}")
             return []
-        
-        logger.debug(f"🃏 Using card selector '{matched_selector}', found {len(card_elements)} raw cards")
-        
+
+        logger.debug(f"🃏 Using selector '{matched_selector}', found {len(card_elements)} raw cards")
+
         sections = []
         seen_names = set()
         skipped_no_name = 0
         skipped_duplicate = 0
-        
+
         for i, card in enumerate(card_elements):
-            # Extract name — try headings first, then links
+            # Try to get a heading/name
             name_el = (
-                card.select_one('h1, h2, h3, h4, h5') or
+                card.select_one('h1, h2, h3, h4, h5, h6') or
                 card.select_one('[class*="title"], [class*="name"], [class*="model"]') or
                 card.select_one('a')
             )
-            
-            # Extract price
-            price_el = card.select_one(
-                '[class*="price"], [data-price], .price, '
-                '[class*="amount"], [class*="cost"]'
-            )
-            
-            # Extract description
-            desc_el = card.select_one(
-                '[class*="desc"], [class*="summary"], '
-                '[class*="subtitle"], p'
-            )
-            
-            # Extract link
-            link_el = card.select_one('a[href]')
-            
+
             name = name_el.get_text(strip=True) if name_el else ''
-            price = price_el.get_text(strip=True) if price_el else ''
-            desc = desc_el.get_text(strip=True) if desc_el else ''
-            href = link_el.get('href', '') if link_el else ''
-            
-            # Skip cards with no name or duplicates
+
+            # ✅ NEW: If no name element found, use first meaningful text line
+            if not name:
+                lines = [l.strip() for l in card.get_text('\n', strip=True).split('\n') if l.strip()]
+                name = lines[0] if lines else ''
+
             if not name:
                 skipped_no_name += 1
-                logger.debug(f"🃏 Card #{i}: skipped — no name found (raw text: '{card.get_text(strip=True)[:80]}')")
                 continue
             if name.lower() in seen_names:
                 skipped_duplicate += 1
-                logger.debug(f"🃏 Card #{i}: skipped — duplicate name '{name}'")
                 continue
             seen_names.add(name.lower())
+
+            # Get ALL text from the card (not just specific fields)
+            # This works generically for countries, NHL teams, films, etc.
+            card_text = card.get_text(' ', strip=True)
             
-            # Build as natural prose — embeds better than raw structured data
-            content_parts = [f"Product: {name}"]
-            if price:
-                content_parts.append(f"Price: {price}")
-            if desc and desc.lower() != name.lower():
-                content_parts.append(f"Description: {desc}")
-            if href:
-                full_url = href if href.startswith('http') else f"{urlparse(url).scheme}://{urlparse(url).netloc}{href}"
-                content_parts.append(f"URL: {full_url}")
-            
-            content = '\n'.join(content_parts)
-            
-            logger.debug(f"🃏 Card #{i}: extracted '{name}' | price='{price}' | has_desc={bool(desc)} | has_href={bool(href)}")
-            
+            # Try specific fields if they exist (e-commerce style)
+            price_el = card.select_one('[class*="price"], [data-price], .price')
+            desc_el = card.select_one('[class*="desc"], [class*="summary"], p')
+            link_el = card.select_one('a[href]')
+
+            price = price_el.get_text(strip=True) if price_el else ''
+            desc = desc_el.get_text(strip=True) if desc_el else ''
+            href = link_el.get('href', '') if link_el else ''
+
+            # Build content: prefer structured if we have named fields,
+            # otherwise use full card text (better for data-dense cards)
+            if price or (desc and desc != name):
+                content_parts = [f"Name: {name}"]
+                if price:
+                    content_parts.append(f"Price: {price}")
+                if desc and desc.lower() != name.lower():
+                    content_parts.append(f"Description: {desc}")
+                if href:
+                    full_url = href if href.startswith('http') else \
+                        f"{urlparse(url).scheme}://{urlparse(url).netloc}{href}"
+                    content_parts.append(f"URL: {full_url}")
+                content = '\n'.join(content_parts)
+            else:
+                # ✅ Generic: just use all the card's text — works for country/stats cards
+                content = card_text
+                if href:
+                    full_url = href if href.startswith('http') else \
+                        f"{urlparse(url).scheme}://{urlparse(url).netloc}{href}"
+                    content += f"\nURL: {full_url}"
+
+            logger.debug(f"🃏 Card #{i}: '{name}' ({len(content)} chars)")
+
             sections.append({
                 'heading': name,
                 'heading_path': [page_title, name],
@@ -182,10 +233,10 @@ class ContentProcessor:
                 'chunk_category': 'main_content',
                 'page_type': 'card'
             })
-        
+
         logger.info(
-            f"🃏 Card extraction complete: {len(sections)} kept, "
-            f"{skipped_no_name} skipped (no name), {skipped_duplicate} skipped (duplicate)"
+            f"🃏 Card extraction: {len(sections)} kept, "
+            f"{skipped_no_name} no-name, {skipped_duplicate} duplicate"
         )
         return sections
 

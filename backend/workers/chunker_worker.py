@@ -288,38 +288,60 @@ def chunk_document(chat_id: str, document_id: str):
                     tracker.mark_failed(f"All {len(failed_chunks)} chunks failed to embed")
                 return
         
-        # Extract structure from metadata (created by ContentProcessor in processor_worker)
+        # ============================================================
+        # ✅ FIX: Extract and check structure BEFORE building full_structure
+        # ============================================================
         document_structure = metadata.get('document_structure', {})
-        full_structure = {
-            'page_title': metadata.get('page_title') or document_structure.get('page_title', ''),
-            'source_url': metadata.get('url') or document_structure.get('source_url', ''),
-            'main_content': {
-                'sections': document_structure.get('sections', []),
-                'tables': document_structure.get('tables', []),
-                'lists': document_structure.get('lists', []),
-                'all_text': metadata.get('all_text', ''),
-                'has_content': bool(document_structure.get('sections')),
-            },
-            'ui_summary': metadata.get('ui_summary', []),
-        }
-
-        if not document_structure:
-            print(f"⚠️ No document_structure found in metadata, falling back to plain text chunking")
-            # Fallback: use cleaned_content if structure is missing
+        
+        # Extract sections, tables, and all_text
+        sections = document_structure.get('sections', [])
+        tables = document_structure.get('tables', [])
+        all_text = metadata.get('all_text', '')
+        
+        print(f"📊 Structure contains: {len(sections)} sections, {len(tables)} tables")
+        print(f"📊 all_text length: {len(all_text)}")
+        if sections:
+            print(f"📊 First section preview: {str(sections[0])[:150]}")
+        elif all_text:
+            print(f"📊 all_text preview: {all_text[:150]}...")
+        
+        # ✅ Check for usable content — sections OR all_text
+        has_structure = bool(sections or tables)
+        has_fallback_text = bool(all_text and len(all_text.split()) >= 10)
+        
+        # ✅ Determine which chunking path to use based on actual content
+        if not document_structure or (not has_structure and not has_fallback_text):
+            print(f"⚠️ No usable content in metadata, falling back to cleaned_content")
             content = doc.get('cleaned_content', '')
             if not content:
                 error_msg = "No content available for document"
-                print(f"⚠️ {error_msg}")
+                print(f"❌ {error_msg}")
                 tracker.mark_failed(error_msg)
                 return
             
             # Use cleaned_content for plain text chunking
             chunker = SemanticChunker(chunk_size=500, chunk_overlap=50)
             chunks = chunker.chunk_text(content)
+            print(f"📝 Plain text chunker created {len(chunks)} chunks")
+            
         else:
+            # ✅ Build full_structure ONLY if we have usable content
+            full_structure = {
+                'page_title': metadata.get('page_title') or document_structure.get('page_title', ''),
+                'source_url': metadata.get('url') or document_structure.get('source_url', ''),
+                'main_content': {
+                    'sections': sections,
+                    'tables': tables,
+                    'lists': document_structure.get('lists', []),
+                    'all_text': all_text,
+                    'has_content': has_structure,
+                },
+                'ui_summary': metadata.get('ui_summary', []),
+            }
+
             url = metadata.get('url', '')
             print(f"📋 Using structured content for: {url}")
-            print(f"📊 Structure contains: {len(document_structure.get('sections', []))} sections, {len(document_structure.get('tables', []))} tables, {len(document_structure.get('cards', []))} cards")
+            print(f"📊 Structure contains: {len(sections)} sections, {len(tables)} tables, {len(document_structure.get('lists', []))} lists")
             
             # Update progress: analyzing structure
             tracker.update_stage('chunking', 30, "Analyzing document structure...")

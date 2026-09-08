@@ -2,11 +2,101 @@
 import asyncio
 import json
 import logging
+import threading
+import traceback
 from typing import Dict, Set, Optional, Any
 from fastapi import WebSocket
 import redis.asyncio as redis
+from redis.exceptions import ConnectionError as RedisConnectionError, TimeoutError as RedisTimeoutError
 
 logger = logging.getLogger(__name__)
+
+# ============================================================
+# Thread-safe bridge for publishing from sync threads
+# ============================================================
+
+_main_loop: asyncio.AbstractEventLoop = None
+_main_loop_lock = threading.Lock()
+
+def set_main_loop(loop: asyncio.AbstractEventLoop):
+    """Store the main event loop at startup."""
+    global _main_loop
+    with _main_loop_lock:
+        _main_loop = loop
+        logger.info(f"✅ Main event loop captured: {loop}")
+
+def get_main_loop() -> asyncio.AbstractEventLoop:
+    """Get the main event loop."""
+    with _main_loop_lock:
+        return _main_loop
+
+def publish_progress_sync(channel: str, message: dict):
+    """
+    Thread-safe bridge: publish from any sync thread 
+    onto the main asyncio event loop.
+    """
+    loop = get_main_loop()
+    if loop is None:
+        logger.warning(f"⚠️ No main loop captured for channel: {channel}")
+        # Try to use the current event loop as fallback
+        try:
+            loop = asyncio.get_running_loop()
+            logger.info(f"🔄 Using current running loop as fallback: {loop}")
+        except RuntimeError:
+            logger.error(f"❌ No event loop available at all for channel: {channel}")
+            return
+    
+    if loop.is_closed():
+        logger.warning(f"⚠️ Main loop is closed for channel: {channel}")
+        return
+
+    # Create the coroutine
+    coroutine = _publish_to_redis_channel(channel, message)
+    
+    # Run it in the main loop
+    future = asyncio.run_coroutine_threadsafe(coroutine, loop)
+    
+    try:
+        # Wait for completion with a reasonable timeout
+        result = future.result(timeout=5.0)
+        if not result:
+            logger.warning(f"⚠️ Publish returned False for {channel}")
+        else:
+            logger.debug(f"✅ Published to {channel}")
+    except asyncio.TimeoutError:
+        logger.error(f"❌ Timeout publishing to {channel} (took >5s)")
+        future.cancel()
+    except Exception as e:
+        logger.error(f"❌ Progress publish failed for {channel}: {e}")
+        logger.error(f"   Traceback: {traceback.format_exc()}")
+
+async def _publish_to_redis_channel(channel: str, message: dict) -> bool:
+    """Internal async publish function."""
+    try:
+        # Use the global manager instance
+        result = await chat_connection_manager.publish_to_redis_channel(channel, message)
+        if result:
+            logger.debug(f"📡 Published to Redis: {channel}")
+        else:
+            logger.warning(f"⚠️ Failed to publish to Redis: {channel}")
+        return result
+    except Exception as e:
+        logger.error(f"❌ Redis publish error on {channel}: {e}")
+        logger.error(f"   Traceback: {traceback.format_exc()}")
+        return False
+
+# ============================================================
+
+def json_serializer(obj):
+    """
+    Custom JSON serializer for datetime objects and other non-serializable types.
+    Used by json.dumps() when encountering objects it can't serialize.
+    """
+    if hasattr(obj, 'isoformat'):
+        return obj.isoformat()
+    if hasattr(obj, '__dict__'):
+        return str(obj)
+    raise TypeError(f"Type {type(obj)} not serializable")
 
 
 class ChatConnectionManager:
@@ -25,22 +115,63 @@ class ChatConnectionManager:
         self.redis_client: Optional[redis.Redis] = None
         self.pubsub: Optional[redis.client.PubSub] = None
         self._redis_initialized = False
+        self._redis_init_attempted = False
         self._init_task: Optional[asyncio.Task] = None
+        self._redis_lock = asyncio.Lock()
+        self._redis_url = None
     
     async def _init_redis(self):
-        """Initialize Redis connection."""
+        """Initialize Redis connection with retry logic."""
         if self._redis_initialized:
             return
         
-        try:
-            from redis_config import REDIS_URL
-            self.redis_client = await redis.from_url(REDIS_URL, decode_responses=True)
-            self.pubsub = self.redis_client.pubsub()
-            self._redis_initialized = True
-            logger.info("✅ Redis connection initialized for WebSocket manager")
-        except Exception as e:
-            logger.error(f"❌ Failed to initialize Redis: {e}")
-            self._redis_initialized = False
+        if self._redis_init_attempted:
+            # Don't retry too often if we already failed
+            return
+        
+        async with self._redis_lock:
+            if self._redis_initialized:
+                return
+            
+            self._redis_init_attempted = True
+            
+            try:
+                from redis_config import REDIS_URL
+                self._redis_url = REDIS_URL
+                logger.info(f"🔄 Connecting to Redis at {REDIS_URL}")
+                
+                # Create client with shorter timeouts
+                self.redis_client = await redis.from_url(
+                    REDIS_URL,
+                    decode_responses=True,
+                    socket_connect_timeout=3,
+                    socket_timeout=3,
+                    retry_on_timeout=True,
+                    max_connections=5,
+                )
+                
+                # Test connection with short timeout
+                await asyncio.wait_for(self.redis_client.ping(), timeout=3.0)
+                
+                self.pubsub = self.redis_client.pubsub()
+                self._redis_initialized = True
+                logger.info(f"✅ Redis connection initialized for WebSocket manager")
+            except asyncio.TimeoutError:
+                logger.warning(f"⚠️ Redis connection timeout - continuing without Redis")
+                self._redis_initialized = False
+                # Try again later
+                self._redis_init_attempted = False
+            except RedisConnectionError as e:
+                logger.warning(f"⚠️ Redis connection error: {e} - continuing without Redis")
+                self._redis_initialized = False
+                # Try again later
+                self._redis_init_attempted = False
+            except Exception as e:
+                logger.error(f"❌ Failed to initialize Redis: {e}")
+                logger.error(f"   Traceback: {traceback.format_exc()}")
+                self._redis_initialized = False
+                # Try again later
+                self._redis_init_attempted = False
     
     async def _ensure_redis(self):
         """Ensure Redis is initialized, retry if needed."""
@@ -52,11 +183,60 @@ class ChatConnectionManager:
         """Get Redis channel name for a chat."""
         return f"{self.CHANNEL_PREFIX}{chat_id}"
     
+    async def publish_to_redis_channel(self, channel: str, message: Dict[str, Any]) -> bool:
+        """
+        Publish a message to a specific Redis channel.
+        Returns True on success, False on failure.
+        """
+        # If Redis isn't initialized, try to initialize it
+        if not self._redis_initialized:
+            await self._ensure_redis()
+            
+            # If still not initialized, just log and return False
+            if not self._redis_initialized:
+                logger.debug(f"⏭️ Redis not available, skipping publish to {channel}")
+                return False
+        
+        try:
+            if not self.redis_client:
+                logger.debug(f"⏭️ Redis client not available, skipping publish to {channel}")
+                return False
+            
+            # Prepare message
+            message = self._prepare_for_json(message)
+            message_json = json.dumps(message, default=json_serializer)
+            
+            # Publish with short timeout
+            result = await asyncio.wait_for(
+                self.redis_client.publish(channel, message_json),
+                timeout=2.0
+            )
+            logger.debug(f"📡 Published to {channel}, subscribers: {result}")
+            return True
+            
+        except asyncio.TimeoutError:
+            logger.debug(f"⏱️ Redis publish timeout to {channel} - skipping")
+            return False
+        except RedisConnectionError as e:
+            logger.debug(f"🔌 Redis connection error on {channel}: {e}")
+            # Reset state so we retry connection
+            self._redis_initialized = False
+            return False
+        except RedisTimeoutError as e:
+            logger.debug(f"⏱️ Redis timeout error on {channel}: {e}")
+            return False
+        except asyncio.CancelledError:
+            logger.debug(f"⏭️ Publish cancelled for {channel}")
+            return False
+        except Exception as e:
+            logger.debug(f"❌ Failed to publish to Redis {channel}: {e}")
+            return False
+    
     async def join(self, websocket: WebSocket, chat_id: str, user_id: Optional[str] = None):
         """Accept a WebSocket connection and add it to the chat room."""
         await websocket.accept()
         
-        # Ensure Redis is initialized
+        # Try to initialize Redis (non-blocking)
         await self._ensure_redis()
         
         # Add to local connections
@@ -79,8 +259,8 @@ class ChatConnectionManager:
                 'users': list(self.chat_users[chat_id])
             })
         
-        # Start Redis listener for this chat if not already running
-        if chat_id not in self.pubsub_tasks or self.pubsub_tasks[chat_id].done():
+        # Start Redis listener for this chat if Redis is available
+        if self._redis_initialized and chat_id not in self.pubsub_tasks:
             self.pubsub_tasks[chat_id] = asyncio.create_task(
                 self._listen_to_redis(chat_id)
             )
@@ -126,7 +306,7 @@ class ChatConnectionManager:
         
         # Ensure message is JSON serializable
         message = self._prepare_for_json(message)
-        message_json = json.dumps(message)
+        message_json = json.dumps(message, default=json_serializer)
         to_remove = []
         
         for connection in self.active_connections[chat_id]:
@@ -202,25 +382,8 @@ class ChatConnectionManager:
     
     async def publish_to_redis(self, chat_id: str, message: Dict[str, Any]):
         """Publish a message to Redis for cross-process delivery."""
-        # Ensure Redis is initialized
-        if not await self._ensure_redis():
-            logger.warning(f"⚠️ Redis not available, cannot publish for chat {chat_id}")
-            return False
-        
-        if not self.redis_client:
-            logger.warning(f"⚠️ Redis client not available, cannot publish for chat {chat_id}")
-            return False
-        
-        try:
-            channel = self._get_channel(chat_id)
-            message = self._prepare_for_json(message)
-            message_json = json.dumps(message)
-            await self.redis_client.publish(channel, message_json)
-            logger.debug(f"📡 Published to Redis: {channel}")
-            return True
-        except Exception as e:
-            logger.error(f"❌ Failed to publish to Redis: {e}")
-            return False
+        channel = self._get_channel(chat_id)
+        return await self.publish_to_redis_channel(channel, message)
     
     async def broadcast(self, chat_id: str, message: Dict[str, Any], publish_to_redis: bool = True):
         """
@@ -236,24 +399,44 @@ class ChatConnectionManager:
         if publish_to_redis:
             await self.publish_to_redis(chat_id, message)
     
-    # ============================================================
-    # Helper methods for common message types
-    # ============================================================
-    
     async def send_progress_update(self, chat_id: str, progress: int, status: str, step: str = None):
-        """Send a progress update to all clients in a chat."""
-        message = {
-            'type': 'progress_update',
-            'data': {
+        """Send a progress update via Redis Pub/Sub and local broadcast."""
+        from utils.chat_status_tracker import ChatStatusTracker
+        
+        logger.info(f"📡 Sending progress update for chat {chat_id}: {status} ({progress}%)")
+        
+        # Get full status data
+        status_data = ChatStatusTracker.get_progress_summary(chat_id)
+        
+        if not status_data:
+            status_data = {
+                'chat_id': chat_id,
+                'exists': True,
                 'status': status,
                 'progress': progress,
                 'current_step': step or '',
-                'is_processing': status not in ['completed', 'failed', 'answered'],
-                'is_ready': status in ['completed', 'answered'],
-                'is_failed': status == 'failed',
+                'friendly_message': f'{status}...',
+                'is_processing': True,
+                'is_ready': False,
+                'is_failed': False,
+                'has_error': False,
+                'error_message': None,
+                'document_id': None,
+                'started_at': None,
+                'completed_at': None
             }
+        
+        message = {
+            'type': 'progress_update',
+            'chat_id': chat_id,
+            'data': status_data
         }
-        await self.broadcast(chat_id, message)
+        
+        # Publish to Redis
+        await self.publish_to_redis(chat_id, message)
+        
+        # Also broadcast locally (if in same process)
+        await self._broadcast_local(chat_id, message)
     
     async def send_status(self, chat_id: str):
         """Send the current status to all clients in a chat."""
@@ -320,9 +503,15 @@ class ChatConnectionManager:
         self.pubsub_tasks.clear()
         
         if self.pubsub:
-            await self.pubsub.close()
+            try:
+                await self.pubsub.close()
+            except Exception:
+                pass
         if self.redis_client:
-            await self.redis_client.close()
+            try:
+                await self.redis_client.close()
+            except Exception:
+                pass
         self._redis_initialized = False
         
         logger.info("🧹 WebSocket manager cleaned up")

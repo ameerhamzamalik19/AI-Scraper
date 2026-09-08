@@ -1,117 +1,172 @@
-# AI Scraper Backend: Agent Handoff
+# Universal Scraper Backend: Agent Handoff
 
-This document is the complete working brief for an AI coding agent. The agent may receive only this file and must assume it has no access to the original repository. Treat statements about current behavior as observations from the handoff snapshot, not guarantees: inspect the supplied code before changing it.
+This file is the working guide for AI agents modifying this repository. It describes the current checkout, not the original design plan. Verify behavior in the owning module and nearby tests before making changes. Keep changes narrow, preserve existing contracts, and do not revert unrelated user work in a dirty worktree.
 
-## Project Identity
+## Project Summary
 
-This is the backend for **Universal Scraper**, a FastAPI service that accepts a website URL, crawls pages on the same domain, stores page versions and processed content, chunks content, generates embeddings, and answers questions using retrieval.
+Universal Scraper is a Python 3.12-targeted FastAPI backend for turning a website into searchable knowledge. A client submits a URL, the backend crawls same-site pages, stores raw and processed versions in PostgreSQL, chunks the content, generates vector embeddings, and answers follow-up questions with retrieval-augmented generation.
 
-Repository root in the original workspace:
+The repository is the `backend` folder. A sibling frontend exists at `../frontend/ai-scraper` and is a React/Vite client, but frontend changes are outside this backend handoff unless the task crosses the API contract.
 
-```text
-backend/
-```
-
-Primary language: Python 3.12 target (the current local test run used Python 3.14).
-
-## Repository Layout
+## Current Repository Layout
 
 ```text
-main.py                         FastAPI application and WebSocket endpoint
-config.py                       Environment-backed application/crawler settings
-models.py                       Pydantic request/response models
+main.py                         FastAPI app, CORS, health routes, router registration
+config.py                       Environment-backed settings and crawler limits
+models.py                       Pydantic request and response models
 exceptions.py                   Application exceptions
-database.py                     Async asyncpg pool
- database_sync.py               Synchronous PostgreSQL helpers
-redis_config.py                 Redis connection and queue names
-redis_client.py                 Redis job API
+database.py                     Async asyncpg pool helpers
+database_sync.py                Synchronous psycopg2 helpers
+redis_config.py                 Redis URLs, queue names, job prefixes, TTLs
+redis_client.py                 Redis job records and Dramatiq dispatch
 redis_pubsub.py                 Redis pub/sub support
-websocket_manager.py            WebSocket connection manager
+websocket_manager.py            WebSocket connection manager and broadcasts
 
-api/deps.py                     Request dependencies, including user header handling
-api/routes/chats.py             Chat endpoints
-api/routes/process.py           Main POST /api/process-link workflow
-api/routes/retrieval_pipeline.py Retrieval/RAG answer path
-api/routes/scraping.py          GET /api/scraping-jobs/{chat_id}
-api/routes/users.py              User endpoints
-api/routes/websocket.py         WebSocket-related routes
+api/deps.py                     Request dependencies and user-header parsing
+api/routes/process.py           POST /api/process-link and URL/question routing
+api/routes/chats.py             Chat, crawled-URL, and status endpoints
+api/routes/scraping.py          Scraping-job endpoint
+api/routes/users.py             Current-user endpoint
+api/routes/websocket.py         WS /ws/{chat_id}
+api/routes/retrieval_pipeline.py Retrieval and answer generation
 
-crawler/crawler.py              BFS crawl orchestrator
-crawler/fetcher.py              HTTPX/Playwright fetching and render-mode detection
-crawler/frontier.py             Crawl URL frontier and same-domain behavior
-crawler/parser.py               HTML metadata/link extraction
-crawler/storage.py               Persistence of pages and page versions
-crawler/content_processor.py    Current BeautifulSoup content extraction
+crawler/crawler.py              BFS crawl orchestration and page persistence
+crawler/fetcher.py              HTTPX/Playwright fetching and render detection
+crawler/frontier.py             Same-site URL queue and URL filtering
+crawler/parser.py               HTML metadata and link extraction
+crawler/storage.py              Page, version, and document persistence
+crawler/content_processor.py    Current BeautifulSoup content processor
 
 processors/chunker.py           Enhanced structure-aware chunking
-processors/content_processor_old.py Legacy processor; do not assume it matches crawler/content_processor.py
-
-services/                       Database-backed user/project/chat/message/page/scraping services
+processors/content_processor_old.py Legacy processor used by old tests only
+services/                       Database-backed user/project/chat/page/message services
+utils/                          Detection, validation, progress, status, and helpers
 workers/crawler_worker.py       Dramatiq crawl actor
-workers/processor_worker.py    HTML/content processing actor, optional Ollama vision analysis
-workers/chunker_worker.py      Chunk persistence actor
-workers/embedder_worker.py     NVIDIA embedding actor
+workers/processor_worker.py    Dramatiq processing actor
+workers/chunker_worker.py       Dramatiq chunking actor
+workers/embedder_worker.py      Dramatiq embedding actor
 
-db/schema.sql                   PostgreSQL + pgvector schema/reference SQL
-tests/                          Pytest tests
-docker-compose.yml              API, workers, Redis, and PostgreSQL services
-Dockerfile                      Python image with Playwright Chromium
-requirements.txt                Pinned Python dependencies
+universal_scraper_schema.sql    Current executable database dump/schema
+db/schema.sql                   Obsolete/commented reference schema; not authoritative
+tests/                          Unit and regression tests
+docker-compose.yml              API, four workers, Redis, and pgvector PostgreSQL
+Dockerfile                      Python image and Playwright Chromium setup
+requirements.txt                Pinned runtime dependencies
+ingestion_pipeline.md           Detailed ingestion walkthrough
+universal_scraper_plan.md       Design/planning document; may describe future behavior
+progress-bar.md                 Progress-stage behavior
+websocket.md                    WebSocket and status behavior
+commands.txt                    Manual local worker commands
 ```
+
+The checkout may contain a local `venv/`, `.env`, `__pycache__/`, and `.pytest_cache/`. Do not commit generated files or secrets. Check `git status --short` before editing; preserve changes you did not make.
 
 ## Runtime Architecture
 
-The normal flow is:
-
-1. Client sends `POST /api/process-link` with a URL in `LinkRequest`.
-2. `api/routes/process.py` obtains or creates the user, default project, and chat.
-3. It creates a page record and puts a scraping job in Redis through `redis_client.add_scraping_job`.
-4. `workers/crawler_worker.py` consumes the Dramatiq scraping queue.
-5. `crawler/crawler.py` performs a same-domain BFS crawl, normally limited by `crawler_settings.MAX_PAGES_PER_CRAWL` (currently 5).
-6. `crawler/fetcher.py` chooses HTTPX or Playwright. A JavaScript app-shell/site decision can be cached and reused per domain.
-7. `crawler/storage.py` writes pages and page versions to PostgreSQL. Each fetched version references a document.
-8. The processor actor cleans/processes HTML using `crawler/content_processor.py`, writes document content/metadata, and dispatches chunking.
-9. `workers/chunker_worker.py` uses `processors/chunker.py` to create useful, unique, heading-aware chunks.
-10. `workers/embedder_worker.py` generates vector embeddings through the NVIDIA OpenAI-compatible API and updates chunk embedding status.
-11. `api/routes/retrieval_pipeline.py` retrieves relevant chunks and generates an answer for later chat questions.
-12. Redis-backed chat status and WebSocket broadcasts report progress.
-
-Important current behavior: `Crawler._crawl_page` directly sends `process_document` after creating a version, and `crawler_worker.py` also sends processing for the first crawled document after the crawl. Check idempotency before changing this fan-out because duplicate processing may be possible.
-
-## Services and Queues
-
-Docker Compose defines:
-
-- `main`: FastAPI on container port 8000, published as `localhost:8000`.
-- `crawler`: Dramatiq actor `workers.crawler_worker`.
-- `processor`: Dramatiq actor `workers.processor_worker`.
-- `chunker`: Dramatiq actor `workers.chunker_worker`.
-- `embedder`: Dramatiq actor `workers.embedder_worker`.
-- `redis`: Redis 7, published as `localhost:6379`.
-- `postgres`: `pgvector/pgvector:pg18`, container port 5432, published as host `localhost:5433`.
-
-Queue names from `redis_config.py`:
+The active ingestion path is:
 
 ```text
-scraping_queue
-processing_queue
-chunking_queue
-embedding_queue
+POST /api/process-link
+  -> create/retrieve user, project, and chat
+  -> create a Redis job record
+  -> enqueue Dramatiq crawl_website(job_id)
+  -> Crawler.run() and same-site BFS crawl
+  -> process_document(document_id) for each fetched page
+  -> chunk_document(chat_id, document_id)
+  -> embed_chunks(chat_id, document_id)
+  -> retrieval_pipeline.answer_user_question() for questions
 ```
 
-Inside Docker, the application connects to `redis:6379` and `postgres:5432`. From the host, PostgreSQL is `localhost:5433`; do not confuse the two ports.
+There are four independently launched Dramatiq workers:
 
-## Local Setup
+| Actor | Module | Queue | Responsibility |
+|---|---|---|---|
+| `crawl_website` | `workers.crawler_worker` | `scraping_queue` | Run the crawl and update crawl/job state |
+| `process_document` | `workers.processor_worker` | `processing_queue` | Clean HTML, extract structure/media, save document content |
+| `chunk_document` | `workers.chunker_worker` | `chunking_queue` | Create and persist deduplicated heading-aware chunks |
+| `embed_chunks` | `workers.embedder_worker` | `embedding_queue` | Call NVIDIA embeddings and save 2048-dimensional vectors |
 
-Prerequisites:
+`Crawler._crawl_page` dispatches `process_document` after a page version/document is created. The old handoff said `crawler_worker.py` also dispatches processing after the crawl; that code is currently commented out. Do not reintroduce or remove fan-out without checking idempotency and all producer/consumer paths.
 
-- Python 3.12 recommended.
-- Docker Desktop and Docker Compose for Redis/PostgreSQL and the full worker topology.
-- Playwright Chromium and its OS dependencies if running outside Docker.
-- PostgreSQL with the `vector` extension if not using Compose.
-- Ollama/NVIDIA credentials only for real embedding/vision processing.
+`RedisClient.add_scraping_job()` writes a JSON job record to a Redis list and also calls `crawl_website.send(job_id)`. Dramatiq is the active worker transport; the Redis list is a redundant job/status record and must not be mistaken for a second worker system.
 
-Create an environment and install dependencies:
+## Application Entry Points
+
+`main.py` creates the FastAPI application, enables CORS from `CORS_ORIGINS`, and registers the routers. It runs on `0.0.0.0:8000` with reload when launched directly.
+
+Active HTTP routes:
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/` | API name, version, and healthy status |
+| `GET` | `/health` | Returns `{"status": "healthy"}` |
+| `POST` | `/api/process-link` | Submit a URL or ask a question |
+| `GET` | `/api/chats` | List chats for the current configured user |
+| `GET` | `/api/chats/{chat_id}` | Get one chat |
+| `DELETE` | `/api/chats/{chat_id}` | Delete one chat |
+| `GET` | `/api/chats/{chat_id}/crawled-urls` | Show per-URL crawl states |
+| `GET` | `/api/chats/{chat_id}/status` | Show progress tracker state |
+| `GET` | `/api/scraping-jobs/{chat_id}` | List scraping jobs |
+| `GET` | `/api/users/current` | Get current user |
+
+WebSocket:
+
+```text
+WS /ws/{chat_id}?user_id=<optional-user-id>
+```
+
+The server handles client message types `ping`, `get_status`, `get_users`, and `typing`. Unknown types are logged and ignored. The frontend may send `join`, which is currently ignored. WebSocket authentication/authorization is still a TODO.
+
+The main request/response contracts live in `models.py`: `LinkRequest`, `ProcessLinkResponse`, `DetectionResult`, `MessageResponse`, `ChatResponse`, `ScrapingJobResponse`, and `UserResponse`. Preserve these public shapes unless the task explicitly changes the API.
+
+`POST /api/process-link` rules:
+
+- A new chat must begin with a valid URL.
+- An existing chat cannot receive a second URL.
+- URL submissions create a page and enqueue crawling asynchronously.
+- Non-URL submissions call the retrieval pipeline synchronously in a worker thread.
+- User and assistant messages are persisted and broadcast through the WebSocket manager.
+
+## Crawler Behavior
+
+`config.py` currently defines:
+
+| Setting | Value | Notes |
+|---|---:|---|
+| `MAX_PAGES_PER_CRAWL` | `5` | Hard page limit |
+| `MAX_CRAWL_DEPTH` | `3` | Declared but not enforced by the current BFS loop |
+| `MAX_RESPONSE_SIZE` | `10 MB` | Response-size guard |
+| `REQUEST_TIMEOUT` | `30 s` | HTTPX timeout |
+| `BROWSER_TIMEOUT` | `60 s` | Playwright timeout |
+| `REQUEST_DELAY` | `1 s` | Same-domain politeness delay |
+| `MAX_RETRIES` | `3` | Fetch retries |
+| `RETRY_DELAY` | `2 s` | Retry delay |
+
+`crawler/frontier.py` keeps the exact scheme and host of the starting URL. It filters fragments, query URLs, common media/assets, archives, feeds, and document downloads. Confirm the frontier tests and implementation before changing same-domain behavior.
+
+`crawler/fetcher.py` uses HTTPX first and can switch to Playwright for JavaScript app shells or blocked pages. The current implementation includes Playwright stealth support, Cloudflare detection, Brotli handling, and optional Bright Data integration. Render mode is cached per domain during a fetcher instance. The focused regression test is `tests/test_fetcher_site_strategy.py`.
+
+`crawler/content_processor.py` is the active processor. It removes non-content tags, learns domain-level navigation/header/footer boilerplate, uses a Redis cache when available, and extracts titles, headings, paragraphs, lists, tables, metadata, visible text, and document structure. Boilerplate removal must remain conservative: retaining a little navigation is preferable to deleting valid page content.
+
+## Database and Embeddings
+
+`universal_scraper_schema.sql` is the current executable schema/dump for this checkout. It uses PostgreSQL, `uuid-ossp`, and pgvector. Relevant tables include `users`, `projects`, `chats`, `messages`, `pages`, `page_versions`, `documents`, `chunks`, `crawl_jobs`, `crawl_urls`, `crawled_urls`, `media_assets`, `processing_events`, and `worker_failures`.
+
+Important current schema facts:
+
+- `chunks.embedding` is `halfvec(2048)`.
+- The embedding index uses `halfvec_cosine_ops`.
+- `chats.pending_documents` is part of the active schema.
+- `crawled_urls` has a unique `(chat_id, url)` constraint.
+- The embedder uses `nvidia/llama-nemotron-embed-vl-1b-v2` and normalizes output to 2048 dimensions.
+
+`db/schema.sql` is commented/reference material and declares a conflicting `vector(1536)` dimension. Do not use it as the migration or embedding source of truth. Any embedding change must update the provider model, dimension handling, database type/index, persistence SQL, and retrieval SQL together.
+
+The database code has two access styles: async `asyncpg` in `database.py` and synchronous `psycopg2` helpers in `database_sync.py`. Preserve the existing async/sync boundary when changing services or workers.
+
+## Docker and Local Setup
+
+Recommended local setup on Windows PowerShell:
 
 ```powershell
 py -3.12 -m venv .venv
@@ -133,25 +188,42 @@ Stop it:
 docker compose down
 ```
 
-The PostgreSQL volume is named `postgres_data`; `docker compose down -v` removes persisted database data and should be treated as destructive.
+`docker compose down -v` removes the `postgres_data` volume and is destructive; use it only with explicit approval.
 
-Run the API directly for a local-only process:
+Compose services and ports:
+
+| Service | Command/role | Host mapping |
+|---|---|---|
+| `main` | FastAPI | `localhost:8000` -> `8000` |
+| `crawler` | crawler Dramatiq worker | internal only |
+| `processor` | processor Dramatiq worker | internal only |
+| `chunker` | chunker Dramatiq worker | internal only |
+| `embedder` | embedder Dramatiq worker | internal only |
+| `redis` | Redis 7 | `localhost:6379` -> `6379` |
+| `postgres` | `pgvector/pgvector:pg18` | `localhost:5433` -> `5432` |
+
+Inside Compose, use `redis:6379` and `postgres:5432`. From the host, use Redis `localhost:6379` and PostgreSQL `localhost:5433`.
+
+Run the API without Docker:
 
 ```powershell
 python main.py
 ```
 
-Equivalent development server:
+Or run workers manually in separate terminals:
 
 ```powershell
-python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+dramatiq workers.crawler_worker -p 1 -t 2 -v
+dramatiq workers.processor_worker -p 1 -t 2 -v
+dramatiq workers.chunker_worker -p 1 -t 2 -v
+dramatiq workers.embedder_worker -p 1 -t 2 -v
 ```
 
-The Dockerfile installs all Python requirements and runs `playwright install --with-deps chromium`.
+The Dockerfile installs requirements and Playwright Chromium with OS dependencies. `requirements.txt` includes FastAPI, asyncpg, Redis, Dramatiq, HTTPX, Playwright, Playwright Stealth, BeautifulSoup, OpenAI-compatible clients, Ollama, extraction libraries, and PostgreSQL drivers.
 
 ## Environment Variables
 
-`config.py` calls `load_dotenv()` and supplies defaults:
+`config.py` loads `.env` and provides these defaults:
 
 ```text
 DATABASE_URL=postgresql://user:password@localhost:5432/universal_scraper
@@ -166,120 +238,65 @@ DEFAULT_PAGE_SIZE=50
 SCRAPING_QUEUE_NAME=scraping_queue
 ```
 
-For Docker Compose, the services set:
+Provider and crawler variables read elsewhere include:
 
 ```text
-DATABASE_URL=postgresql://postgres:postgres@postgres:5432/universal_scraper
-REDIS_URL=redis://redis:6379/0
+EMBEDDING_MODEL_API_KEY=<NVIDIA embedding API key>
+OLLAMA_API_KEY=<Ollama vision API key>
+OLLAMA_VISION_MODEL=<vision model override>
+OPENROUTER_API_KEY=<optional provider key>
+GROQ_API_KEY=<optional provider key>
+BRIGHTDATA_API_KEY=<optional browser/proxy key>
+BRIGHTDATA_ZONE_NAME=<optional Bright Data zone>
+HARDCODED_USER_ID=<temporary test user override used by chat routes>
 ```
 
-Additional model variables used in worker code include:
+Never put real credentials in source, documentation, commits, or tool output. The local `.env` contains credential-looking values and should be treated as sensitive; rotate any key that has been exposed or committed. `HARDCODED_USER_ID` and the chat-route override are temporary testing behavior, not authentication. `api/deps.py` parses `X-User-ID`, but chat routes currently replace the dependency result with `HARDCODED_USER_ID`.
 
-```text
-OLLAMA_API_KEY=<needed for Ollama cloud vision calls>
-OLLAMA_VISION_MODEL=gemma4:31b-cloud
-EMBEDDING_MODEL_API_KEY=<needed for NVIDIA embeddings>
+## Testing and Validation
+
+Focused tests:
+
+```powershell
+python -m pytest -q tests/test_fetcher_site_strategy.py
+python -m pytest -q tests/test_chunker.py
 ```
 
-Without `EMBEDDING_MODEL_API_KEY`, the embedder actor marks the chat failed rather than producing real embeddings. Do not put secrets in source control or in this document.
-
-## API Surface
-
-Confirmed entry points:
-
-- `GET /` returns an API-running message.
-- `GET /health` returns `{"status": "healthy"}`.
-- `POST /api/process-link` accepts a link or question. A new chat must begin with a valid URL; an existing chat cannot receive a second URL.
-- `GET /api/scraping-jobs/{chat_id}` returns scraping jobs for a chat.
-- `WS /ws/{chat_id}` joins a chat room and receives status/message broadcasts.
-- Additional chat, user, and WebSocket routes are registered from `api/routes/` and should be read before changing contracts.
-
-Use the OpenAPI page at `http://localhost:8000/docs` when the API is running. Request/response shape is defined in `models.py`, not in this document.
-
-## Data Model
-
-The intended PostgreSQL model in `db/schema.sql` includes users, projects, crawl jobs, pages, page versions, documents, chunks, crawl URLs, processing events, and worker failures. PostgreSQL uses UUIDs and pgvector. Important relationships:
-
-```text
-user -> projects -> pages -> page_versions -> documents -> chunks
-project -> crawl_jobs -> crawl_urls
-```
-
-Before relying on `db/schema.sql`, verify the SQL is active and complete in the supplied snapshot. The visible schema is heavily commented reference SQL, so database initialization/migrations may be handled elsewhere or may be incomplete.
-
-There is a known dimension risk: the schema reference declares `embedding vector(1536)`, while `workers/embedder_worker.py` currently uses dimension `2048` and model `nvidia/llama-nemotron-embed-vl-1b-v2`. Any embedding change must reconcile the database vector dimension, model output, SQL casts, and retrieval queries together.
-
-## Content Processing Rules
-
-`crawler/content_processor.py` is the current processor used by `workers/processor_worker.py`:
-
-- Removes non-content tags such as script, style, iframe, SVG, metadata, head, and template.
-- Learns navigation/header/footer-like text for the first page of a domain.
-- Stores learned boilerplate patterns in Redis under `boilerplate_patterns:<domain>`.
-- Attempts conservative similarity-based boilerplate removal on subsequent pages.
-- Extracts title, headings, paragraphs, lists, tables, sections, metadata, all visible text, and a document structure.
-- Deduplicates sections and heading paths.
-
-Be conservative when modifying boilerplate removal: deleting valid content is worse than retaining a small amount of navigation. Domain cache behavior must be tested with Redis unavailable and available.
-
-## Testing and Quality Checks
-
-Run the full suite:
+Full suite and syntax check:
 
 ```powershell
 python -m pytest -q
-```
-
-Run a focused test file:
-
-```powershell
-python -m pytest -q tests/test_fetcher_site_strategy.py
-```
-
-Useful checks before submitting a change:
-
-```powershell
 python -m compileall -q .
-python -m pytest -q tests/test_fetcher_site_strategy.py
 ```
 
-Do not claim the full suite is green without running it. The recorded baseline in this snapshot is currently **not collectible**: `tests/test_content_processor.py` imports `ContentProcessor` from `processors.content_processor_old`, but that module exposes `ContentProcessorOld`. This causes an ImportError during collection. The same test file also appears written for an older processor contract and expects cards behavior that may not match the current processor. Treat this as pre-existing until a change explicitly addresses it.
+The known baseline limitation is `tests/test_content_processor.py`: it imports `ContentProcessor` from `processors.content_processor_old`, while that module exposes `ContentProcessorOld`, and the test expects an older processor contract. Treat collection failures from that mismatch as pre-existing unless the task explicitly addresses the legacy test. Do not silently replace the active `crawler.content_processor.ContentProcessor` with the legacy processor.
 
-Tests may require external services if expanded to integration coverage. Prefer unit tests with mocked Redis/database/network clients for pure logic and focused regression tests for crawler, parser, processor, queue dispatch, and status transitions.
+The current `tests/test_chunker.py` baseline also fails because `EnhancedChunker().chunk_structure()` returns no chunks for its fixture. Investigate the chunker implementation and contract before attributing a future chunking failure to a new change.
 
-## Engineering Rules for the Agent
+`python -m compileall -q .` traverses the checked-in local `venv/` and currently reports a Python-2-style syntax error in `venv/Lib/site-packages/websocket/policyserver.py`. Prefer compiling application directories or use a clean environment when a syntax-only check is needed.
 
-- Read the owning module and its nearest tests before editing.
-- Preserve public APIs and existing data contracts unless the task requires a deliberate migration.
-- Fix root causes and keep changes narrow; do not perform unrelated cleanup.
-- Never hardcode credentials, API keys, or machine-specific absolute paths.
-- Do not use destructive database commands or remove the Docker volume without explicit approval.
-- Be careful with async code: database pool lifecycle, `asyncio.run` inside worker actors, and WebSocket cleanup are intentional boundaries that need targeted tests.
-- Keep Redis and PostgreSQL access mockable in unit tests.
-- When changing queue payloads or actor signatures, update every producer and consumer together.
-- When changing schema fields, update storage, workers, retrieval SQL, and any migration/bootstrap path together.
-- Preserve same-domain crawl restrictions, page limits, request delays, response-size limits, and retry behavior unless explicitly requested.
-- Use logging consistently; avoid adding noisy `print` calls in new code unless matching an existing worker diagnostic is necessary.
-- Avoid broad HTML extraction rewrites when the task concerns one field or one selector.
-- After the first edit, run the narrowest relevant test or compile check immediately. Then run the broader available checks.
-- Report pre-existing failures separately from failures introduced by the change.
+For changes to queues, run the relevant worker/unit tests and inspect every producer and consumer. For crawler changes, use mocked network/database clients where possible. For processor changes, test Redis available and unavailable paths and isolate the domain boilerplate cache. For schema or embedding changes, check schema, worker, storage, and retrieval SQL together.
 
-## First Investigation Checklist
+## Known Risks and Open Work
 
-1. Confirm the working directory and inspect `git status`.
-2. Identify the exact requested behavior and its route, worker, service, or processor owner.
-3. Read the owning implementation plus one adjacent test/call site.
-4. Run the narrowest available check before editing.
-5. Make the smallest compatible change.
-6. Run the focused check, then `python -m compileall -q .` and relevant pytest tests.
-7. Review the diff for accidental API, schema, dependency, or configuration changes.
+- WebSocket authentication and authorization are not implemented.
+- Chat routes currently use `HARDCODED_USER_ID` instead of the parsed user header.
+- `MAX_CRAWL_DEPTH` is documented but not enforced by the BFS crawl.
+- Redis job-list records and Dramatiq dispatch are both written; understand this redundancy before changing job status behavior.
+- Provider calls require credentials for real embeddings and optional vision analysis. Missing embedding credentials result in zero/failure behavior in the embedder path; do not interpret that as a successful production ingestion.
+- The active 2048-dimension `halfvec` schema conflicts with the obsolete 1536-dimension reference schema.
+- Database bootstrap/migrations are not managed by a dedicated migration tool in this repository; verify which schema has actually been loaded before integration work.
+- The sibling frontend currently targets the backend through its own Vite configuration and may have hardcoded development assumptions. Treat frontend and backend changes as one contract only when the task requires it.
 
-## Known Snapshot Risks
+## Agent Workflow
 
-- Test collection fails because of the legacy processor import mismatch described above.
-- The current and legacy content processors have different contracts; do not silently substitute one for the other.
-- Processing may be enqueued from both crawler layers; verify duplicate dispatch/idempotency.
-- Database schema embedding dimension and embedder dimension disagree.
-- Docker PostgreSQL uses host port 5433 but container port 5432.
-- Redis boilerplate cache is domain-scoped and can affect tests across runs; clear or isolate cache state when testing processor behavior.
-- The default local database URL in `config.py` uses placeholder credentials and port 5432, while Compose uses different credentials and host/container addressing.
+1. Run `git status --short` and identify user changes. Never reset or checkout unrelated files.
+2. Find the owning route, worker, service, or processor and read its nearest test/call site.
+3. State one local hypothesis about the behavior and run the cheapest check that could disprove it.
+4. Make the smallest compatible edit. Preserve public APIs, queue payloads, and database contracts unless migration is intentional.
+5. Immediately run the narrowest relevant test or compile check after the first edit.
+6. Run broader relevant tests and `python -m compileall -q .` when practical.
+7. Review the diff for accidental schema, dependency, configuration, generated-file, or secret changes.
+8. Report pre-existing failures separately from failures introduced by the change.
+
+Do not commit, create branches, delete database volumes, or rotate credentials unless the user explicitly asks for it.

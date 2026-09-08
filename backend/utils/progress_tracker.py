@@ -5,6 +5,7 @@ Progress is monotonic and tied to pipeline stages, not individual pages.
 """
 
 from typing import Dict, Any, Optional
+import asyncio
 import logging
 from utils.chat_status_tracker import ChatStatusTracker
 from database_sync import execute_update, execute_one
@@ -139,7 +140,6 @@ class PipelineProgressTracker:
                 current_progress = current.get('progress') or 0
                 
                 # Terminal state check - don't allow changes after completion
-                                # Terminal state check - don't allow changes after completion
                 if current_status in ['completed', 'answered']:
                     logger.warning(f"Chat {self.chat_id} already in terminal state {current_status}, ignoring update")
                     return False
@@ -150,7 +150,6 @@ class PipelineProgressTracker:
                     return False
 
                 # DB-level stage-order guard: reject backward stage transitions
-                # (the in-memory guard can't help when a fresh tracker is created per worker)
                 current_db_index = self.get_stage_index(current_status) if current_status else -1
                 new_index = self.get_stage_index(status)
                 if new_index != -1 and current_db_index != -1 and new_index < current_db_index:
@@ -189,10 +188,8 @@ class PipelineProgressTracker:
             
             logger.debug(f"📊 Updated chat {self.chat_id}: {status} ({progress}%)")
 
-            try:
-                ChatStatusTracker._broadcast_update(self.chat_id, progress, status, step)
-            except Exception as _be:
-                logger.warning(f"WebSocket broadcast failed (non-fatal): {_be}")
+            # Use the thread-safe sync bridge for WebSocket broadcast
+            self._broadcast_progress_sync(progress, status, step)
 
             return True
             
@@ -200,6 +197,55 @@ class PipelineProgressTracker:
             logger.error(f"❌ Failed to update chat {self.chat_id}: {e}")
             return False
     
+    def _broadcast_progress_sync(self, progress: int, status: str, step: str = None):
+        """
+        Thread-safe broadcast — automatically handles async and sync contexts.
+        """
+        try:
+            message = {
+                'type': 'progress_update',
+                'chat_id': self.chat_id,
+                'data': {
+                    'chat_id': self.chat_id,
+                    'exists': True,
+                    'status': status,
+                    'progress': progress,
+                    'current_step': step or '',
+                    'friendly_message': step or f'{status}...',
+                    'is_processing': status not in ['completed', 'answered', 'failed'],
+                    'is_ready': status in ['completed', 'answered'],
+                    'is_failed': status == 'failed',
+                    'has_error': status == 'failed',
+                    'error_message': None,
+                    'document_id': None,
+                    'started_at': None,
+                    'completed_at': None
+                }
+            }
+
+            channel = f"ws:chat:{self.chat_id}"
+
+            try:
+                # Check if we're inside a running event loop (async context)
+                loop = asyncio.get_running_loop()
+                
+                # We're in async context (main-1 FastAPI route)
+                # Use create_task — fire and forget, never blocks
+                from websocket_manager import chat_connection_manager
+                loop.create_task(
+                    chat_connection_manager.publish_to_redis_channel(channel, message)
+                )
+                logger.debug(f"📡 Async broadcast scheduled for {self.chat_id}")
+
+            except RuntimeError:
+                # No running loop — we're in a sync worker thread (crawler-1, processor-1)
+                # Use the blocking bridge to the main loop
+                from websocket_manager import publish_progress_sync
+                publish_progress_sync(channel, message)
+                logger.debug(f"📡 Sync broadcast sent for {self.chat_id}")
+
+        except Exception as e:
+            logger.warning(f"⚠️ Broadcast failed (non-fatal): {e}")
     def mark_crawling(self, page_count: int = 0, total_pages: int = 0) -> int:
         """Update crawling progress based on pages found."""
         if total_pages > 0:
@@ -243,9 +289,6 @@ class PipelineProgressTracker:
         Mark pipeline as failed while preserving last progress.
         This gives better visibility into where the failure occurred.
         """
-        # Keep last progress instead of resetting to 0
-        # progress = self._last_progress if self._last_progress > 0 else 0
-        
         if self._last_progress > 0:
             progress = self._last_progress
         else:
@@ -256,6 +299,7 @@ class PipelineProgressTracker:
                 progress = (row.get('progress') or 0) if row else 0
             except Exception:
                 progress = 0
+        
         try:
             now = get_current_datetime().isoformat()
             
@@ -286,6 +330,10 @@ class PipelineProgressTracker:
             self._current_progress = progress
             
             logger.error(f"❌ Chat {self.chat_id} failed: {error} (progress at failure: {progress})")
+            
+            # Broadcast the failure using the sync bridge
+            self._broadcast_progress_sync(progress, 'failed', f"Failed: {error[:100]}")
+            
             return progress
             
         except Exception as e:

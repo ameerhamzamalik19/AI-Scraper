@@ -7,6 +7,8 @@ from typing import Optional, Dict, Any, List
 from urllib.parse import urlparse
 import re
 import random
+import os
+import json
 from bs4 import BeautifulSoup
 from config import crawler_settings
 import logging
@@ -29,7 +31,6 @@ except ImportError:
         from playwright_stealth import Stealth
         STEALTH_AVAILABLE = True
         logger.info("✅ playwright-stealth loaded (Stealth class)")
-        # We'll handle this in the function
     except ImportError:
         STEALTH_AVAILABLE = False
         logger.warning("playwright-stealth not installed. Install with: pip install playwright-stealth")
@@ -337,7 +338,14 @@ class Fetcher:
     """
     Hybrid fetcher: tries fast HTTPX first, falls back to Playwright
     for JS-rendered pages or when blocking is detected.
+    Also supports BrightData Web Unlocker API for difficult sites.
     """
+
+    # ✅ FORCE PLAYWRIGHT FOR THESE DOMAINS
+    FORCE_PLAYWRIGHT_DOMAINS = {
+        # 'scrapethissite.com',
+        # 'scrapethissite',
+    }
 
     def __init__(self):
         self.http_client: Optional[httpx.AsyncClient] = None
@@ -346,10 +354,25 @@ class Fetcher:
         self.use_stealth: bool = getattr(crawler_settings, 'USE_STEALTH', True)
         self.user_agents: List[str] = self._build_user_agent_pool()
         self._site_render_mode: Dict[str, str] = {}
+        self._site_blocked: Dict[str, bool] = {}
+        
+        # BrightData configuration
+        self.brightdata_api_key = os.getenv("BRIGHTDATA_API_KEY", "")
+        self.brightdata_zone = os.getenv("BRIGHTDATA_ZONE_NAME", "")
+        self.brightdata_enabled = bool(self.brightdata_api_key and self.brightdata_zone)
+        self.brightdata_used = set()  # Track which sites we've tried BrightData for
         
         # Persistent browser process
         self.browser_process = None
         self.browser_connection = None
+        
+        # HTTP client for BrightData API
+        self.brightdata_client: Optional[httpx.AsyncClient] = None
+        
+        if self.brightdata_enabled:
+            logger.info("✅ BrightData Web Unlocker API configured")
+        else:
+            logger.warning("⚠️ BrightData API not configured. Set BRIGHTDATA_API_KEY and BRIGHTDATA_ZONE_NAME in .env")
 
     def _build_user_agent_pool(self) -> List[str]:
         """Build a pool of user agents for rotation."""
@@ -386,12 +409,52 @@ class Fetcher:
             )
         return self.http_client
 
+    async def _get_brightdata_client(self) -> httpx.AsyncClient:
+        """Get (or create) the HTTPX client for BrightData API."""
+        if self.brightdata_client is None or self.brightdata_client.is_closed:
+            self.brightdata_client = httpx.AsyncClient(
+                timeout=httpx.Timeout(60.0, connect=10.0),
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {self.brightdata_api_key}",
+                }
+            )
+        return self.brightdata_client
+
     async def _rotate_http_client(self) -> None:
         """Close the current HTTPX client and create a fresh one."""
         if self.http_client and not self.http_client.is_closed:
             await self.http_client.aclose()
         self.http_client = None
         self.user_agents = self.user_agents[1:] + [self.user_agents[0]]
+
+    def _is_blocked_site(self, url: str) -> bool:
+        """Check if a site has been marked as blocked."""
+        site_key = self._get_site_key(url)
+        return self._site_blocked.get(site_key, False)
+
+    def _mark_site_blocked(self, url: str) -> None:
+        """Mark a site as blocked (requires BrightData or Playwright)."""
+        site_key = self._get_site_key(url)
+        self._site_blocked[site_key] = True
+        logger.info(f"🚫 Site marked as blocked: {site_key}")
+
+    def _should_use_brightdata(self, url: str) -> bool:
+        """Check if BrightData should be used for this URL."""
+        if not self.brightdata_enabled:
+            return False
+        
+        site_key = self._get_site_key(url)
+        
+        # Don't retry BrightData if it already failed for this site
+        if site_key in self.brightdata_used:
+            return False
+        
+        # Use BrightData for blocked sites
+        if self._is_blocked_site(url):
+            return True
+        
+        return False
 
     def _detect_login_required(self, html: str, url: str, status_code: int) -> tuple[bool, str]:
         """
@@ -402,20 +465,20 @@ class Fetcher:
             return False, ""
         
         # ============================================================
-        # 1. Input size guard (Issue #6)
+        # 1. Input size guard
         # ============================================================
         MAX_HTML_SIZE = 1_000_000  # 1MB
         if len(html) > MAX_HTML_SIZE:
             html = html[:MAX_HTML_SIZE]
         
         # ============================================================
-        # 2. Early status code check (Issue #7)
+        # 2. Early status code check
         # ============================================================
         if status_code in (401, 403):
             return True, f"HTTP {status_code} - Authentication required"
         
         # ============================================================
-        # 3. Parse URL for path checking (Issue #5)
+        # 3. Parse URL for path checking
         # ============================================================
         from urllib.parse import urlparse, parse_qs
         parsed_url = urlparse(url)
@@ -444,7 +507,7 @@ class Fetcher:
                 return True, "Login URL query parameter detected"
         
         # ============================================================
-        # 4. Whitelist check (Issue #1 & #4 - uses BeautifulSoup)
+        # 4. Whitelist check (uses BeautifulSoup)
         # ============================================================
         from urllib.parse import urlparse
         from bs4 import BeautifulSoup
@@ -488,7 +551,7 @@ class Fetcher:
                 title_lower = title.lower()
                 # Only detect if the title is primarily about login
                 if any(title_lower.startswith(t) for t in ['login', 'sign in', 'log in', 'authentication']):
-                    # Sanitize the title (Issue #2)
+                    # Sanitize the title
                     sanitized_title = self._sanitize_string(title)
                     return True, f"Login page title detected: {sanitized_title[:100]}"
             
@@ -507,7 +570,7 @@ class Fetcher:
         # ============================================================
         soup = BeautifulSoup(html, 'html.parser')
         
-        # Check for login forms using BeautifulSoup (Issue #1, #4)
+        # Check for login forms using BeautifulSoup
         for form in soup.find_all('form'):
             action = form.get('action', '').lower()
             
@@ -538,7 +601,7 @@ class Fetcher:
                 if not any(x in action for x in ['search', 'region', 'country']):
                     return True, "Login form action detected"
         
-        # Check title (Issue #2 - sanitized)
+        # Check title (sanitized)
         title_tag = soup.find('title')
         if title_tag:
             title = title_tag.get_text().strip()
@@ -547,7 +610,7 @@ class Fetcher:
                 sanitized_title = self._sanitize_string(title)
                 return True, f"Login page title: {sanitized_title[:100]}"
         
-        # Check heading (Issue #1 - fixed with BeautifulSoup)
+        # Check heading
         for heading in soup.find_all(['h1', 'h2', 'h3']):
             heading_text = heading.get_text().strip().lower()
             if any(t in heading_text for t in ['login', 'sign in', 'log in']):
@@ -555,7 +618,7 @@ class Fetcher:
                 if len(heading.get_text(strip=True)) < 100:
                     return True, "Login heading detected"
         
-        # Check for access denied messages (Issue #3 - consistent approach)
+        # Check for access denied messages
         html_lower = html.lower()
         if re.search(
             r"access\s+denied|access\s+is\s+denied|you\s+don't\s+have\s+permission"
@@ -564,7 +627,7 @@ class Fetcher:
         ):
             return True, "Access denied message detected"
         
-        # URL path check for non-whitelisted (Issue #5)
+        # URL path check for non-whitelisted
         for segment in path_segments:
             segment_lower = segment.lower()
             if 'login' in segment_lower or 'signin' in segment_lower or 'auth' in segment_lower:
@@ -575,7 +638,6 @@ class Fetcher:
     def _sanitize_string(self, text: str, max_length: int = 100) -> str:
         """
         Sanitize a string to prevent log injection and UI injection.
-        (Issue #2)
         """
         if not text:
             return ""
@@ -602,26 +664,65 @@ class Fetcher:
 
     def _set_site_render_mode(self, url: str, mode: str) -> None:
         """Persist the chosen fetch strategy for the whole site."""
-        if mode not in {"httpx", "playwright"}:
+        if mode not in {"httpx", "playwright", "brightdata"}:
             return
         site_key = self._get_site_key(url)
         self._site_render_mode[site_key] = mode
         logger.info(f"🧭 Site render strategy for {site_key}: {mode}")
 
     def _should_use_playwright_for_url(self, url: str) -> bool:
-        """Check whether the entire site has already been assigned to Playwright."""
+        """
+        Check whether the entire site has already been assigned to Playwright,
+        OR if it's in the force Playwright list.
+        """
         site_key = self._get_site_key(url)
+        
+        # ✅ Check if domain is in force Playwright list
+        for domain in self.FORCE_PLAYWRIGHT_DOMAINS:
+            if domain in site_key:
+                logger.info(f"🎯 Force Playwright for domain: {domain}")
+                return True
+        
         return self._site_render_mode.get(site_key) == "playwright"
 
-    def _detect_site_render_mode_for_html(self, url: str, html: Optional[str]) -> str:
-        """Decide the site's strategy once and cache it based on the first page."""
+    def _should_use_brightdata_for_url(self, url: str) -> bool:
+        """Check whether the site should use BrightData."""
         site_key = self._get_site_key(url)
+        return self._site_render_mode.get(site_key) == "brightdata"
+
+    def _detect_site_render_mode_for_html(self, url: str, html: Optional[str]) -> str:
+        """
+        Decide the site's strategy once and cache it based on the first page.
+        
+        The key insight: don't commit httpx to the cache until you've verified 
+        the content is actually useful. Only cache httpx if content passes a 
+        minimum quality bar.
+        """
+        site_key = self._get_site_key(url)
+
+        # Already cached → use it, no re-evaluation
         if site_key in self._site_render_mode:
             return self._site_render_mode[site_key]
 
-        mode = "playwright" if html and self._needs_browser_rendering(html) else "httpx"
-        self._set_site_render_mode(url, mode)
-        return mode
+        # First visit: decide mode and lock it in permanently
+        if html and self._needs_browser_rendering(html, url):
+            self._set_site_render_mode(url, "playwright")
+            return "playwright"
+
+        # Only cache as httpx if content looks genuinely populated
+        soup = BeautifulSoup(html or '', 'html.parser')
+        for tag in soup(['script', 'style', 'noscript']):
+            tag.decompose()
+        content_len = len((soup.find('body') or soup).get_text(strip=True))
+
+        if content_len > 200:
+            # Content looks real — safe to cache as httpx
+            self._set_site_render_mode(url, "httpx")
+            return "httpx"
+
+        # Content too thin to be sure — don't cache yet, try playwright this once
+        logger.info(f"⚠️ Thin content ({content_len} chars), not caching — trying Playwright: {url}")
+        return "playwright"
 
     def _detect_blocking(
         self, status_code: int, headers: dict, html: Optional[str]
@@ -642,11 +743,23 @@ class Fetcher:
         if 'x-ratelimit-remaining: 0' in headers_str or 'retry-after' in headers_str:
             return True, "Rate limited"
 
+        # ✅ NEW: Detect WAF challenges from headers
+        headers_lower = {k.lower(): v.lower() for k, v in headers.items()}
+        
+        # Amazon WAF challenge
+        if headers_lower.get('x-amzn-waf-action') == 'challenge':
+            return True, "Amazon WAF challenge detected"
+        
+        # CloudFront error
+        if headers_lower.get('x-cache') == 'error from cloudfront':
+            return True, "CloudFront error - WAF blocked"
+
         waf_phrases = [
             'request blocked', 'access denied', 'you have been blocked',
             'ip address blocked', 'suspicious activity', 'automated request',
             'our systems have detected', 'unusual traffic', 'ddos protection',
             'access to this page has been denied',
+            'waf', 'challenge', 'please verify you are human',
         ]
         for phrase in waf_phrases:
             if phrase in html_lower:
@@ -654,24 +767,177 @@ class Fetcher:
 
         return False, ""
 
-    def _needs_browser_rendering(self, html: Optional[str]) -> bool:
-        """Return True if the page is an empty JS app shell that needs Playwright."""
+    def _needs_browser_rendering(self, html: Optional[str], url: str = "") -> bool:
+        """
+        Return True if the page needs Playwright rendering.
+        
+        This now includes smarter detection for:
+        1. Classic SPA shells (Next.js, Nuxt, etc.)
+        2. AJAX-loaded content with empty data containers
+        3. Inline JavaScript fetch/XHR patterns with thin content
+        """
         if not html:
             return False
 
         soup = BeautifulSoup(html, 'html.parser')
+
+        # --- 1. Classic SPA shell (your existing logic) ---
         root = soup.find(id=re.compile(r'^(?:__next|__nuxt|root|app)$'))
-        if not root:
+        if root and not root.get_text(' ', strip=True):
+            framework_markers = ('/_next/', '/_nuxt/', '/static/js/', '/assets/js/')
+            if any(
+                any(marker in (script.get('src') or '') for marker in framework_markers)
+                for script in soup.find_all('script', src=True)
+            ):
+                return True
+
+        # --- 2. Strip noise, measure real content ---
+        for tag in soup(['script', 'style', 'noscript', 'meta', 'link', 'header', 'footer', 'nav']):
+            tag.decompose()
+
+        body = soup.find('body')
+        if not body:
             return False
 
-        if root.get_text(' ', strip=True):
-            return False
+        visible_text = body.get_text(' ', strip=True)
+        visible_text_len = len(visible_text)
 
-        framework_markers = ('/_next/', '/_nuxt/', '/static/js/', '/assets/js/')
-        return any(
-            any(marker in (script.get('src') or '') for marker in framework_markers)
-            for script in soup.find_all('script', src=True)
+        # --- 3. Empty data containers = AJAX-loaded content ---
+        empty_containers = [
+            c for c in body.find_all(['table', 'tbody', 'ul', 'ol'])
+            if len(c.get_text(strip=True)) < 20
+        ]
+        if empty_containers and visible_text_len < 500:
+            logger.info(f"🔍 AJAX detected: {len(empty_containers)} empty containers, {visible_text_len} chars — {url}")
+            return True
+
+        # --- 4. Inline JS fetch/XHR patterns with thin content ---
+        original_soup = BeautifulSoup(html, 'html.parser')
+        inline_scripts = ' '.join(
+            s.get_text() for s in original_soup.find_all('script', src=False)
         )
+        ajax_patterns = [
+            r'fetch\s*\(', r'\$\.ajax\s*\(', r'\$\.get\s*\(',
+            r'XMLHttpRequest', r'axios\.', r'await\s+fetch',
+        ]
+        ajax_hits = sum(1 for p in ajax_patterns if re.search(p, inline_scripts))
+
+        if visible_text_len < 1000 and ajax_hits >= 2:
+            logger.info(f"🔍 AJAX detected: {ajax_hits} JS patterns, {visible_text_len} chars — {url}")
+            return True
+
+        return False
+
+    async def _fetch_with_brightdata(self, url: str) -> Dict[str, Any]:
+        """
+        Fetch using BrightData Web Unlocker API.
+        This handles proxy rotation, CAPTCHA solving, and anti-bot challenges.
+        """
+        logger.info(f"🔓 Fetching with BrightData Web Unlocker: {url}")
+        
+        site_key = self._get_site_key(url)
+        self.brightdata_used.add(site_key)
+        
+        try:
+            client = await self._get_brightdata_client()
+            
+            # Prepare request payload
+            payload = {
+                "zone": self.brightdata_zone,
+                "url": url,
+                "format": "raw",
+                "render": "true"
+            }
+            
+            # Add country targeting if configured
+            country = os.getenv("BRIGHTDATA_COUNTRY", "")
+            if country:
+                payload["country"] = country
+            
+            # Make the request
+            response = await client.post(
+                "https://api.brightdata.com/request",
+                json=payload
+            )
+            
+            if response.status_code == 200:
+                content_type = response.headers.get('content-type', '').lower()
+                is_html = 'text/html' in content_type or 'application/xhtml+xml' in content_type
+                
+                if is_html:
+                    html = _decode_content(response.content, content_type)
+                    html = _clean_html(html)
+                    
+                    # Check if BrightData returned an error page
+                    if 'brightdata' in html.lower() and 'error' in html.lower():
+                        logger.warning(f"⚠️ BrightData returned error page for {url}")
+                        # Mark site for Playwright fallback
+                        self._set_site_render_mode(url, "playwright")
+                        return {
+                            'success': False,
+                            'error': 'BrightData returned error page',
+                            'method': 'brightdata',
+                        }
+                    
+                    logger.info(f"✅ BrightData fetch successful for {url} ({len(html)} chars)")
+                    
+                    # Mark site as unblocked (BrightData handled it)
+                    site_key = self._get_site_key(url)
+                    self._site_blocked[site_key] = False
+                    
+                    return {
+                        'success': True,
+                        'html': html,
+                        'status_code': 200,
+                        'content_type': content_type,
+                        'response_size': len(html.encode('utf-8')),
+                        'headers': dict(response.headers),
+                        'url': url,
+                        'method': 'brightdata',
+                        'brightdata_used': True,
+                    }
+                else:
+                    # Non-HTML response (JSON, etc.)
+                    content = response.text
+                    logger.info(f"✅ BrightData fetch successful (non-HTML) for {url}")
+                    return {
+                        'success': True,
+                        'html': content,
+                        'status_code': 200,
+                        'content_type': content_type,
+                        'response_size': len(content.encode('utf-8')),
+                        'headers': dict(response.headers),
+                        'url': url,
+                        'method': 'brightdata',
+                        'brightdata_used': True,
+                    }
+            else:
+                logger.error(f"❌ BrightData API error: {response.status_code} - {response.text}")
+                
+                # If BrightData fails, mark site for Playwright fallback
+                self._set_site_render_mode(url, "playwright")
+                
+                return {
+                    'success': False,
+                    'error': f'BrightData API error: {response.status_code}',
+                    'method': 'brightdata',
+                    'status_code': response.status_code,
+                }
+                
+        except httpx.TimeoutException:
+            logger.warning(f"⏱️ BrightData timeout for {url}")
+            return {
+                'success': False,
+                'error': 'BrightData timeout',
+                'method': 'brightdata',
+            }
+        except Exception as e:
+            logger.error(f"❌ BrightData error for {url}: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'method': 'brightdata',
+            }
 
     def _fetch_from_browser_process(self, url: str) -> Dict[str, Any]:
         """Send a URL to the persistent Playwright browser process."""
@@ -749,6 +1015,10 @@ class Fetcher:
             )
             if is_blocked:
                 logger.warning(f"🚫 Blocked ({block_reason}): {url}")
+                
+                # Mark site as blocked
+                self._mark_site_blocked(url)
+                
                 return {
                     'success': False,
                     'error': block_reason,
@@ -756,6 +1026,7 @@ class Fetcher:
                     'requires_login': False,
                     'status_code': response.status_code,
                     'method': 'httpx',
+                    'html': html,
                 }
 
             # --- Login check ---
@@ -772,6 +1043,7 @@ class Fetcher:
                         'is_blocked': False,
                         'status_code': response.status_code,
                         'method': 'httpx',
+                        'html': html,
                     }
 
             # --- JS shell check: mark the whole site for Playwright and use it for all later pages ---
@@ -816,33 +1088,44 @@ class Fetcher:
     async def fetch(self, url: str) -> Dict[str, Any]:
         """
         Main fetch entry point.
-        Strategy: cache one site-level decision, then reuse it for the rest of the domain.
+        Strategy: HTTPX → Playwright → BrightData → Retry with rotation.
         """
         logger.info(f"🌐 Fetching: {url}")
 
+        # Step 0: Check if site is in force Playwright list
         if self._should_use_playwright_for_url(url):
-            logger.info(f"♻️ Reusing cached Playwright strategy for site {self._get_site_key(url)}: {url}")
+            logger.info(f"🎯 Using forced Playwright for {self._get_site_key(url)}: {url}")
             return await self.fetch_playwright(url)
 
         # Step 1: HTTPX
         result = await self._fetch_with_httpx(url)
 
+        # If HTTPX succeeded, return immediately
         if result.get('success'):
             return result
 
-        # Step 2: Playwright fallback
-        if result.get('is_blocked') or result.get('requires_login'):
+        # Step 2: Try Playwright (fallback for ANY failure)
+        logger.info(f"🔄 HTTPX failed, trying Playwright for: {url}")
+        playwright_result = await self.fetch_playwright(url)
+        if playwright_result.get('success'):
+            # Cache as playwright for future requests
             self._set_site_render_mode(url, "playwright")
-            logger.info("🔄 Falling back to Playwright for the site...")
-            playwright_result = await self.fetch_playwright(url)
-            if playwright_result.get('success'):
-                return playwright_result
+            return playwright_result
 
-        # Step 3: Rotate UA and retry
-        if not result.get('success'):
-            logger.info("🔀 Rotating user agent and retrying...")
-            await self._rotate_http_client()
-            result = await self._fetch_with_httpx(url)
+        # Step 3: Try BrightData (fallback for ANY failure after Playwright)
+        if self.brightdata_enabled:
+            site_key = self._get_site_key(url)
+            if site_key not in self.brightdata_used:
+                logger.info(f"🔓 Playwright failed, trying BrightData for: {url}")
+                self._set_site_render_mode(url, "brightdata")
+                brightdata_result = await self._fetch_with_brightdata(url)
+                if brightdata_result.get('success'):
+                    return brightdata_result
+
+        # Step 4: Rotate UA and retry HTTPX (last resort)
+        logger.info("🔀 Rotating user agent and retrying HTTPX...")
+        await self._rotate_http_client()
+        result = await self._fetch_with_httpx(url)
 
         return result
 
@@ -866,6 +1149,10 @@ class Fetcher:
         if self.http_client and not self.http_client.is_closed:
             await self.http_client.aclose()
             self.http_client = None
+
+        if self.brightdata_client and not self.brightdata_client.is_closed:
+            await self.brightdata_client.aclose()
+            self.brightdata_client = None
 
         if self.browser:
             await self.browser.close()

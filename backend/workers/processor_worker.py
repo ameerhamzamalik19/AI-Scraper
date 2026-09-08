@@ -16,9 +16,32 @@ from redis_config import PROCESSING_QUEUE_NAME
 from crawler.content_processor import ContentProcessor
 from utils.chat_status_tracker import ChatStatusTracker
 from utils.progress_tracker import get_progress_tracker
-
+# workers/processor_worker.py  (at module load, before actors)
+import asyncio
+import threading
+from websocket_manager import set_main_loop
 
 logger = logging.getLogger(__name__)
+
+def _start_publisher_loop():
+    """
+    Start a dedicated event loop in a background thread for Redis publishing.
+    This gives processor-1 its own loop to use with publish_progress_sync.
+    """
+    loop = asyncio.new_event_loop()
+    set_main_loop(loop)  # register it so publish_progress_sync can find it
+    
+    logger.info(f"✅ Publisher event loop started for processor worker: {id(loop)}")
+    loop.run_forever()
+
+# Start it once at module load
+_publisher_thread = threading.Thread(
+    target=_start_publisher_loop,
+    daemon=True,
+    name="redis-publisher"
+)
+_publisher_thread.start()
+
 
 try:
     from bs4 import BeautifulSoup
