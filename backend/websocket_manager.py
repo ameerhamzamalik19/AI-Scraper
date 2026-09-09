@@ -119,6 +119,7 @@ class ChatConnectionManager:
         self._init_task: Optional[asyncio.Task] = None
         self._redis_lock = asyncio.Lock()
         self._redis_url = None
+        self._latest_status: Dict[str, tuple] = {}
     
     async def _init_redis(self):
         """Initialize Redis connection with retry logic."""
@@ -277,6 +278,7 @@ class ChatConnectionManager:
             self.active_connections[chat_id].discard(websocket)
             if not self.active_connections[chat_id]:
                 del self.active_connections[chat_id]
+                self._latest_status.pop(chat_id, None)
                 # Clean up Redis listener
                 if chat_id in self.pubsub_tasks:
                     self.pubsub_tasks[chat_id].cancel()
@@ -303,6 +305,45 @@ class ChatConnectionManager:
         """Broadcast to local connections only (no Redis)."""
         if chat_id not in self.active_connections:
             return
+
+        # Redis can deliver a queued worker update after a newer update from
+        # another worker. Never let an older stage overwrite a newer one in
+        # the live UI; reload already gets the latest database state.
+        if message.get('type') in {'progress_update', 'status_update'}:
+            data = message.get('data') or {}
+            status = data.get('status')
+            progress = data.get('progress') or 0
+            stage_order = {
+                'pending': 0,
+                'crawling': 1,
+                'processing': 2,
+                'chunking': 3,
+                'embedding': 4,
+                'completed': 5,
+                'answered': 5,
+                'failed': 5,
+            }
+            current = self._latest_status.get(chat_id)
+            incoming = (stage_order.get(status, -1), progress)
+            current_status = current[2] if current else None
+            if current_status in {'completed', 'answered'} and status not in {'completed', 'answered'}:
+                logger.debug(
+                    "Ignoring non-terminal websocket status for completed chat %s: %s/%s",
+                    chat_id,
+                    status,
+                    progress,
+                )
+                return
+            if status != 'failed' and current and incoming < current[:2]:
+                logger.debug(
+                    "Ignoring stale websocket status for %s: %s/%s after %s",
+                    chat_id,
+                    status,
+                    progress,
+                    current,
+                )
+                return
+            self._latest_status[chat_id] = (*incoming, status)
         
         # Ensure message is JSON serializable
         message = self._prepare_for_json(message)

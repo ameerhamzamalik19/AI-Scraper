@@ -16,8 +16,27 @@ from api.routes.retrieval_pipeline import answer_user_question
 from websocket_manager import chat_connection_manager
 from utils.chat_status_tracker import ChatStatusTracker
 from utils.progress_tracker import get_progress_tracker
+import re
 
 router = APIRouter(prefix="/api", tags=["process"])
+
+CONVERSATIONAL_PATTERNS = re.compile(
+    r"^(hi|hello|hey|howdy|how are you|how's it going|what's up|wassup|"
+    r"thanks|thank you|cheers|good (morning|afternoon|evening|night)|"
+    r"who are you|what can you do|what do you do)\b",
+    re.IGNORECASE
+)
+
+CONVERSATIONAL_RESPONSES = {
+    "how are you": "I'm doing well, thanks for asking! What would you like to know about the content I've indexed?",
+    "how's it going": "Going great! Ask me anything about the website you've shared.",
+    "what's up": "Not much! Ready to answer questions about your content. What do you want to know?",
+    "who are you": "I'm an AI assistant that answers questions based on website content you provide. Share a URL and I'll index it for you!",
+    "what can you do": "I can crawl websites and answer questions about their content. Share a URL to get started!",
+    "what do you do": "I can crawl websites and answer questions about their content. Share a URL to get started!",
+}
+
+
 
 @router.post("/process-link", response_model=ProcessLinkResponse)
 async def process_link(request: LinkRequest):
@@ -203,25 +222,36 @@ async def process_link(request: LinkRequest):
             
             # ✅ Update progress to processing stage
             tracker = get_progress_tracker(chat_id)
-            tracker.update_stage('processing', 0, "Processing your question...")
-            await chat_connection_manager.send_status(chat_id)
+            # ✅ Short-circuit conversational messages before RAG
+            if CONVERSATIONAL_PATTERNS.match(content.strip()):
+                content_lower = content.lower().strip()
+                response_content = next(
+                    (v for k, v in CONVERSATIONAL_RESPONSES.items() if k in content_lower),
+                    "Hey! Ask me anything about the content I've indexed."
+                )
+                tracker.mark_completed("Done")
+                await chat_connection_manager.send_status(chat_id)
+            else:
+                # ✅ Update progress to processing stage
+                tracker.update_stage('processing', 0, "Processing your question...")
+                await chat_connection_manager.send_status(chat_id)
             
-            response_content = await asyncio.to_thread(
-                answer_user_question,
-                content,
-                chat_id=chat_id,
-                project_id=project_id,
-                page_id=page_id,
-                chat_history=chat_history
-            )
-            
-            if response_content is None:
-                response_content = "I couldn't process your question. Please try again."
-            
-            # ✅ Mark as answered
-            tracker = get_progress_tracker(chat_id)
-            tracker.mark_completed("Answer generated!")
-            await chat_connection_manager.send_status(chat_id)
+                response_content = await asyncio.to_thread(
+                    answer_user_question,
+                    content,
+                    chat_id=chat_id,
+                    project_id=project_id,
+                    page_id=page_id,
+                    chat_history=chat_history
+                )
+                
+                if response_content is None:
+                    response_content = "I couldn't process your question. Please try again."
+                
+                # ✅ Mark as answered
+                tracker = get_progress_tracker(chat_id)
+                tracker.mark_completed("Answer generated!")
+                await chat_connection_manager.send_status(chat_id)
         
         # Save assistant response
         assistant_message = await MessageService.create_message(

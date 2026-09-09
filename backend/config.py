@@ -40,13 +40,20 @@ class CrawlerSettings:
     MAX_PAGES_PER_CRAWL: int = 5
     MAX_CRAWL_DEPTH: int = 3  # Not used with BFS, but kept for reference
     MAX_RESPONSE_SIZE: int = 10 * 1024 * 1024  # 10MB
+
+    MAX_IMAGES_TO_PROCESS = 20  # Increased from 20
+    MAX_TABLES_TO_PROCESS = 100  # Increased from 20
+    MAX_TABLE_ROWS_TO_STORE = 100  # Increased from 50
+    MAX_TABLE_ROWS_TO_TEXT = 20
+    MIN_TEXT_LENGTH = 3
+    MAX_LINKS_PER_PAGE = 100  # Limit the number of links to process per page
     
     # Timeouts
     REQUEST_TIMEOUT: int = 30  # seconds
     BROWSER_TIMEOUT: int = 60  # seconds
     
     # Politeness (even without robots.txt)
-    REQUEST_DELAY: float = 1.0  # seconds between requests to same domain
+    REQUEST_DELAY: float = 0.0  # seconds between requests to same domain
     
     # User Agent
     USER_AGENT: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"

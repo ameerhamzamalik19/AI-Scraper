@@ -3,13 +3,13 @@ import time
 import logging
 from typing import Dict, Any, List, Optional
 from urllib.parse import urlparse
-from workers.processor_worker import process_document
 from crawler.frontier import URLFrontier
 from crawler.fetcher import Fetcher
 from crawler.parser import HTMLParser
 from crawler.storage import CrawlerStorage
 from config import crawler_settings
 from database_sync import execute_query
+from utils.queue_dispatch import enqueue_worker
 
 logger = logging.getLogger(__name__)
 
@@ -28,16 +28,19 @@ class Crawler:
         user_id: str,
         chat_id: str,
         page_id: str,
-        max_pages: int = 1
+        max_pages: int = None
     ):
         self.url = url
         self.project_id = project_id
         self.user_id = user_id
         self.chat_id = chat_id
         self.page_id = page_id
-        self.max_pages = max_pages
+        self.max_pages = max_pages or crawler_settings.MAX_PAGES_PER_CRAWL
         
-        self.frontier = URLFrontier(url, max_pages)
+        # ✅ Use page_id if provided, otherwise create new
+        self.initial_page_id = page_id
+        
+        self.frontier = URLFrontier(url, self.max_pages)
         self.fetcher = Fetcher()
         self.crawled_url_records: List[Dict[str, Any]] = []
         self.results = {
@@ -147,8 +150,11 @@ class Crawler:
         except Exception as e:
             logger.error(f"Failed to broadcast crawl progress: {e}")
     
-    async def _crawl_page(self, url: str) -> Optional[Dict[str, Any]]:
-        """Crawl a single page and store results"""
+    async def _crawl_page(self, url: str, depth: int = 0) -> Optional[Dict[str, Any]]:
+        """
+        Crawl a single page and store results.
+        ✅ Now tracks depth for crawl depth enforcement.
+        """
         try:
             # Mark as processing
             self._save_crawled_url_record(url, 'processing')
@@ -172,16 +178,56 @@ class Crawler:
             metadata = parser.extract_metadata(html, url)
             links = parser.extract_links(html, url)
             
-            # Store in database
-            page = await CrawlerStorage.get_or_create_page(
-                project_id=self.project_id,
-                chat_id=self.chat_id,
-                url=url,
-                normalized_url=url
-            )
+            # ✅ FIX: Create or get page first, then create page version
+            # The page creation should happen BEFORE page version creation
+            if url == self.url and self.initial_page_id:
+                # If this is the seed URL and we have a page_id, use it
+                # But we need to get the page from the database first
+                # Let's check if we can find the page by ID
+                try:
+                    from database import get_db_connection
+                    async with get_db_connection() as conn:
+                        page_result = await conn.fetchrow(
+                            "SELECT id, chat_id, project_id, url, normalized_url FROM pages WHERE id = $1",
+                            self.initial_page_id
+                        )
+                        if page_result:
+                            page = {
+                                "id": page_result["id"],
+                                "chat_id": page_result["chat_id"],
+                                "project_id": page_result["project_id"],
+                                "url": page_result["url"],
+                                "normalized_url": page_result["normalized_url"]
+                            }
+                        else:
+                            # Page doesn't exist, create new one
+                            page = await CrawlerStorage.get_or_create_page(
+                                project_id=self.project_id,
+                                chat_id=self.chat_id,
+                                url=url,
+                                normalized_url=url
+                            )
+                except Exception as e:
+                    logger.warning(f"Could not fetch existing page: {e}")
+                    # Fallback: create new page
+                    page = await CrawlerStorage.get_or_create_page(
+                        project_id=self.project_id,
+                        chat_id=self.chat_id,
+                        url=url,
+                        normalized_url=url
+                    )
+            else:
+                # Always create a new page for non-seed URLs
+                page = await CrawlerStorage.get_or_create_page(
+                    project_id=self.project_id,
+                    chat_id=self.chat_id,
+                    url=url,
+                    normalized_url=url
+                )
             
+            # ✅ Now create the page version with the correct page_id
             version = await CrawlerStorage.create_page_version(
-                page_id=page['id'],
+                page_id=page['id'],  # ← page_id is required, not project_id
                 url=url,
                 html=html,
                 metadata=metadata,
@@ -200,22 +246,33 @@ class Crawler:
                 )
 
             # Trigger processor worker
-            process_document.send(self.chat_id, version['document_id'])
+            enqueue_worker(
+                "workers.processor_worker.process_document",
+                self.chat_id,
+                version['document_id'],
+            )
             
             print(f"📤 Triggered processor for document: {version['document_id']}")
             
             # Mark as visited in frontier
             self.frontier.mark_visited(url)
             
-            # Add discovered links to frontier
-            current_depth = 0
+            # ✅ Add discovered links to frontier with depth tracking
+            current_depth = depth + 1
             new_links = [link for link in links if link != url]
             
-            if len(new_links) > 100:
-                new_links = new_links[:100]
+            # Limit links per page
+            if len(new_links) > crawler_settings.MAX_LINKS_PER_PAGE:
+                new_links = new_links[:crawler_settings.MAX_LINKS_PER_PAGE]
             
-            self.frontier.add_urls(new_links, current_depth + 1)
-            self.results["pages_discovered"] += len(new_links)
+            # ✅ Enforce crawl depth - only add links if within max depth
+            if current_depth <= crawler_settings.MAX_CRAWL_DEPTH:
+                added_count = self.frontier.add_urls(new_links, current_depth)
+                self.results["pages_discovered"] += added_count
+                print(f"   📊 Added {added_count} new links at depth {current_depth}")
+            else:
+                print(f"   ⏭️ Skipping {len(new_links)} links at depth {current_depth} (max {crawler_settings.MAX_CRAWL_DEPTH})")
+            
             self.results["pages_crawled"] += 1
             
             page_data = {
@@ -224,14 +281,15 @@ class Crawler:
                 'page_id': page['id'],
                 'page_version_id': version['id'],
                 'title': metadata.get('title', ''),
-                'links_count': len(new_links)
+                'links_count': len(new_links),
+                'depth': depth
             }
             self.results["crawled_pages"].append(page_data)
             
-            # Save as completed
+            # The page is not ready until processing, chunking, and embedding succeed.
             self._save_crawled_url_record(
                 url=url,
-                status='completed',
+                status='processing',
                 page_id=page['id'],
                 page_version_id=version['id'],
                 document_id=version['document_id'],
@@ -245,7 +303,8 @@ class Crawler:
                 "page": page,
                 "version": version,
                 "metadata": metadata,
-                "links": new_links
+                "links": new_links,
+                "depth": depth
             }
             
         except Exception as e:
@@ -260,9 +319,13 @@ class Crawler:
             return None
     
     async def run(self) -> Dict[str, Any]:
-        """Run the crawler"""
+        """
+        Run the crawler.
+        ✅ Now enforces both MAX_PAGES_PER_CRAWL and MAX_CRAWL_DEPTH.
+        """
         print(f"🕷️ Starting crawl for: {self.url}")
         print(f"📊 Max pages: {self.max_pages}")
+        print(f"📊 Max depth: {crawler_settings.MAX_CRAWL_DEPTH}")
         print("-" * 50)
         
         # Mark initial URL as pending
@@ -275,12 +338,12 @@ class Crawler:
             if not url_item:
                 break
             
-            # Add delay between requests
+            # ✅ Add delay between requests
             if crawl_count > 0:
                 await asyncio.sleep(crawler_settings.REQUEST_DELAY)
             
-            # Crawl the page
-            result = await self._crawl_page(url_item.url)
+            # ✅ Crawl the page with depth tracking
+            result = await self._crawl_page(url_item.url, url_item.depth)
             
             if result:
                 crawl_count += 1
@@ -296,7 +359,8 @@ class Crawler:
         print(f"📊 Pages crawled: {self.results['pages_crawled']}")
         print(f"📄 Crawled pages:")
         for page in self.results["crawled_pages"]:
-            print(f"   - {page.get('url', 'Unknown URL')} (doc: {page.get('document_id', 'N/A')})")
+            depth_info = f" (depth {page.get('depth', 'N/A')})" if page.get('depth') is not None else ""
+            print(f"   - {page.get('url', 'Unknown URL')}{depth_info} (doc: {page.get('document_id', 'N/A')})")
         print(f"📊 Pages discovered: {self.results['pages_discovered']}")
         print(f"📊 Pages failed: {self.results['pages_failed']}")
         

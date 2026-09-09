@@ -14,6 +14,10 @@ from processors.chunker import EnhancedChunker
 from utils.chat_status_tracker import ChatStatusTracker
 from utils.progress_tracker import get_progress_tracker
 from utils.content_classifier import ContentType, ContentClassifier
+from utils.queue_dispatch import enqueue_worker
+from utils.worker_event_loop import start_worker_event_loop
+
+start_worker_event_loop("chunker")
 
 print("✅ Chunker worker loaded with EnhancedChunker")
 
@@ -224,6 +228,7 @@ def _infer_content_type_from_metadata(metadata: Dict[str, Any]) -> Optional[Cont
 
 
 @dramatiq.actor(
+    actor_name="workers.chunker_worker.chunk_document",
     queue_name=CHUNKING_QUEUE_NAME,
     max_retries=2,
     time_limit=600000
@@ -297,17 +302,26 @@ def chunk_document(chat_id: str, document_id: str):
             if pending_chunks or processing_chunks:
                 print(f"📤 Sending {len(pending_chunks)} pending chunks to embedder")
                 tracker.update_stage('embedding', 0, f"Generating embeddings for {len(pending_chunks)} chunks...")
-                from workers.embedder_worker import embed_chunks
-                embed_chunks.send(chat_id, document_id)
+                enqueue_worker(
+                    "workers.embedder_worker.embed_chunks",
+                    chat_id,
+                    document_id,
+                )
                 return
             
             if completed_chunks and not pending_chunks and not processing_chunks and not failed_chunks:
-                tracker.mark_completed(f"All {len(completed_chunks)} chunks already embedded")
+                enqueue_worker(
+                    "workers.embedder_worker.embed_chunks",
+                    chat_id,
+                    document_id,
+                )
                 return
             
             if failed_chunks and not pending_chunks and not processing_chunks:
                 if completed_chunks:
-                    tracker.mark_completed(f"Embedded {len(completed_chunks)} chunks, {len(failed_chunks)} failed")
+                    tracker.mark_failed(
+                        f"{len(failed_chunks)} chunks failed to embed; retry is required"
+                    )
                     execute_update(
                         """UPDATE chats 
                            SET metadata = jsonb_set(COALESCE(metadata, '{}'::jsonb), '{embedding_failures}', %s) 
@@ -418,7 +432,8 @@ def chunk_document(chat_id: str, document_id: str):
                     entity_type, section_title, position_in_page, information_density,
                     embedding_status, created_at, updated_at) 
                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                   ON CONFLICT (document_id, chunk_index) DO NOTHING""",
+                   ON CONFLICT (page_version_id, chunk_hash) DO NOTHING
+                   """,
                 (
                     chunk_id,
                     page_version_id,
@@ -453,8 +468,11 @@ def chunk_document(chat_id: str, document_id: str):
         # ============================================================
         if chunk_ids:
             tracker.update_stage('embedding', 0, f"Generating embeddings for {len(chunks)} chunks...")
-            from workers.embedder_worker import embed_chunks
-            embed_chunks.send(chat_id, document_id)
+            enqueue_worker(
+                "workers.embedder_worker.embed_chunks",
+                chat_id,
+                document_id,
+            )
             print(f"📤 Sent {len(chunk_ids)} chunks to embedder")
         else:
             # Check if there are any existing chunks that need embedding
@@ -474,17 +492,26 @@ def chunk_document(chat_id: str, document_id: str):
                 if pending or processing:
                     print(f"📤 Found {len(pending)} pending chunks, sending to embedder")
                     tracker.update_stage('embedding', 0, f"Generating embeddings for {len(pending)} chunks...")
-                    from workers.embedder_worker import embed_chunks
-                    embed_chunks.send(chat_id, document_id)
+                    enqueue_worker(
+                        "workers.embedder_worker.embed_chunks",
+                        chat_id,
+                        document_id,
+                    )
                     return
                 elif failed and not pending and not processing:
                     if completed:
-                        tracker.mark_completed(f"Embedded {len(completed)} chunks, {len(failed)} failed")
+                            tracker.mark_failed(
+                                f"{len(failed)} chunks failed to embed; retry is required"
+                            )
                     else:
                         tracker.mark_failed(f"All {len(failed)} chunks failed to embed")
                     return
                 elif completed:
-                    tracker.mark_completed(f"All {len(completed)} chunks already embedded")
+                    enqueue_worker(
+                        "workers.embedder_worker.embed_chunks",
+                        chat_id,
+                        document_id,
+                    )
                     return
             
             print(f"⚠️ No chunks found for document {document_id}")

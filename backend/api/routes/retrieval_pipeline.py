@@ -2,7 +2,7 @@
 from typing import Any, Dict, List, Optional, Tuple
 from ollama import Client
 from database_sync import execute_query
-from workers.embedder_worker import get_embedding
+from utils.embedding_service import get_embedding
 import os
 import logging
 import json
@@ -59,28 +59,32 @@ def format_generation_error(error: Exception) -> str:
     return "I couldn't generate an answer right now. Please try again later."
 
 
-SYSTEM_PROMPT = """You are a helpful, knowledgeable assistant that answers questions based on provided website content.
+SYSTEM_PROMPT = """You are a helpful assistant for a specific website. You have access to content scraped from that site.
 
-## YOUR JOB:
-- Answer naturally and conversationally, like a human expert
-- Synthesize information from the context into clear, flowing prose
-- NEVER mention "based on the context," "according to the provided content," or "the chunks say"
-- NEVER show internal reasoning or thinking
-- NEVER cite sources or mention chunks
-- If the context doesn't contain enough information, say: "I don't have enough information about that in the available content."
-- Be concise and direct - don't over-explain
-- If the content is only weakly related, say you don't have enough information
+## HOW TO RESPOND:
+
+**For greetings and small talk** (hi, how are you, thanks, etc.):
+- Respond naturally and briefly like a human would
+- Don't mention the website or context
+- Keep it to 1-2 sentences max
+
+**For questions clearly about the website content:**
+- Answer using ONLY the provided context
+- Synthesize naturally — never say "based on the context" or "the chunks say"
+- If the context doesn't answer it, say: "I don't have that information available."
+
+**For questions that mix general knowledge + website content:**
+- Use the context as your primary source
+- You may fill in basic, universally-known facts (definitions, common concepts) to make the answer flow naturally
+- Never speculate or fabricate specific details, numbers, or claims not in the context
 
 ## RULES:
-1. Use ONLY information from the context - no external knowledge
-2. Write naturally - like you already know this information
-3. Synthesize across multiple chunks when relevant
-4. If information is incomplete, acknowledge it simply
-5. No source citations, no "chunk numbers," no "according to the text"
-6. Be confident in your answer - don't hedge unnecessarily
-7. If the context doesn't directly answer the question, say so
-
-Remember: Write like a helpful expert, not a research paper."""
+1. Never mention "chunks," "context," "scraped content," or internal workings
+2. Never cite sources or reference numbers
+3. Be concise and direct
+4. For factual questions about the site's topic, stick to the context
+5. When genuinely uncertain, say so simply — don't over-hedge
+6. Write like a knowledgeable human, not a research paper"""
 
 
 def build_user_prompt(question: str, context_chunks: List[Dict[str, Any]]) -> str:
@@ -560,8 +564,8 @@ def answer_user_question(
         for pattern in entity_patterns:
             matches = re.findall(pattern, standalone_question)
             if matches:
-                # Use first entity as filter
-                entity_filter = None
+                # Use the first detected entity as a document filter.
+                entity_filter = matches[0]
                 print(f"🎯 Detected entity: {entity_filter}")
                 break
 
@@ -596,12 +600,15 @@ def answer_user_question(
             print(f"  #{i+1}: [{entity}] [{category}] sim:{similarity:.4f} - {content_preview}...")
             print(f"      Source: {source}")
 
-        # Step 6: Generate response
-        response = generate_response(standalone_question, chunks, chat_history)
+        # Step 6: Generate response using the user's original wording. The
+        # standalone question is only a retrieval representation.
+        response = generate_response(user_question, chunks, chat_history)
         print("✅ Generated response:", response)
         
         if not response or not response.strip():
-            return answer_user_question(user_question, chat_id, project_id, page_id, chat_history, attempt + 1)
+            response = generate_response(user_question, chunks, chat_history)
+            if not response or not response.strip():
+                return "I couldn't generate an answer right now. Please try again later."
         return response
 
     except Exception as e:

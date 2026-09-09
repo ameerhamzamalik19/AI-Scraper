@@ -44,9 +44,11 @@ class EnhancedChunker:
         'article_body': 1.2,
         'faq': 1.4,
         'code_example': 1.1,
-        'table': 1.1,
-        'card': 1.0,
+        'table': 1.2,  # Increased boost for tables
+        'list': 1.15,  # Added boost for lists
+        'card': 1.1,   # Added boost for cards
         'image': 1.05,
+        'structured_data': 1.3,  # Added boost for structured data
         'content': 1.0,
     }
 
@@ -136,6 +138,7 @@ class EnhancedChunker:
         has_table = bool(chunk.get("content_structure", {}).get("has_table"))
         has_list = bool(chunk.get("content_structure", {}).get("has_list"))
         has_images = bool(chunk.get("content_structure", {}).get("has_images"))
+        has_structured_data = bool(chunk.get("content_structure", {}).get("has_structured_data"))
 
         category = chunk.get('chunk_category', 'main_content')
         category_weight = EnhancedChunker.CATEGORY_WEIGHTS.get(category, 0.5)
@@ -143,17 +146,27 @@ class EnhancedChunker:
         entity_type = chunk.get('entity_type', 'content')
         entity_boost = EnhancedChunker.ENTITY_BOOSTS.get(entity_type, 1.0)
 
+        # Boost for structured content (tables, lists, structured data)
+        structured_boost = 1.0
+        if has_table:
+            structured_boost += 0.2
+        if has_list:
+            structured_boost += 0.15
+        if has_structured_data:
+            structured_boost += 0.25
+        
         # Small chunks still get relevance - they contain valuable info
         relevance = min(1.0, (
             (0.35 * min(heading_depth / 4, 1.0)) +
             (0.45 * min(words / 200, 1.0)) +
-            (0.2 * (1.0 if has_table or has_list or has_images else 0.0))
-        )) * category_weight * entity_boost
+            (0.2 * (1.0 if has_table or has_list or has_images or has_structured_data else 0.0))
+        )) * category_weight * entity_boost * structured_boost
 
         quality = min(1.0, (
             (0.5 * min(words / 160, 1.0)) +
             (0.2 if has_table else 0.0) +
             (0.2 if has_list else 0.0) +
+            (0.1 if has_structured_data else 0.0) +
             (0.1 if content.strip() else 0.0)
         ))
 
@@ -161,6 +174,7 @@ class EnhancedChunker:
         chunk["content_structure"]["quality_score"] = round(quality, 4)
         chunk["category_weight"] = category_weight
         chunk["entity_boost"] = entity_boost
+        chunk["structured_boost"] = round(structured_boost, 3)
         return chunk
 
     @staticmethod
@@ -168,24 +182,142 @@ class EnhancedChunker:
         """Convert table to readable text format - PRESERVE ALL rows."""
         parts = []
         
+        # Add table heading/summary if available
+        summary = table.get('summary', '')
+        if summary:
+            parts.append(f"Table Summary: {summary}")
+        
         headers = table.get('headers', [])
         if headers:
             parts.append("Headers: " + ", ".join(headers))
         
-        rows = table.get('rows', [])
         # ✅ Don't truncate - preserve all rows for maximum information
-        for row in rows:
-            parts.append(", ".join(row))
+        rows = table.get('rows', [])
+        if rows:
+            parts.append("Rows:")
+            for i, row in enumerate(rows, 1):
+                # Format each row with row number
+                parts.append(f"  Row {i}: " + ", ".join(str(cell) for cell in row))
         
-        summary = table.get('summary', '')
-        if summary:
-            parts.append("Summary: " + summary)
+        # Add row count for context
+        if rows:
+            parts.append(f"Total rows: {len(rows)}")
+        
+        # Add column count for context
+        if headers:
+            parts.append(f"Total columns: {len(headers)}")
+        
+        return "\n".join(parts) if parts else ""
+
+    @staticmethod
+    def _format_list_as_text(list_data: Dict) -> str:
+        """Convert list to readable text format - PRESERVE ALL items."""
+        parts = []
+        
+        list_type = list_data.get('type', 'unordered')
+        items = list_data.get('items', [])
+        
+        if not items:
+            return ""
+        
+        # Add list summary
+        parts.append(f"List type: {list_type}")
+        parts.append(f"Items ({len(items)}):")
+        
+        # Format each item with its position
+        for i, item in enumerate(items, 1):
+            parts.append(f"  {i}. {item}")
+        
+        return "\n".join(parts)
+
+    @staticmethod
+    def _format_card_as_text(card: Dict) -> str:
+        """Convert card to readable text format."""
+        parts = []
+        
+        name = card.get('name', '')
+        if name:
+            parts.append(f"Card: {name}")
+        
+        description = card.get('description', '')
+        if description:
+            parts.append(f"Description: {description}")
+        
+        price = card.get('price', '')
+        if price:
+            parts.append(f"Price: {price}")
+        
+        text = card.get('text', '')
+        if text:
+            parts.append(f"Text: {text}")
+        
+        # Add any other fields
+        for key, value in card.items():
+            if key not in ['name', 'description', 'price', 'text'] and value:
+                parts.append(f"{key}: {value}")
+        
+        return "\n".join(parts) if parts else ""
+
+    @staticmethod
+    def _format_structured_data_as_text(structured_data: Dict) -> str:
+        """Convert structured data (JSON-LD, SVG text, data attributes) to readable text."""
+        parts = []
+        
+        # Process JSON-LD
+        json_ld = structured_data.get('json_ld', {})
+        if json_ld:
+            parts.append("Structured Data (Schema.org):")
+            # Flatten the JSON-LD object into readable text
+            if isinstance(json_ld, dict):
+                for key, value in json_ld.items():
+                    if isinstance(value, list):
+                        for item in value:
+                            if isinstance(item, dict):
+                                for sub_key, sub_value in item.items():
+                                    if sub_value:
+                                        parts.append(f"  {sub_key}: {sub_value}")
+                            elif value:
+                                parts.append(f"  {key}: {value}")
+                    elif value:
+                        parts.append(f"  {key}: {value}")
+            elif isinstance(json_ld, list):
+                for item in json_ld:
+                    if isinstance(item, dict):
+                        for key, value in item.items():
+                            if value:
+                                parts.append(f"  {key}: {value}")
+        
+        # Process SVG text
+        svg_text = structured_data.get('svg_text', '')
+        if svg_text:
+            parts.append(f"SVG Diagram Text: {svg_text}")
+        
+        # Process data attributes
+        data_attrs = structured_data.get('data_attributes', {})
+        if data_attrs:
+            parts.append("Data Attributes:")
+            for key, value in data_attrs.items():
+                parts.append(f"  {key}: {value}")
         
         return "\n".join(parts) if parts else ""
 
     @staticmethod
     def _detect_entity_type(section: Dict[str, Any], content_type: Optional[str] = None) -> str:
         """Detect entity type from section content."""
+        # Check chunk_type first
+        chunk_type = section.get('chunk_type', '')
+        
+        if chunk_type == 'table':
+            return 'table'
+        elif chunk_type == 'list':
+            return 'list'
+        elif chunk_type == 'card':
+            return 'card'
+        elif chunk_type == 'structured_data':
+            return 'structured_data'
+        elif chunk_type == 'image' or chunk_type == 'media_chunk':
+            return 'image'
+        
         content = section.get('content', '').lower()
         
         # Detect product
@@ -200,13 +332,9 @@ class EnhancedChunker:
         if '?' in content and any(word in content for word in ['how', 'what', 'why', 'when', 'where']):
             return 'faq'
         
-        # Detect table
-        if section.get('chunk_type') == 'table':
-            return 'table'
-        
-        # Detect card
-        if section.get('chunk_type') == 'card':
-            return 'card'
+        # Detect structured data from content patterns
+        if any(pattern in content for pattern in ['@type', 'schema.org', 'json-ld']):
+            return 'structured_data'
         
         return 'content'
 
@@ -255,11 +383,13 @@ class EnhancedChunker:
         sections_count = len(main_content.get("sections", []))
         tables_count = len(main_content.get("tables", []))
         lists_count = len(main_content.get("lists", []))
+        cards_count = len(main_content.get("cards", []))
         
         cls._debug_log(f"📊 INPUT STRUCTURE STATS", {
             'sections_count': sections_count,
             'tables_count': tables_count,
             'lists_count': lists_count,
+            'cards_count': cards_count,
             'has_all_text': bool(main_content.get("all_text"))
         })
 
@@ -303,6 +433,7 @@ class EnhancedChunker:
                     "has_list": False,
                     "has_images": False,
                     "has_code": False,
+                    "has_structured_data": False,
                     "heading": section.get("heading", ""),
                     "relevance_score": 0.0,
                     "quality_score": 0.0,
@@ -331,15 +462,21 @@ class EnhancedChunker:
         })
         
         # ============================================================
-        # 2. Process TABLES - ONE TABLE = ONE CHUNK
+        # 2. Process TABLES - ONE TABLE = ONE CHUNK (PRESERVE ALL ROWS)
         # ============================================================
         table_chunks_created = 0
         for table in main_content.get("tables", []) or []:
             table_text = cls._format_table_as_text(table)
             if not cls.is_empty_chunk(table_text):
+                # Get heading path from table or use default
+                heading_path = table.get("heading_path", [])
+                if not heading_path:
+                    heading = table.get("heading", "Table")
+                    heading_path = [default_title, heading]
+                
                 chunk = {
                     "content": table_text,
-                    "heading_path": table.get("heading_path") or [default_title],
+                    "heading_path": heading_path,
                     "chunk_type": "table",
                     "chunk_category": "main_content",
                     "entity_type": "table",
@@ -351,7 +488,10 @@ class EnhancedChunker:
                         "has_list": False,
                         "has_images": False,
                         "has_code": False,
+                        "has_structured_data": False,
                         "table_headers": table.get("headers", []),
+                        "row_count": len(table.get("rows", [])),
+                        "col_count": len(table.get("headers", [])),
                         "relevance_score": 0.0,
                         "quality_score": 0.0,
                     },
@@ -366,48 +506,180 @@ class EnhancedChunker:
             'total_tables': tables_count,
             'chunks_created': table_chunks_created
         })
+        logger.info(f"📊 Created {table_chunks_created} table chunks")
         
         # ============================================================
-        # 3. Process LISTS - ONE LIST = ONE CHUNK
+        # 3. Process LISTS - ONE LIST = ONE CHUNK (PRESERVE ALL ITEMS)
         # ============================================================
         list_chunks_created = 0
-        for list_item in main_content.get("lists", []) or []:
-            items = list_item.get("items", [])
-            if items:
-                list_text = f"{list_item.get('type', 'unordered')} list:\n" + "\n".join(f"- {item}" for item in items)
-                if not cls.is_empty_chunk(list_text):
-                    chunk = {
-                        "content": list_text,
-                        "heading_path": [default_title],
-                        "chunk_type": "list",
-                        "chunk_category": "main_content",
-                        "entity_type": "content",
-                        "token_count": len(list_text.split()),
-                        "source_url": source_url,
-                        "page_title": default_title,
-                        "content_structure": {
-                            "has_table": False,
-                            "has_list": True,
-                            "has_images": False,
-                            "has_code": False,
-                            "list_type": list_item.get("type"),
-                            "relevance_score": 0.0,
-                            "quality_score": 0.0,
-                        },
-                        "chunk_hash": hashlib.sha256(list_text.encode("utf-8")).hexdigest(),
-                        "chunk_index": chunk_index
-                    }
-                    chunk_index += 1
-                    list_chunks_created += 1
-                    chunks.append(cls.score_chunk(chunk))
+        for list_data in main_content.get("lists", []) or []:
+            list_text = cls._format_list_as_text(list_data)
+            if not cls.is_empty_chunk(list_text):
+                chunk = {
+                    "content": list_text,
+                    "heading_path": [default_title, "List"],
+                    "chunk_type": "list",
+                    "chunk_category": "main_content",
+                    "entity_type": "list",
+                    "token_count": len(list_text.split()),
+                    "source_url": source_url,
+                    "page_title": default_title,
+                    "content_structure": {
+                        "has_table": False,
+                        "has_list": True,
+                        "has_images": False,
+                        "has_code": False,
+                        "has_structured_data": False,
+                        "list_type": list_data.get("type", "unordered"),
+                        "item_count": len(list_data.get("items", [])),
+                        "relevance_score": 0.0,
+                        "quality_score": 0.0,
+                    },
+                    "chunk_hash": hashlib.sha256(list_text.encode("utf-8")).hexdigest(),
+                    "chunk_index": chunk_index
+                }
+                chunk_index += 1
+                list_chunks_created += 1
+                chunks.append(cls.score_chunk(chunk))
         
         cls._debug_log(f"📋 LIST PROCESSING COMPLETE", {
             'total_lists': lists_count,
             'chunks_created': list_chunks_created
         })
+        logger.info(f"📋 Created {list_chunks_created} list chunks")
         
         # ============================================================
-        # 4. Process PRODUCT DATA - ONE PRODUCT = ONE CHUNK
+        # 4. Process CARDS - ONE CARD = ONE CHUNK
+        # ============================================================
+        card_chunks_created = 0
+        for card in main_content.get("cards", []) or []:
+            card_text = cls._format_card_as_text(card)
+            if not cls.is_empty_chunk(card_text):
+                chunk = {
+                    "content": card_text,
+                    "heading_path": [default_title, "Card"],
+                    "chunk_type": "card",
+                    "chunk_category": "main_content",
+                    "entity_type": "card",
+                    "token_count": len(card_text.split()),
+                    "source_url": source_url,
+                    "page_title": default_title,
+                    "content_structure": {
+                        "has_table": False,
+                        "has_list": False,
+                        "has_images": False,
+                        "has_code": False,
+                        "has_structured_data": False,
+                        "card_name": card.get("name", ""),
+                        "relevance_score": 0.0,
+                        "quality_score": 0.0,
+                    },
+                    "chunk_hash": hashlib.sha256(card_text.encode("utf-8")).hexdigest(),
+                    "chunk_index": chunk_index
+                }
+                chunk_index += 1
+                card_chunks_created += 1
+                chunks.append(cls.score_chunk(chunk))
+        
+        cls._debug_log(f"🃏 CARD PROCESSING COMPLETE", {
+            'total_cards': cards_count,
+            'chunks_created': card_chunks_created
+        })
+        logger.info(f"🃏 Created {card_chunks_created} card chunks")
+        
+        # ============================================================
+        # 5. Process STRUCTURED DATA (JSON-LD, SVG text, data attributes)
+        # ============================================================
+        structured_data = structure.get("structured_data", {})
+        structured_chunks_created = 0
+        
+        if structured_data and any(structured_data.values()):
+            structured_text = cls._format_structured_data_as_text(structured_data)
+            if not cls.is_empty_chunk(structured_text):
+                chunk = {
+                    "content": structured_text,
+                    "heading_path": [default_title, "Structured Data"],
+                    "chunk_type": "structured_data",
+                    "chunk_category": "main_content",
+                    "entity_type": "structured_data",
+                    "token_count": len(structured_text.split()),
+                    "source_url": source_url,
+                    "page_title": default_title,
+                    "content_structure": {
+                        "has_table": False,
+                        "has_list": False,
+                        "has_images": False,
+                        "has_code": False,
+                        "has_structured_data": True,
+                        "structured_data_keys": list(structured_data.keys()),
+                        "relevance_score": 0.0,
+                        "quality_score": 0.0,
+                    },
+                    "chunk_hash": hashlib.sha256(structured_text.encode("utf-8")).hexdigest(),
+                    "chunk_index": chunk_index
+                }
+                chunk_index += 1
+                structured_chunks_created += 1
+                chunks.append(cls.score_chunk(chunk))
+        
+        cls._debug_log(f"📐 STRUCTURED DATA PROCESSING COMPLETE", {
+            'has_structured_data': bool(structured_data),
+            'chunks_created': structured_chunks_created
+        })
+        logger.info(f"📐 Created {structured_chunks_created} structured data chunks")
+        
+        # ============================================================
+        # 6. Process MEDIA CHUNKS (from processor_worker.py)
+        # ============================================================
+        media_chunks = structure.get("media_chunks", [])
+        media_chunks_created = 0
+        
+        for media_chunk in media_chunks:
+            content = media_chunk.get("content", "")
+            if cls.is_empty_chunk(content):
+                continue
+            
+            media_type = media_chunk.get("media_type", "image")
+            entity_type = media_type  # 'image' or 'table'
+            
+            chunk = {
+                "content": content,
+                "heading_path": [default_title, f"{media_type.title()} Media"],
+                "chunk_type": "media_chunk",
+                "chunk_category": "main_content",
+                "entity_type": entity_type,
+                "token_count": len(content.split()),
+                "source_url": media_chunk.get("source_url", source_url),
+                "page_title": default_title,
+                "content_structure": {
+                    "has_table": media_type == "table",
+                    "has_list": False,
+                    "has_images": media_type == "image",
+                    "has_code": False,
+                    "has_structured_data": False,
+                    "media_type": media_type,
+                    "alt_text": media_chunk.get("alt_text", ""),
+                    "caption": media_chunk.get("caption", ""),
+                    "section_heading": media_chunk.get("section_heading", ""),
+                    "source_url": media_chunk.get("source_url", ""),
+                    "relevance_score": 0.0,
+                    "quality_score": 0.0,
+                },
+                "chunk_hash": hashlib.sha256(content.encode("utf-8")).hexdigest(),
+                "chunk_index": chunk_index
+            }
+            chunk_index += 1
+            media_chunks_created += 1
+            chunks.append(cls.score_chunk(chunk))
+        
+        cls._debug_log(f"🖼️ MEDIA CHUNK PROCESSING COMPLETE", {
+            'total_media_chunks': len(media_chunks),
+            'chunks_created': media_chunks_created
+        })
+        logger.info(f"🖼️ Created {media_chunks_created} media chunks ({media_chunks_created} images/tables)")
+        
+        # ============================================================
+        # 7. Process PRODUCT DATA - ONE PRODUCT = ONE CHUNK
         # ============================================================
         if content_type == "ecommerce":
             product_data = main_content.get("product_data", {})
@@ -428,6 +700,7 @@ class EnhancedChunker:
                             "has_list": False,
                             "has_images": True,
                             "has_code": False,
+                            "has_structured_data": False,
                             "is_product": True,
                             "relevance_score": 0.0,
                             "quality_score": 0.0,
@@ -439,7 +712,7 @@ class EnhancedChunker:
                     chunks.append(cls.score_chunk(chunk))
         
         # ============================================================
-        # 5. FALLBACK: If no chunks, use all_text
+        # 8. FALLBACK: If no chunks, use all_text
         # ============================================================
         if not chunks:
             all_text = main_content.get("all_text", "")
@@ -463,6 +736,7 @@ class EnhancedChunker:
                         "has_list": False,
                         "has_images": False,
                         "has_code": False,
+                        "has_structured_data": False,
                         "relevance_score": 0.0,
                         "quality_score": 0.0,
                     },
@@ -480,7 +754,7 @@ class EnhancedChunker:
                 cls._debug_log(f"❌ all_text is empty, no fallback possible")
         
         # ============================================================
-        # 6. Process UI SUMMARY chunks (medium weight)
+        # 9. Process UI SUMMARY chunks (medium weight)
         # ============================================================
         ui_summary = structure.get("ui_summary", [])
         ui_chunks_created = 0
@@ -507,6 +781,7 @@ class EnhancedChunker:
                     "has_list": False,
                     "has_images": False,
                     "has_code": False,
+                    "has_structured_data": False,
                     "source_type": summary_chunk.get("source_type", ""),
                     "relevance_score": 0.0,
                     "quality_score": 0.0,
@@ -524,13 +799,13 @@ class EnhancedChunker:
         })
         
         # ============================================================
-        # 7. Calculate information density for each chunk
+        # 10. Calculate information density for each chunk
         # ============================================================
         for chunk in chunks:
             chunk['information_density'] = cls._calc_information_density(chunk.get('content', ''))
         
         # ============================================================
-        # 8. Final validation - ONLY remove truly empty chunks
+        # 11. Final validation - ONLY remove truly empty chunks
         # ============================================================
         before_filter = len(chunks)
         chunks = [c for c in chunks if not cls.is_empty_chunk(c.get('content', ''))]
@@ -552,6 +827,10 @@ class EnhancedChunker:
             entity = chunk.get('entity_type', 'unknown')
             entity_counts[entity] = entity_counts.get(entity, 0) + 1
             total_words += len(chunk.get('content', '').split())
+        
+        # Log entity type distribution for debugging
+        cls._debug_log(f"📊 ENTITY TYPE DISTRIBUTION", entity_counts)
+        logger.info(f"📊 Entity type distribution: {entity_counts}")
         
         cls._debug_log(f"✅ CHUNK_STRUCTURE COMPLETE", {
             'total_chunks': len(chunks),

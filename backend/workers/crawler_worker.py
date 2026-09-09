@@ -7,6 +7,9 @@ from config import crawler_settings, settings
 from database import close_db_pool
 from utils.chat_status_tracker import ChatStatusTracker
 from utils.progress_tracker import get_progress_tracker
+from utils.worker_event_loop import start_worker_event_loop
+
+start_worker_event_loop("crawler")
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +80,7 @@ def crawl_website(job_id: str):
             # Update crawling progress - show we've found pages
             tracker.update_stage(
                 'crawling', 
-                50,  # 50% through crawling stage (halfway through 5-30% range)
+                min(100, int((pages_crawled / max(1, crawler_settings.MAX_PAGES_PER_CRAWL)) * 100)),
                 f"Found {pages_discovered} pages, crawled {pages_crawled}"
             )
         

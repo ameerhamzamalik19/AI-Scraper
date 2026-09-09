@@ -17,32 +17,13 @@ from crawler.content_processor import ContentProcessor
 from utils.chat_status_tracker import ChatStatusTracker
 from utils.progress_tracker import get_progress_tracker
 from utils.content_classifier import ContentType, ContentClassifier
-
-# workers/processor_worker.py  (at module load, before actors)
-import asyncio
-import threading
-from websocket_manager import set_main_loop
+from config import crawler_settings  # ADDED: Import crawler_settings
+from utils.queue_dispatch import enqueue_worker
 
 logger = logging.getLogger(__name__)
+from utils.worker_event_loop import start_worker_event_loop
 
-def _start_publisher_loop():
-    """
-    Start a dedicated event loop in a background thread for Redis publishing.
-    This gives processor-1 its own loop to use with publish_progress_sync.
-    """
-    loop = asyncio.new_event_loop()
-    set_main_loop(loop)  # register it so publish_progress_sync can find it
-    
-    logger.info(f"✅ Publisher event loop started for processor worker: {id(loop)}")
-    loop.run_forever()
-
-# Start it once at module load
-_publisher_thread = threading.Thread(
-    target=_start_publisher_loop,
-    daemon=True,
-    name="redis-publisher"
-)
-_publisher_thread.start()
+start_worker_event_loop("processor")
 
 
 try:
@@ -778,8 +759,16 @@ class DocumentProcessor:
         assets = []
         media_analyzer = MediaAnalyzer()
         
-        # Process images
-        for image in soup.find_all('img')[:20]:
+        # Process images - Use crawler_settings.MAX_IMAGES_TO_PROCESS
+        max_images = getattr(crawler_settings, 'MAX_IMAGES_TO_PROCESS', 20)
+        images = soup.find_all('img')[:max_images]
+        
+        # Log if we hit the limit
+        total_images = len(soup.find_all('img'))
+        if total_images > max_images:
+            logger.info(f"Reached max images limit ({max_images}), skipping remaining {total_images - max_images} images")
+        
+        for image in images:
             source = image.get('src') or image.get('data-src')
             if not source:
                 continue
@@ -800,20 +789,24 @@ class DocumentProcessor:
                 structured_data = None
                 if should_analyze:
                     logger.info(f"🔍 Analyzing image: {source_url} - {reason}")
-                    
-                    # Generate description
-                    description = media_analyzer.generate_image_description(
-                        image, payload, source_url
-                    )
-                    
-                    # Also extract structured content (generic)
+
+                    # One vision request provides both searchable text and
+                    # structured facts; a second description request doubles
+                    # latency for every analyzed image.
                     structured_data = media_analyzer.extract_structured_content(
                         payload, source_url, "general"
                     )
-                    
+
+                    description = None
                     if structured_data:
-                        # Use structured data to enhance description
-                        if structured_data.get('visible_text'):
+                        description = (
+                            structured_data.get('searchable_text') or
+                            structured_data.get('summary') or
+                            structured_data.get('visible_text')
+                        )
+                        if structured_data.get('visible_text') and (
+                            structured_data['visible_text'] not in (description or '')
+                        ):
                             description = f"{description or ''} | Visible text: {structured_data['visible_text']}"
                         if structured_data.get('entities'):
                             entity_text = " | ".join([
@@ -821,10 +814,10 @@ class DocumentProcessor:
                                 for e in structured_data.get('entities', [])[:5]
                             ])
                             if entity_text:
-                                description = f"{description} | Entities: {entity_text}"
-                    
+                                description = f"{description or ''} | Entities: {entity_text}"
+
                     if not description:
-                        logger.warning(f"⚠️ LLM description failed, using fallback for {source_url}")
+                        logger.warning(f"⚠️ Vision extraction failed, using fallback for {source_url}")
                         description = DocumentProcessor.describe_image(
                             source_url,
                             image.get('alt', ''),
@@ -891,8 +884,16 @@ class DocumentProcessor:
             except Exception as e:
                 logger.warning('Unable to process image %s: %s', source_url, e)
 
-        # Process tables
-        for table in soup.find_all('table')[:20]:
+        # Process tables - Use crawler_settings.MAX_TABLES_TO_PROCESS
+        max_tables = getattr(crawler_settings, 'MAX_TABLES_TO_PROCESS', 20)
+        tables = soup.find_all('table')[:max_tables]
+        
+        # Log if we hit the limit
+        total_tables = len(soup.find_all('table'))
+        if total_tables > max_tables:
+            logger.info(f"Reached max tables limit ({max_tables}), skipping remaining {total_tables - max_tables} tables")
+        
+        for table in tables:
             table_text = table.get_text(' | ', strip=True)
             if not table_text:
                 continue
@@ -912,7 +913,7 @@ class DocumentProcessor:
                 logger.debug(f"⏭️ Skipping table analysis: {reason}")
                 description = DocumentProcessor.describe_table(table_text)
             
-            # Extract table headers and rows
+            # Extract ALL table headers and rows (not just first 50)
             headers = []
             rows_data = []
             thead = table.find('thead')
@@ -924,12 +925,18 @@ class DocumentProcessor:
                 if first_row:
                     for th in first_row.find_all(['th', 'td']):
                         headers.append(th.get_text(strip=True))
+            
+            # Extract ALL rows for storage
             for tr in table.find_all('tr'):
                 cells = []
                 for td in tr.find_all(['td', 'th']):
                     cells.append(td.get_text(strip=True))
                 if cells:
                     rows_data.append(cells)
+            
+            # Get row limits from settings
+            max_rows_to_store = getattr(crawler_settings, 'MAX_TABLE_ROWS_TO_STORE', 50)
+            max_rows_to_text = getattr(crawler_settings, 'MAX_TABLE_ROWS_TO_TEXT', 50)
             
             assets.append({
                 'media_type': 'table',
@@ -939,8 +946,10 @@ class DocumentProcessor:
                 'description': description,
                 'was_analyzed': should_analyze,
                 'table_headers': headers,
-                'table_rows': rows_data[:50],  # Limit rows
+                'table_rows': rows_data[:max_rows_to_store],  # Use setting for storage
+                'table_rows_full': rows_data,  # Store ALL rows
                 'table_summary': description,
+                'row_count': len(rows_data),
             })
         
         return assets
@@ -962,6 +971,7 @@ def _infer_content_type_from_url(url: str) -> Optional[ContentType]:
 
 
 @dramatiq.actor(
+    actor_name="workers.processor_worker.process_document",
     queue_name=PROCESSING_QUEUE_NAME,
     max_retries=2,
     time_limit=600000
@@ -1019,8 +1029,11 @@ def process_document(chat_id: str, document_id: str):
             # forward to chunker so pending_documents gets decremented.
             print(f"⚠️ Document {document_id} already processed, forwarding to chunker")
             tracker.update_stage('chunking', 0, "Content already extracted, creating chunks...")
-            from workers.chunker_worker import chunk_document
-            chunk_document.send(chat_id, document_id)
+            enqueue_worker(
+                "workers.chunker_worker.chunk_document",
+                chat_id,
+                document_id,
+            )
             return
 
         # If it's already processing, skip (avoid duplicate work).
@@ -1079,6 +1092,36 @@ def process_document(chat_id: str, document_id: str):
         analyzed_tables = sum(1 for a in media_assets if a.get('was_analyzed') and a['media_type'] == 'table')
         print(f"📊 Media assets: {len(media_assets)} total (Images analyzed: {analyzed_images}, Tables analyzed: {analyzed_tables})")
         
+        # ✅ Step 3.5: Create dedicated media chunks
+        try:
+            # Create media chunks using the ContentProcessor's media chunking method
+            media_chunks = ContentProcessor._create_media_chunks(
+                media_assets, 
+                metadata.get('title') or extracted_metadata.get('title') or url or 'Untitled Page',
+                url
+            )
+            
+            if media_chunks:
+                logger.info(f"✅ Created {len(media_chunks)} dedicated media chunks")
+                
+                # Merge media chunks into the document structure's sections
+                if 'sections' not in document_structure:
+                    document_structure['sections'] = []
+                
+                # Add media chunks as special sections
+                document_structure['sections'].extend(media_chunks)
+                document_structure['media_chunks'] = media_chunks
+                
+                # Also add to raw_content for search
+                for chunk in media_chunks:
+                    if chunk.get('content'):
+                        raw_content += f"\n\n{chunk['content']}"
+                
+                logger.info(f"📊 Added {len(media_chunks)} media chunks to document structure")
+        except Exception as e:
+            logger.warning(f"Failed to create media chunks: {e}")
+            # Continue without media chunks - not critical
+        
         # ✅ Step 4: Infer content type for type-aware chunking
         content_type = _infer_content_type_from_url(url)
         
@@ -1114,24 +1157,28 @@ def process_document(chat_id: str, document_id: str):
             # Add table data if present
             if asset['media_type'] == 'table' and asset.get('table_headers') and asset.get('table_rows'):
                 raw_content += f"\nTable headers: {', '.join(asset['table_headers'])}"
-                raw_content += f"\nTable rows: {asset['table_rows'][:5]}"
+                # Use MAX_TABLE_ROWS_TO_TEXT for searchable content
+                max_rows_to_text = getattr(crawler_settings, 'MAX_TABLE_ROWS_TO_TEXT', 50)
+                table_rows_for_text = asset.get('table_rows', [])[:max_rows_to_text]
+                raw_content += f"\nTable rows: {table_rows_for_text}"
 
-        # Step 5: Merge metadata
+        # ✅ Step 5: Merge metadata with enhanced document structure
         merged_metadata = {
             **metadata,
             **extracted_metadata,
-            'document_structure': document_structure,
+            'document_structure': document_structure,  # Now includes media_chunks
             'url': url,
             'extraction_version': '2.0',
             'media_analysis_stats': {
                 'total_assets': len(media_assets),
                 'analyzed_images': analyzed_images,
                 'analyzed_tables': analyzed_tables,
+                'media_chunks_created': len(document_structure.get('media_chunks', [])),
             },
             'content_type': content_type.value if content_type else None,
         }
 
-        # Step 6: Update document with content_type
+        # Step 6: Update document with content_type and enhanced structure
         execute_update(
             """UPDATE documents 
                SET cleaned_content = %s, 
@@ -1147,13 +1194,29 @@ def process_document(chat_id: str, document_id: str):
 
         # Step 7: Store media assets with enhanced metadata
         for asset in media_assets:
+            # Determine processing_status
+            processing_status = 'COMPLETED' if asset.get('was_analyzed') else 'SKIPPED'
+            vision_model = 'gemma4:31b-cloud' if asset.get('was_analyzed') else None
+            
+            # Prepare table-specific fields
+            table_headers = None
+            table_rows = None
+            table_summary = None
+            
+            if asset['media_type'] == 'table':
+                table_headers = json.dumps(asset.get('table_headers', []))
+                # Store ALL rows (not just first 50)
+                table_rows = json.dumps(asset.get('table_rows_full', asset.get('table_rows', [])))
+                table_summary = asset.get('description')
+            
             execute_update(
                 """INSERT INTO media_assets
                 (page_version_id, document_id, media_type, source_url,
                  mime_type, data_base64, description, created_at,
                  image_type, alt_text, caption, surrounding_text, 
-                 section_heading, processing_status, vision_model)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                 section_heading, processing_status, vision_model,
+                 table_headers, table_rows, table_summary)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                 (
                     doc['page_version_id'], 
                     document_id, 
@@ -1168,14 +1231,18 @@ def process_document(chat_id: str, document_id: str):
                     asset.get('caption') if asset['media_type'] == 'image' else None,
                     asset.get('surrounding_text') if asset['media_type'] == 'image' else None,
                     asset.get('section_heading') if asset['media_type'] == 'image' else None,
-                    'COMPLETED',
-                    'gemma4:31b-cloud' if asset.get('was_analyzed') else None
+                    processing_status,
+                    vision_model,
+                    table_headers,
+                    table_rows,
+                    table_summary
                 )
             )
 
         print(f"✅ Document {document_id} processed successfully")
         print(f"   - Raw HTML length: {len(raw_content)} chars")
         print(f"   - Media assets: {len(media_assets)}")
+        print(f"   - Media chunks created: {len(document_structure.get('media_chunks', []))}")
         if content_type:
             print(f"   - Content type: {content_type.value}")
         
@@ -1183,8 +1250,11 @@ def process_document(chat_id: str, document_id: str):
         tracker.update_stage('chunking', 0, "Creating chunks from content...")
 
         # ✅ Enqueue chunking job with chat_id and document_id
-        from workers.chunker_worker import chunk_document
-        chunk_document.send(chat_id, document_id)
+        enqueue_worker(
+            "workers.chunker_worker.chunk_document",
+            chat_id,
+            document_id,
+        )
         
     except Exception as e:
         error_msg = f"Error processing document: {str(e)}"

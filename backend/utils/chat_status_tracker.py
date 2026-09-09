@@ -123,31 +123,36 @@ class ChatStatusTracker:
     def _broadcast_update(chat_id: str, progress: int, status: str, step: str = None):
         """Broadcast status update via WebSocket."""
         try:
-            from websocket_manager import chat_connection_manager
+            from websocket_manager import chat_connection_manager, publish_progress_sync
             import asyncio
+
+            status_data = ChatStatusTracker.get_progress_summary(chat_id) or {
+                'chat_id': chat_id,
+                'exists': True,
+                'status': status,
+                'progress': progress,
+                'current_step': step or '',
+            }
+            message = {
+                'type': 'progress_update',
+                'chat_id': chat_id,
+                'data': status_data,
+            }
             
-            # Create event loop if needed
             try:
-                loop = asyncio.get_event_loop()
+                loop = asyncio.get_running_loop()
             except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
+                # Worker processes publish through their dedicated loop.
+                publish_progress_sync(f"ws:chat:{chat_id}", message)
+                return
             
-            # Schedule broadcast
-            if loop.is_running():
-                asyncio.create_task(chat_connection_manager.send_progress_update(
-                    chat_id,
-                    progress,
-                    status,
-                    step
-                ))
-            else:
-                loop.run_until_complete(chat_connection_manager.send_progress_update(
-                    chat_id,
-                    progress,
-                    status,
-                    step
-                ))
+            # API code can schedule the normal Redis and local broadcast.
+            asyncio.create_task(chat_connection_manager.send_progress_update(
+                chat_id,
+                progress,
+                status,
+                step
+            ))
         except Exception as e:
             logger.warning(f"Failed to broadcast WebSocket update: {e}")
     

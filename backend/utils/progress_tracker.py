@@ -202,24 +202,18 @@ class PipelineProgressTracker:
         Thread-safe broadcast — automatically handles async and sync contexts.
         """
         try:
+            # Read the committed row so websocket clients receive the same
+            # state that a page reload would read from the database.
+            status_data = ChatStatusTracker.get_progress_summary(self.chat_id)
             message = {
                 'type': 'progress_update',
                 'chat_id': self.chat_id,
-                'data': {
+                'data': status_data or {
                     'chat_id': self.chat_id,
                     'exists': True,
                     'status': status,
                     'progress': progress,
                     'current_step': step or '',
-                    'friendly_message': step or f'{status}...',
-                    'is_processing': status not in ['completed', 'answered', 'failed'],
-                    'is_ready': status in ['completed', 'answered'],
-                    'is_failed': status == 'failed',
-                    'has_error': status == 'failed',
-                    'error_message': None,
-                    'document_id': None,
-                    'started_at': None,
-                    'completed_at': None
                 }
             }
 

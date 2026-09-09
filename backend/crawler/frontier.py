@@ -70,28 +70,45 @@ class URLFrontier:
             '.zip', '.tar', '.gz', '.rar',                     # Archives
             '.xml', '.rss',                                    # Feeds
             '.css', '.js',                                     # Static assets
-            '#', '?',                                          # Fragments/query params
         ]
         url_lower = url.lower()
         for ext in skip_extensions:
             if url_lower.endswith(ext):
                 return False
         
+        # Skip URLs with fragments or certain query params
+        parsed = urlparse(url)
+        if parsed.fragment:
+            return False
+        
         return True
     
-    def _add_url(self, url: str, depth: int = 0):
-        """Add URL to queue if valid"""
+    def _add_url(self, url: str, depth: int = 0) -> bool:
+        """
+        Add URL to queue if valid.
+        Returns True if URL was added, False otherwise.
+        """
         if not self._should_add(url):
-            return
+            return False
         
         normalized = self._normalize_url(url)
         self.queued.add(normalized)
         self.queue.append(URLItem(url=url, depth=depth))
+        return True
     
-    def add_urls(self, urls: List[str], depth: int):
-        """Add multiple URLs to frontier"""
+    def add_urls(self, urls: List[str], depth: int) -> int:
+        """
+        Add multiple URLs to frontier.
+        Returns the number of URLs successfully added.
+        """
+        if not urls:
+            return 0
+        
+        count = 0
         for url in urls:
-            self._add_url(url, depth)
+            if self._add_url(url, depth):
+                count += 1
+        return count
     
     def next_url(self) -> Optional[URLItem]:
         """Get next URL to crawl"""
