@@ -37,7 +37,7 @@ class CrawlerSettings:
     """Crawler configuration"""
     
     # Limits
-    MAX_PAGES_PER_CRAWL: int = 5
+    MAX_PAGES_PER_CRAWL: int = 1
     MAX_CRAWL_DEPTH: int = 3  # Not used with BFS, but kept for reference
     MAX_RESPONSE_SIZE: int = 10 * 1024 * 1024  # 10MB
 

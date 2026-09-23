@@ -19,6 +19,7 @@ from utils.progress_tracker import get_progress_tracker
 from utils.content_classifier import ContentType, ContentClassifier
 from config import crawler_settings  # ADDED: Import crawler_settings
 from utils.queue_dispatch import enqueue_worker
+from utils.json_utils import safe_json_loads
 
 logger = logging.getLogger(__name__)
 from utils.worker_event_loop import start_worker_event_loop
@@ -48,21 +49,28 @@ class OllamaVisionClient:
             headers={'Authorization': f'Bearer {api_key}'} if api_key else {}
         )
 
-    def _chat(self, messages: List[Dict[str, Any]], num_predict: int = 512, temperature: float = 0.2) -> Optional[str]:
+    def _chat(self, messages: List[Dict[str, Any]], num_predict: int = 512, temperature: float = 0.2,
+              response_format: Optional[str] = None) -> Optional[str]:
         """
         Internal method — send a chat request and return the content string.
         All public methods funnel through here for consistent error handling.
         """
         try:
+            chat_options = {
+                "temperature": temperature,
+                "top_p": 0.9,
+                "num_predict": num_predict,
+            }
+            request = {
+                "model": self.model,
+                "messages": messages,
+                "stream": False,
+                "options": chat_options,
+            }
+            if response_format:
+                request["format"] = response_format
             response = self._client.chat(
-                model=self.model,
-                messages=messages,
-                stream=False,
-                options={
-                    "temperature": temperature,
-                    "top_p": 0.9,
-                    "num_predict": num_predict,
-                }
+                **request
             )
             return response['message']['content'].strip()
         except Exception as e:
@@ -172,28 +180,25 @@ Return ONLY valid JSON:
         }
 
         prompt = prompts.get(data_type, prompts["general"])
-        response = self.analyze_image_with_vision(image_data, prompt)
+        response = self._chat(
+            [{"role": "user", "content": prompt, "images": [image_data]}],
+            num_predict=1024,
+            temperature=0.1,
+            response_format="json",
+        )
 
         if not response:
             return None
 
-        try:
-            json_match = re.search(r'\{.*\}', response, re.DOTALL)
-            if json_match:
-                return json.loads(json_match.group())
-            # No JSON found — wrap plain text as a minimal dict
-            return {
-                "content_type": "image",
-                "visible_text": response,
-                "searchable_text": response
-            }
-        except (json.JSONDecodeError, Exception) as e:
-            logger.error(f"Structured data JSON parse failed: {e}")
-            return {
-                "content_type": "image",
-                "visible_text": response,
-                "searchable_text": response
-            }
+        parsed = safe_json_loads(response, context="ollama_vision")
+        if parsed is not None:
+            return parsed
+
+        return {
+            "content_type": "image",
+            "visible_text": response,
+            "searchable_text": response
+        }
 
 
 class MediaAnalyzer:
@@ -425,6 +430,8 @@ DO NOT add speculation or marketing. Just factual description."""
 
 class DocumentProcessor:
     """Clean and process raw HTML into Markdown with full content preservation"""
+
+    _media_http = requests.Session()
     
     @staticmethod
     def clean_html(html: str) -> str:
@@ -707,7 +714,7 @@ class DocumentProcessor:
             mime_type = header[5:].split(';', 1)[0] or 'application/octet-stream'
             return mime_type, payload
 
-        response = requests.get(source_url, timeout=30)
+        response = DocumentProcessor._media_http.get(source_url, timeout=30)
         response.raise_for_status()
         if len(response.content) > 10 * 1024 * 1024:
             raise ValueError('image exceeds 10 MB limit')
@@ -726,7 +733,7 @@ class DocumentProcessor:
                 return img.width, img.height
             else:
                 # Download and check
-                response = requests.get(source_url, timeout=10)
+                response = DocumentProcessor._media_http.get(source_url, timeout=10)
                 img = Image.open(io.BytesIO(response.content))
                 return img.width, img.height
         except Exception as e:
@@ -773,6 +780,65 @@ class DocumentProcessor:
             if not source:
                 continue
             source_url = urljoin(page_url, source)
+
+            source_lower = source_url.lower()
+            alt_text = image.get('alt', '').strip().lower()
+            class_attr = image.get('class', [])
+            if isinstance(class_attr, str):
+                class_attr = class_attr.split()
+            icon_indicators = (
+                'icon', 'logo', 'button', 'arrow', 'bullet', 'dot', 'separator',
+                'line', 'spacer', 'bg-', 'background'
+            )
+            has_icon_indicator = any(
+                indicator in source_lower or any(indicator in cls.lower() for cls in class_attr)
+                for indicator in icon_indicators
+            )
+            if has_icon_indicator:
+                assets.append({
+                    'media_type': 'image',
+                    'source_url': source_url,
+                    'mime_type': mimetypes.guess_type(source_url)[0] or 'application/octet-stream',
+                    'data_base64': None,
+                    'description': DocumentProcessor.describe_image(source_url, image.get('alt', ''), image.get('title', '')),
+                    'width': 0,
+                    'height': 0,
+                    'was_analyzed': False,
+                    'structured_data': None,
+                    'image_type': 'decorative',
+                    'alt_text': image.get('alt', ''),
+                    'caption': None,
+                    'surrounding_text': None,
+                    'section_heading': None,
+                })
+                continue
+
+            if not alt_text:
+                parent = image.parent
+                has_context = False
+                for _ in range(3):
+                    if parent and parent.get_text(strip=True):
+                        has_context = True
+                        break
+                    parent = parent.parent if parent else None
+                if not has_context:
+                    assets.append({
+                        'media_type': 'image',
+                        'source_url': source_url,
+                        'mime_type': mimetypes.guess_type(source_url)[0] or 'application/octet-stream',
+                        'data_base64': None,
+                        'description': DocumentProcessor.describe_image(source_url, image.get('alt', ''), image.get('title', '')),
+                        'width': 0,
+                        'height': 0,
+                        'was_analyzed': False,
+                        'structured_data': None,
+                        'image_type': 'decorative',
+                        'alt_text': image.get('alt', ''),
+                        'caption': None,
+                        'surrounding_text': None,
+                        'section_heading': None,
+                    })
+                    continue
             
             try:
                 # Get image data

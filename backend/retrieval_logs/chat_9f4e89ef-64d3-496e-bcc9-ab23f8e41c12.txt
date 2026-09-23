@@ -1,0 +1,751 @@
+
+====================================================================================================
+Retrieved at: 2026-09-23T10:24:14.811091+00:00
+Chat ID: 9f4e89ef-64d3-496e-bcc9-ab23f8e41c12
+Original question: What is the overall rating and total review count displayed on /testimonials?
+Standalone question: What is the overall rating and total review count displayed on the /testimonials page of https://web-scraping.dev/?
+Retrieval metadata: {"confidence": 0.5486686444901776, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: 47565cf6-58de-4f74-a679-f654bc28e49b
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['web-scraping.dev - Web Scraping Testing & Learning Platform']
+similarity: 0.5486686444901776
+adjusted_similarity: 0.5486686444901776
+ordinal_index: None
+content:
+Page: web-scraping.dev - Web Scraping Testing & Learning Platform
+URL: https://web-scraping.dev/
+Contains: 3 sections, 1 tables, 4 lists, 0 cards
+Top sections: Used By | Scraping Scenarios50 Scenarios | Page Description
+
+--- Chunk 2 ---
+chunk_id: bfd2b4ec-9a30-42ff-afad-c1d3481ea63e
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 3']
+similarity: 0.5390769038836168
+adjusted_similarity: 0.5390769038836168
+ordinal_index: 2
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 3 of 54
+Endless Scroll Paging
+https://web-scraping.dev/testimonials
+Intermediate
+Dynamic client side paging where new items appear as user scrolls.
+
+--- Chunk 3 ---
+chunk_id: 0318f833-4bfb-4fb9-9550-ad450bbe8beb
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 5']
+similarity: 0.5086388805773029
+adjusted_similarity: 0.5086388805773029
+ordinal_index: 4
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 5 of 54
+Endless Button Paging
+https://web-scraping.dev/reviews
+Intermediate
+Dynamic paging where new items appear on Load More click.
+
+--- Chunk 4 ---
+chunk_id: 8e165db1-080d-4914-bf5e-0688240503ad
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 7']
+similarity: 0.5077901157776388
+adjusted_similarity: 0.5077901157776388
+ordinal_index: 6
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 7 of 54
+Forced New Tab Links
+https://web-scraping.dev/reviews
+Beginner
+Links forced to open in new tabs via different techniques.
+
+--- Chunk 5 ---
+chunk_id: ae5c6f55-0bfd-45ca-98f9-125a30cfb6c3
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 4']
+similarity: 0.4945905651147595
+adjusted_similarity: 0.4945905651147595
+ordinal_index: 3
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 4 of 54
+Secret API Token
+https://web-scraping.dev/testimonials
+Intermediate
+X-Secret-Token used to lock access to hidden APIs.
+
+--- Chunk 6 ---
+chunk_id: f4791422-6c8d-4f9c-ad82-c9b781278000
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 9']
+similarity: 0.48307914015255926
+adjusted_similarity: 0.48307914015255926
+ordinal_index: 8
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 9 of 54
+Hidden Web Data
+https://web-scraping.dev/product/1
+Intermediate
+Review data hidden in HTML as JSON, loaded on page load.
+
+--- Chunk 7 ---
+chunk_id: 8e870d12-c183-4eae-a068-a9d6cdb7b648
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['web-scraping.dev - Web Scraping Testing & Learning Platform', 'Page Description']
+similarity: 0.4640620589418074
+adjusted_similarity: 0.4640620589418074
+ordinal_index: None
+content:
+[web-scraping.dev - Web Scraping Testing & Learning Platform > Page Description]
+
+Mock e-commerce website for web scraping testing and learning. Practice scraping with realistic scenarios including pagination, authentication, GraphQL, CSRF protection and more.
+
+--- Chunk 8 ---
+chunk_id: 11cf25dc-7805-4603-8a3d-763e6b9fb9f5
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 1']
+similarity: 0.46355127278390285
+adjusted_similarity: 0.46355127278390285
+ordinal_index: 0
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 1 of 54
+Scenario
+Path
+Level
+Description
+
+--- Chunk 9 ---
+chunk_id: 2c920336-6700-48ec-bc5c-fdd84f9a83cb
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 31']
+similarity: 0.4620543741153105
+adjusted_similarity: 0.4620543741153105
+ordinal_index: 30
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 31 of 54
+Rate Limit & Politeness
+/rate-limited
+Crawler
+429 with Retry-After: 5 after 3 req/10s.
+
+--- Chunk 10 ---
+chunk_id: 04517dc3-417e-4421-927d-f8f473f793db
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 22']
+similarity: 0.460813517021583
+adjusted_similarity: 0.460813517021583
+ordinal_index: 21
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 22 of 54
+Bad Encoding
+https://web-scraping.dev/bad-encoding
+Intermediate
+Pages with mismatched Content-Type charset headers.
+
+
+====================================================================================================
+Retrieved at: 2026-09-23T10:24:55.628891+00:00
+Chat ID: 9f4e89ef-64d3-496e-bcc9-ab23f8e41c12
+Original question: What does this website tells?
+Standalone question: What does the website at https://web-scraping.dev/ tell you?
+Retrieval metadata: {"confidence": 0.6393082740577533, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: 47565cf6-58de-4f74-a679-f654bc28e49b
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['web-scraping.dev - Web Scraping Testing & Learning Platform']
+similarity: 0.6393082740577533
+adjusted_similarity: 0.6393082740577533
+ordinal_index: None
+content:
+Page: web-scraping.dev - Web Scraping Testing & Learning Platform
+URL: https://web-scraping.dev/
+Contains: 3 sections, 1 tables, 4 lists, 0 cards
+Top sections: Used By | Scraping Scenarios50 Scenarios | Page Description
+
+--- Chunk 2 ---
+chunk_id: 8e870d12-c183-4eae-a068-a9d6cdb7b648
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['web-scraping.dev - Web Scraping Testing & Learning Platform', 'Page Description']
+similarity: 0.5698060193628847
+adjusted_similarity: 0.5698060193628847
+ordinal_index: None
+content:
+[web-scraping.dev - Web Scraping Testing & Learning Platform > Page Description]
+
+Mock e-commerce website for web scraping testing and learning. Practice scraping with realistic scenarios including pagination, authentication, GraphQL, CSRF protection and more.
+
+--- Chunk 3 ---
+chunk_id: dadf43a8-d982-424d-a106-cfe2ea3aa0c2
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['web-scraping.dev - Web Scraping Testing & Learning Platform', 'Used By']
+similarity: 0.5604095311863366
+adjusted_similarity: 0.5604095311863366
+ordinal_index: None
+content:
+[web-scraping.dev - Web Scraping Testing & Learning Platform > Used By]
+
+ScrapFly Documentation
+Web Scraping Academy
+Blog & Tutorials
+
+--- Chunk 4 ---
+chunk_id: 11cf25dc-7805-4603-8a3d-763e6b9fb9f5
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 1']
+similarity: 0.5501909251224174
+adjusted_similarity: 0.5501909251224174
+ordinal_index: 0
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 1 of 54
+Scenario
+Path
+Level
+Description
+
+--- Chunk 5 ---
+chunk_id: c66c489e-1242-481b-ba63-c1d24f6c058a
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 2']
+similarity: 0.5313334191397365
+adjusted_similarity: 0.5313334191397365
+ordinal_index: 1
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 2 of 54
+Static Paging
+https://web-scraping.dev/products
+Beginner
+HTML-based server-side item paging where each page is its own URL.
+
+--- Chunk 6 ---
+chunk_id: 4a9039ea-2117-483e-b13d-1e6f0e0fe0cc
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 12']
+similarity: 0.5286224359243333
+adjusted_similarity: 0.5286224359243333
+ordinal_index: 11
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 12 of 54
+Cookies Based Login
+https://web-scraping.dev/login
+Intermediate
+User authentication based on form request and cookies.
+
+--- Chunk 7 ---
+chunk_id: 31b45b5c-3158-4dfb-8b9a-afe321ed97a7
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['web-scraping.dev - Web Scraping Testing & Learning Platform', 'Scraping Scenarios50 Scenarios']
+similarity: 0.5265695799982864
+adjusted_similarity: 0.5265695799982864
+ordinal_index: None
+content:
+[web-scraping.dev - Web Scraping Testing & Learning Platform > Scraping Scenarios50 Scenarios]
+
+Real-world web patterns you'll encounter in production scraping projects.
+      Each scenario is tagged with difficulty level and includes working code examples.
+Sponsored by
+Best Web Scraping API
+
+--- Chunk 8 ---
+chunk_id: bfd2b4ec-9a30-42ff-afad-c1d3481ea63e
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 3']
+similarity: 0.5154105852929752
+adjusted_similarity: 0.5154105852929752
+ordinal_index: 2
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 3 of 54
+Endless Scroll Paging
+https://web-scraping.dev/testimonials
+Intermediate
+Dynamic client side paging where new items appear as user scrolls.
+
+--- Chunk 9 ---
+chunk_id: 2c081cb2-cd71-4fc1-aeec-239a0ac35c76
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 15']
+similarity: 0.508481663697479
+adjusted_similarity: 0.508481663697479
+ordinal_index: 14
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 15 of 54
+Cookie Popup
+https://web-scraping.dev/login?cookies=
+Beginner
+Cookie info modal popup that blocks the entire screen.
+
+--- Chunk 10 ---
+chunk_id: 09a4dd6b-6c2c-4154-ac57-4ae383508201
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 17']
+similarity: 0.5074392803559903
+adjusted_similarity: 0.5074392803559903
+ordinal_index: 16
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 17 of 54
+Blocking Redirect (Invalid Referer)
+https://web-scraping.dev/credentials
+Advanced
+Page requires valid Referer header, otherwise redirects to blocked.
+
+
+====================================================================================================
+Retrieved at: 2026-09-23T10:26:28.302689+00:00
+Chat ID: 9f4e89ef-64d3-496e-bcc9-ab23f8e41c12
+Original question: Tell me 2 beginner level scenarios from the website
+Standalone question: What are two beginner‑level scenarios on https://web-scraping.dev/?
+Retrieval metadata: {"confidence": 0.6525173013701507, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: 11cf25dc-7805-4603-8a3d-763e6b9fb9f5
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 1']
+similarity: 0.6525173013701507
+adjusted_similarity: 0.6525173013701507
+ordinal_index: 0
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 1 of 54
+Scenario
+Path
+Level
+Description
+
+--- Chunk 2 ---
+chunk_id: 6bd8e7dd-1a72-4fec-82b8-96a590e3fdf0
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios']
+similarity: 0.5765780067991484
+adjusted_similarity: 0.6342358074790633
+ordinal_index: None
+content:
+Columns: Scenario | Path | Level | Description
+Rows: 54
+  Row 1: Scenario Path Level Description
+  Row 2: Static Paging https://web-scraping.dev/products Beginner HTML-based server-side item paging where each page is its own URL.
+  Row 3: Endless Scroll Paging https://web-scraping.dev/testimonials Intermediate Dynamic client side paging where new items appear as user scrolls.
+  ... (51 more rows)
+
+--- Chunk 3 ---
+chunk_id: 31b45b5c-3158-4dfb-8b9a-afe321ed97a7
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['web-scraping.dev - Web Scraping Testing & Learning Platform', 'Scraping Scenarios50 Scenarios']
+similarity: 0.6185303281078575
+adjusted_similarity: 0.6185303281078575
+ordinal_index: None
+content:
+[web-scraping.dev - Web Scraping Testing & Learning Platform > Scraping Scenarios50 Scenarios]
+
+Real-world web patterns you'll encounter in production scraping projects.
+      Each scenario is tagged with difficulty level and includes working code examples.
+Sponsored by
+Best Web Scraping API
+
+--- Chunk 4 ---
+chunk_id: 47565cf6-58de-4f74-a679-f654bc28e49b
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['web-scraping.dev - Web Scraping Testing & Learning Platform']
+similarity: 0.5726230467864128
+adjusted_similarity: 0.5726230467864128
+ordinal_index: None
+content:
+Page: web-scraping.dev - Web Scraping Testing & Learning Platform
+URL: https://web-scraping.dev/
+Contains: 3 sections, 1 tables, 4 lists, 0 cards
+Top sections: Used By | Scraping Scenarios50 Scenarios | Page Description
+
+--- Chunk 5 ---
+chunk_id: c66c489e-1242-481b-ba63-c1d24f6c058a
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 2']
+similarity: 0.5669890335090978
+adjusted_similarity: 0.5669890335090978
+ordinal_index: 1
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 2 of 54
+Static Paging
+https://web-scraping.dev/products
+Beginner
+HTML-based server-side item paging where each page is its own URL.
+
+--- Chunk 6 ---
+chunk_id: 2c081cb2-cd71-4fc1-aeec-239a0ac35c76
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 15']
+similarity: 0.543442161118554
+adjusted_similarity: 0.543442161118554
+ordinal_index: 14
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 15 of 54
+Cookie Popup
+https://web-scraping.dev/login?cookies=
+Beginner
+Cookie info modal popup that blocks the entire screen.
+
+--- Chunk 7 ---
+chunk_id: c6ce6833-f0d1-452a-82e8-f4a9019bf777
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 8']
+similarity: 0.5261228228995457
+adjusted_similarity: 0.5261228228995457
+ordinal_index: 7
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 8 of 54
+Product HTML Markup
+https://web-scraping.dev/product/1
+Beginner
+Basic e-commerce product structure and CSS class based markup.
+
+--- Chunk 8 ---
+chunk_id: 4a9039ea-2117-483e-b13d-1e6f0e0fe0cc
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 12']
+similarity: 0.5260619594550244
+adjusted_similarity: 0.5260619594550244
+ordinal_index: 11
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 12 of 54
+Cookies Based Login
+https://web-scraping.dev/login
+Intermediate
+User authentication based on form request and cookies.
+
+--- Chunk 9 ---
+chunk_id: db5fbe86-8882-43ef-b673-c16784ecbe23
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 23']
+similarity: 0.5203099256978594
+adjusted_similarity: 0.5203099256978594
+ordinal_index: 22
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 23 of 54
+Antibot Challenge
+https://web-scraping.dev/antibot/easy
+Beginner
+Simple antibot protection that blocks direct access.
+
+--- Chunk 10 ---
+chunk_id: 8e165db1-080d-4914-bf5e-0688240503ad
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 7']
+similarity: 0.51512122571743
+adjusted_similarity: 0.51512122571743
+ordinal_index: 6
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 7 of 54
+Forced New Tab Links
+https://web-scraping.dev/reviews
+Beginner
+Links forced to open in new tabs via different techniques.
+
+
+====================================================================================================
+Retrieved at: 2026-09-23T10:27:25.568257+00:00
+Chat ID: 9f4e89ef-64d3-496e-bcc9-ab23f8e41c12
+Original question: Tell me all the beginner level scenarios from the website
+Standalone question: What are all the beginner‑level scenarios on https://web-scraping.dev/?
+Retrieval metadata: {"confidence": 0.6560804686594255, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: 11cf25dc-7805-4603-8a3d-763e6b9fb9f5
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 1']
+similarity: 0.6560804686594255
+adjusted_similarity: 0.6560804686594255
+ordinal_index: 0
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 1 of 54
+Scenario
+Path
+Level
+Description
+
+--- Chunk 2 ---
+chunk_id: 6bd8e7dd-1a72-4fec-82b8-96a590e3fdf0
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios']
+similarity: 0.5810982890608969
+adjusted_similarity: 0.6392081179669866
+ordinal_index: None
+content:
+Columns: Scenario | Path | Level | Description
+Rows: 54
+  Row 1: Scenario Path Level Description
+  Row 2: Static Paging https://web-scraping.dev/products Beginner HTML-based server-side item paging where each page is its own URL.
+  Row 3: Endless Scroll Paging https://web-scraping.dev/testimonials Intermediate Dynamic client side paging where new items appear as user scrolls.
+  ... (51 more rows)
+
+--- Chunk 3 ---
+chunk_id: 31b45b5c-3158-4dfb-8b9a-afe321ed97a7
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['web-scraping.dev - Web Scraping Testing & Learning Platform', 'Scraping Scenarios50 Scenarios']
+similarity: 0.6322611113530847
+adjusted_similarity: 0.6322611113530847
+ordinal_index: None
+content:
+[web-scraping.dev - Web Scraping Testing & Learning Platform > Scraping Scenarios50 Scenarios]
+
+Real-world web patterns you'll encounter in production scraping projects.
+      Each scenario is tagged with difficulty level and includes working code examples.
+Sponsored by
+Best Web Scraping API
+
+--- Chunk 4 ---
+chunk_id: 47565cf6-58de-4f74-a679-f654bc28e49b
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['web-scraping.dev - Web Scraping Testing & Learning Platform']
+similarity: 0.5734853238258508
+adjusted_similarity: 0.5734853238258508
+ordinal_index: None
+content:
+Page: web-scraping.dev - Web Scraping Testing & Learning Platform
+URL: https://web-scraping.dev/
+Contains: 3 sections, 1 tables, 4 lists, 0 cards
+Top sections: Used By | Scraping Scenarios50 Scenarios | Page Description
+
+--- Chunk 5 ---
+chunk_id: c66c489e-1242-481b-ba63-c1d24f6c058a
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 2']
+similarity: 0.5594133330696175
+adjusted_similarity: 0.5594133330696175
+ordinal_index: 1
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 2 of 54
+Static Paging
+https://web-scraping.dev/products
+Beginner
+HTML-based server-side item paging where each page is its own URL.
+
+--- Chunk 6 ---
+chunk_id: 2c081cb2-cd71-4fc1-aeec-239a0ac35c76
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 15']
+similarity: 0.5383266676712365
+adjusted_similarity: 0.5383266676712365
+ordinal_index: 14
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 15 of 54
+Cookie Popup
+https://web-scraping.dev/login?cookies=
+Beginner
+Cookie info modal popup that blocks the entire screen.
+
+--- Chunk 7 ---
+chunk_id: c6ce6833-f0d1-452a-82e8-f4a9019bf777
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 8']
+similarity: 0.5171723621794878
+adjusted_similarity: 0.5171723621794878
+ordinal_index: 7
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 8 of 54
+Product HTML Markup
+https://web-scraping.dev/product/1
+Beginner
+Basic e-commerce product structure and CSS class based markup.
+
+--- Chunk 8 ---
+chunk_id: 8e165db1-080d-4914-bf5e-0688240503ad
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 7']
+similarity: 0.5166320820843389
+adjusted_similarity: 0.5166320820843389
+ordinal_index: 6
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 7 of 54
+Forced New Tab Links
+https://web-scraping.dev/reviews
+Beginner
+Links forced to open in new tabs via different techniques.
+
+--- Chunk 9 ---
+chunk_id: db5fbe86-8882-43ef-b673-c16784ecbe23
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: table_row
+section_title: 
+heading_path: ['Scraping Scenarios50 Scenarios', 'Row 23']
+similarity: 0.5148436212964989
+adjusted_similarity: 0.5148436212964989
+ordinal_index: 22
+content:
+Table: web-scraping.dev - Web Scraping Testing & Learning Platform — Row 23 of 54
+Antibot Challenge
+https://web-scraping.dev/antibot/easy
+Beginner
+Simple antibot protection that blocks direct access.
+
+--- Chunk 10 ---
+chunk_id: 8e870d12-c183-4eae-a068-a9d6cdb7b648
+document_id: 0386aab9-defb-4115-9566-cfa675280458
+source_url: https://web-scraping.dev/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['web-scraping.dev - Web Scraping Testing & Learning Platform', 'Page Description']
+similarity: 0.5116210449831472
+adjusted_similarity: 0.5116210449831472
+ordinal_index: None
+content:
+[web-scraping.dev - Web Scraping Testing & Learning Platform > Page Description]
+
+Mock e-commerce website for web scraping testing and learning. Practice scraping with realistic scenarios including pagination, authentication, GraphQL, CSRF protection and more.
+

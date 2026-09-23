@@ -1,0 +1,748 @@
+
+====================================================================================================
+Retrieved at: 2026-09-23T10:18:43.926141+00:00
+Chat ID: 429c746d-e447-4f29-b5a3-aedd300e42d4
+Original question: How does puppygraph help?
+Standalone question: How does puppygraph help?
+Retrieval metadata: {"confidence": 0.4, "has_lexical_match": true, "has_results": true, "reason": "lexical match", "rrf_score": 0.03387978142076503, "score_gap": 0.002101723413198822}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: d244896e-e9be-40e5-9b58-a7b47a31dad1
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: image
+section_title: 
+heading_path: ['Nodes and Edges in Graph Theory', 'Image']
+similarity: 0.5254483475927144
+adjusted_similarity: 0.03387978142076503
+rrf_score: 0.032266458495966696
+vector_rank: 1
+keyword_rank: 3
+ordinal_index: None
+content:
+[Image from Nodes and Edges in Graph Theory]
+Description: PuppyGraph logo purple puppy icon | Entities: PuppyGraph (organization) | Logo Icon (other)
+Visible text: PuppyGraph
+Entities: PuppyGraph (organization) | Logo Icon (other)
+Caption: Figure: PuppyGraph Logo
+Section: How PuppyGraph Helps
+
+--- Chunk 2 ---
+chunk_id: 7f5a618e-3ca3-4223-9f64-30e846136908
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['Nodes and Edges in Graph Theory', 'Challenges in Managing Large-Scale Node-Edge Graphs', 'How PuppyGraph Helps']
+similarity: 0.46977028521458897
+adjusted_similarity: 0.03177805800756621
+rrf_score: 0.03177805800756621
+vector_rank: 5
+keyword_rank: 1
+ordinal_index: 8
+content:
+[Nodes and Edges in Graph Theory > Challenges in Managing Large-Scale Node-Edge Graphs > How PuppyGraph Helps]
+
+Figure: PuppyGraph Logo
+PuppyGraph
+is the first and only real time, zero-ETL graph query engine in the market, empowering data teams to query existing relational data stores as a unified graph model that can be deployed in under 10 minutes, bypassing traditional graph databases' cost, latency, and maintenance hurdles.
+It seamlessly integrates with data lakes like
+Apache Iceberg: ,
+Apache Hudi
+, and
+Delta Lake
+, as well as databases including
+MySQL: ,
+PostgreSQL
+, and
+DuckDB
+, so you can query across multiple sources simultaneously.
+Figure: PuppyGraph Supported Data Sources
+Figure: Example Architecture with PuppyGraph
+Key PuppyGraph capabilities include:
+Zero ETL:
+PuppyGraph runs as a query engine on your existing relational databases and lakes. Skip pipeline builds, reduce fragility, and start querying as a graph in minutes.
+No Data Duplication:
+Query your data in place, eliminating the need to copy large datasets into a separate graph database. This ensures data consistency and leverages existing data access controls.
+Real Time Analysis:
+By querying live source data, analyses reflect the current state of the environment, mitigating the problem of relying on static, potentially outdated graph snapshots. PuppyGraph users report 6-hop queries across billions of edges in less than 3 seconds.
+Scalable Performance:
+PuppyGraph’s distributed compute engine scales with your cluster size. Run petabyte-scale workloads and deep traversals like 10-hop neighbors, and get answers back in seconds. This exceptional query performance is achieved through the use of parallel processing and vectorized evaluation technology.
+Best of SQL and Graph:
+Because PuppyGraph queries your data in place, teams can use their existing SQL engines for tabular workloads and PuppyGraph for relationship-heavy analysis, all on the same source tables. No need to force every use case through a graph database or retrain teams on a new query language.
+Lower Total Cost of Ownership:
+Graph databases make you pay twice — once for pipelines, duplicated storage, and parallel governance, and again for the high-memory hardware needed to make them fast. PuppyGraph removes both costs by querying your lake directly with zero ETL and no second system to maintain. No massive RAM bills, no duplicated ACLs, and no extra infrastructure to secure.
+Flexible and Iterative Modeling:
+Using metadata driven schemas allows creating multiple graph views from the same underlying data. Models can be iterated upon quickly without rebuilding data pipelines, supporting agile analysis workflows.
+Standard Querying and Visualization:
+Support for standard graph query languages (
+openCypher: ,
+Gremlin
+) and integrated
+visualization tools
+helps analysts explore relationships intuitively and effectively.
+Proven at Enterprise Scale:
+PuppyGraph is already used by half of the top 20 cybersecurity companies, as well as engineering-driven enterprises like AMD and Coinbase. Whether it’s multi-hop security reasoning, asset intelligence, or deep relationship queries across massive datasets, these teams trust PuppyGraph to replace slow ETL pipelines and complex graph stacks with a simpler, faster architecture.
+Figure: PuppyGraph in-production clients
+Figure: What customers and partners are saying about PuppyGraph
+As data grows more complex, the most valuable insights often lie in how entities relate. PuppyGraph brings those insights to the surface, whether you’re modeling organizational networks, social introductions,
+fraud
+and
+cybersecurity
+graphs, or
+GraphRAG
+pipelines that trace knowledge provenance.
+Figure: PuppyGraph UI - Query the data using Gremlin
+Figure: Architecture with graph database vs. with PuppyGraph
+Deployment is simple:
+download the free Docker image
+, connect PuppyGraph to your existing data stores, define graph schemas, and start querying. PuppyGraph can be deployed via
+Docker: ,
+AWS AMI: ,
+GCP Marketplace
+, or within a VPC or data center for full data control.
+Get Started with PuppyGraph for FREE
+
+--- Chunk 3 ---
+chunk_id: d3cc7ad8-2a35-40b8-bbad-c7f8b8c63a3c
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: image
+section_title: 
+heading_path: ['Nodes and Edges in Graph Theory', 'Image']
+similarity: 0.4017497727684739
+adjusted_similarity: 0.030406250000000003
+rrf_score: 0.028958333333333336
+vector_rank: 15
+keyword_rank: 4
+ordinal_index: None
+content:
+[Image from Nodes and Edges in Graph Theory]
+Description: Example Architecture
+Single copy of data – query it in both SQL & Graph
+BI &Viz
+PuppyGraph
+G.V()
++tableau
+Looker
+Query Language
+Gremlin
+Cypher
+SQL
+Query Engine
+PuppyGraph
+Unified Graph Query Engine
+trino
+Databricks SQL
+Unified SQL Query Engine
+Storage
+PostgreSQL
+ETL
+ICEBERG
+databricks | Entities: BI &Viz (label) | PuppyGraph (product) | Tableau (product) | Looker (product) | Query Language (label)
+Visible text: Example Architecture
+Single copy of data – query it in both SQL & Graph
+BI &Viz
+PuppyGraph
+G.V()
++tableau
+Looker
+Query Language
+Gremlin
+Cypher
+SQL
+Query Engine
+PuppyGraph
+Unified Graph Query Engine
+trino
+Databricks SQL
+Unified SQL Query Engine
+Storage
+PostgreSQL
+ETL
+ICEBERG
+databricks
+Entities: BI &Viz (label) | PuppyGraph (product) | Tableau (product) | Looker (product) | Query Language (label)
+Caption: Figure: Example Architecture with PuppyGraph
+Section: How PuppyGraph Helps
+
+--- Chunk 4 ---
+chunk_id: da8a6c1b-d344-4cdf-9475-6024dbff2363
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: image
+section_title: 
+heading_path: ['Nodes and Edges in Graph Theory', 'Image']
+similarity: 0.41933878564548777
+adjusted_similarity: 0.030292652552926527
+rrf_score: 0.028850145288501453
+vector_rank: 13
+keyword_rank: 6
+ordinal_index: None
+content:
+[Image from Nodes and Edges in Graph Theory]
+Description: Supported Data Sources
+PuppyGraph
+ICEBERG
+PostgreSQL
+Google BigQuery
+Azure Storage
+VERTICA
+DELTA LAKE
+MySQL
+Amazon Redshift
+SingleStore
+CLOUDERA
+Apache hudi
+databricks
+snowflake
+IBM watsonx
+Parquet
+HIVE
+amazon S3
+DuckDB
+yugabyteDB
+ORACLE
+mongoDB
+elasticsearch
+*New data sources can be supported in 2-4 weeks. | Entities: PuppyGraph (organization) | ICEBERG (product) | PostgreSQL (product) | Google BigQuery (product) | Azure Storage (product)
+Visible text: Supported Data Sources
+PuppyGraph
+ICEBERG
+PostgreSQL
+Google BigQuery
+Azure Storage
+VERTICA
+DELTA LAKE
+MySQL
+Amazon Redshift
+SingleStore
+CLOUDERA
+Apache hudi
+databricks
+snowflake
+IBM watsonx
+Parquet
+HIVE
+amazon S3
+DuckDB
+yugabyteDB
+ORACLE
+mongoDB
+elasticsearch
+*New data sources can be supported in 2-4 weeks.
+Entities: PuppyGraph (organization) | ICEBERG (product) | PostgreSQL (product) | Google BigQuery (product) | Azure Storage (product)
+Caption: Figure: PuppyGraph Supported Data Sources
+Section: How PuppyGraph Helps
+
+--- Chunk 5 ---
+chunk_id: 0daca934-a97e-42c6-8bd3-403af26970b1
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: card
+section_title: 
+heading_path: ['Nodes and Edges in Graph Theory', 'Challenges in Managing Large-Scale Node-Edge Graphs', 'Part 2 of 3']
+similarity: 0.3997002812812327
+adjusted_similarity: 0.02928692699490662
+rrf_score: 0.02928692699490662
+vector_rank: 16
+keyword_rank: 2
+ordinal_index: 17
+content:
+Name: Challenges in Managing Large-Scale Node-Edge Graphs
+Description: In real production environments, enterprises and organizations generate large amounts of data that may be stored in many places, including data lakes, data warehouses, and databases. Large-scale node-edge graphs are modeled from this data and can then be used for graph analysis and graph queries. Traditional methods require building and maintaining a complex ETL system to load the data into a dedicatedgraph database. More specifically, this approach encounters several challenges:
+URL: https://www.puppygraph.com/blog/graph-database
+Details: Challenges in Managing Large-Scale Node-Edge Graphs In real production environments, enterprises and organizations generate large amounts of data that may be stored in many places, including data lakes, data warehouses, and databases. Large-scale node-edge graphs are modeled from this data and can then be used for graph analysis and graph queries. Traditional methods require building and maintaining a complex ETL system to load the data into a dedicated graph database . More specifically, this approach encounters several challenges: Integration and migration: Moving from relational tables to nodes and edges requires complex ETL and custom integrations, which are error prone and hard to keep in sync with existing systems. Data modeling and schema design: Flexible or schema-less models can drift over time, and evolving graph topologies make it difficult to design schemas that stay both clean and performant over time. Performance and scalability: Multi-hop traversals are hard to optimize and graphs are difficult to shard, so cross partition queries add latency and make large graph databases challenging to scale. How PuppyGraph Helps Figure: PuppyGraph Logo PuppyGraph is the first and only real time, zero-ETL graph query engine in the market, empowering data teams to query existing relational data stores as a unified graph model that can be deployed in under 10 minutes, bypassing traditional graph databases' cost, latency, and maintenance hurdles. It seamlessly integrates with data lakes like Apache Iceberg , Apache Hudi , and Delta Lake , as well as databases including MySQL , PostgreSQL , and DuckDB , so you can query across multiple sources simultaneously. Figure: PuppyGraph Supported Data Sources Figure: Example Architecture with PuppyGraph Key PuppyGraph capabilities include: Zero ETL: PuppyGraph runs as a query engine on your existing relational databases and lakes. Skip pipeline builds, reduce fragility, and start querying as a graph in minutes. No Data Duplication: Query your data in place, eliminating the need to copy large datasets into a separate graph database. This ensures data consistency and leverages existing data access controls. Real Time Analysis: By querying live source data, analyses reflect the current state of the environment, mitigating the problem of relying on static, potentially outdated graph snapshots. PuppyGraph users report 6-hop queries across billions of edges in less than 3 seconds. Scalable Performance: PuppyGraph’s distributed compute engine scales with your cluster size. Run petabyte-scale workloads and deep traversals like 10-hop neighbors, and get answers back in seconds. This exceptional query performance is achieved through the use of parallel processing and vectorized evaluation technology. Best of SQL and Graph: Because PuppyGraph queries your data in place, teams can use their existing SQL engines for tabular workloads and PuppyGraph for relationship-heavy analysis, all on the same source tables. No need to force every use case through a graph database or retrain teams on a new query language. Lower Total Cost of Ownership: Graph databases make you pay twice — once for pipelines, duplicated storage, and parallel governance, and again for the high-memory hardware needed to make them fast. PuppyGraph removes both costs by querying your lake directly with zero ETL and no second system to maintain. No massive RAM bills, no duplicated ACLs, and no extra infrastructure to secure. Flexible and Iterative Modeling: Using metadata driven schemas allows creating multiple graph views from the same underlying data. Models can be iterated upon quickly without rebuilding data pipelines, supporting agile analysis workflows. Standard Querying and Visualization: Support for standard graph query languages ( openCypher , Gremlin ) and integrated visualization tools helps analysts explore relationships intuitively and effectively. Proven at Enterprise Scale: PuppyGraph is already used by half of the top 20 cybersecurity companies, as well as engineering-driven enterprises like AMD and Coinbase. Whether it’s multi-hop security reasoning, asset intelligence, or deep relationship queries across massive datasets, these teams trust PuppyGraph to replace slow ETL pipelines and complex graph stacks with a simpler, faster architecture. Figure: PuppyGraph in-production clients Figure: What customers and partners are saying about PuppyGraph As data grows more complex, the most valuable insights often lie in how entities relate. PuppyGraph brings those insights to the surface, whether you’re modeling organizational networks, social introductions, fraud and cybersecurity graphs, or GraphRAG pipelines that trace knowledge provenance.
+
+--- Chunk 6 ---
+chunk_id: 6c385be8-182e-4c11-a553-6821c37c4fe8
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: image
+section_title: 
+heading_path: ['Nodes and Edges in Graph Theory', 'Image']
+similarity: 0.3460009484055028
+adjusted_similarity: 0.02911680911680912
+rrf_score: 0.027730294396961064
+vector_rank: 21
+keyword_rank: 5
+ordinal_index: None
+content:
+[Image from Nodes and Edges in Graph Theory]
+Description: Historically, graph queries required specialized storage and compute, but now PuppyGraph is running directly on plain vanilla Iceberg tables. Just point to a table with your nodes and edges, and let PuppyGraph go. The performance you get out the other side is amazing. Jason Reid – Co-Founder of Iceberg / Tabular
+Really excited to see PuppyGraph integrate with open source Unity Catalog as the first graph compute engine partner! We want users to be able to use the best data and AI tools seamlessly and securely on their data. Matei Zaharia – CTO @ Databricks
+PuppyGraph queries all our crypto data directly without ETL and performs all kinds of exploration and aggregation. It's so powerful. Eric Sun – Head of Data @ Coinbase
+PuppyGraph's relationship engine has been instrumental in building our correction platform, enable seamless connectivity and insights. Naiming Chu – VP of Infra @ Netskope
+We found PuppyGraph excel at analytical and summarization use cases, outperforming most graph databases by a wide margin. Namith Cholappurath – VP Architecture @ Prevalent AI | Entities: PuppyGraph (product) | Jason Reid (person) | Iceberg (organization) | Tabular (organization) | Matei Zaharia (person)
+Visible text: Historically, graph queries required specialized storage and compute, but now PuppyGraph is running directly on plain vanilla Iceberg tables. Just point to a table with your nodes and edges, and let PuppyGraph go. The performance you get out the other side is amazing. Jason Reid – Co-Founder of Iceberg / Tabular
+Really excited to see PuppyGraph integrate with open source Unity Catalog as the first graph compute engine partner! We want users to be able to use the best data and AI tools seamlessly and securely on their data. Matei Zaharia – CTO @ Databricks
+PuppyGraph queries all our crypto data directly without ETL and performs all kinds of exploration and aggregation. It's so powerful. Eric Sun – Head of Data @ Coinbase
+PuppyGraph's relationship engine has been instrumental in building our correction platform, enable seamless connectivity and insights. Naiming Chu – VP of Infra @ Netskope
+We found PuppyGraph excel at analytical and summarization use cases, outperforming most graph databases by a wide margin. Namith Cholappurath – VP Architecture @ Prevalent AI
+Entities: PuppyGraph (product) | Jason Reid (person) | Iceberg (organization) | Tabular (organization) | Matei Zaharia (person)
+Caption: Figure: What customers and partners are saying about PuppyGraph
+Section: How PuppyGraph Helps
+
+--- Chunk 7 ---
+chunk_id: c3bc92ff-3de7-430f-90a4-f24561f3c0d3
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: image
+section_title: 
+heading_path: ['Nodes and Edges in Graph Theory', 'Image']
+similarity: 0.37184294388013317
+adjusted_similarity: 0.028796641791044776
+rrf_score: 0.027425373134328357
+vector_rank: 20
+keyword_rank: 7
+ordinal_index: None
+content:
+[Image from Nodes and Edges in Graph Theory]
+Description: coinbase Clarivate Prevalent AI ebay Protocol Labs netskope Alchemy Pay paloalto NETWORKS CipherOwl DATADOG AMD PuppyGraph | Visible text: coinbase Clarivate™ Prevalent AI ebay Protocol Labs netskope Alchemy Pay paloalto NETWORKS CipherOwl DATADOG AMD PuppyGraph | Entities: coinbase (organization) | Clarivate (organization) | Prevalent AI (organization) | ebay (organization) | Protocol Labs (organization)
+Visible text: coinbase Clarivate™ Prevalent AI ebay Protocol Labs netskope Alchemy Pay paloalto NETWORKS CipherOwl DATADOG AMD PuppyGraph
+Entities: coinbase (organization) | Clarivate (organization) | Prevalent AI (organization) | ebay (organization) | Protocol Labs (organization)
+Caption: Figure: PuppyGraph in-production clients
+Section: How PuppyGraph Helps
+
+--- Chunk 8 ---
+chunk_id: ae3dde5e-16b5-4182-9df7-9fdd0f67255f
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: image
+section_title: 
+heading_path: ['Nodes and Edges in Graph Theory', 'Image']
+similarity: 0.33888102275076726
+adjusted_similarity: 0.028246054519368725
+rrf_score: 0.02690100430416069
+vector_rank: 22
+keyword_rank: 8
+ordinal_index: None
+content:
+[Image from Nodes and Edges in Graph Theory]
+Description: PuppyGraph
+Healthy 0.38
+puppygraph
+Schema
+Query
+Visualize
+Dashboard
+Settings
+Docs
+Gremlin Query
+Gremlin Console
+Cypher Console
+Graph Notebook
+Run
+Help
+Radial Layout
+Clear
+[ : ]
+[3]: g.V("Person[24189255811812]").elementMap()
+Rows: 1
+Result
+Raw
+id Person[24189255811812]
+label Person
+personName Franju
+isBlocked false
+createTime 2022-05-31T13:18:52.912Z
+expand
+[2]: g.V("Person[24189255811812]").out("PersonOwnAccount").repeat(out("AccountTransferAccount")).until(has("createTime", between("2022-05-01T00:00:00.000Z", "2023-01-01T00:00:00.000Z"))).where(or(repeat(out("Is")).is(is()), where(gt("elapsedTime")).by("createTime"))).as("t").inV().inV().as("a").dedup().by(select("t")).select("t","a").emit().times(3).simplePath().path()
+Rows: 30
+Result
+Raw
+Path Vertex Person[24189255811812]
+Vertex Account[48886739550675050]
+Edge AccountTransferAccount AccountTransferAccount[5911]
+expand
+[1]: g.V().hasLabel('Account').count()
+Person[24189255811812]
+id Person[24189255811812]
+label Person
+personName Franju
+isBlocked false
+createTime 2022-05-31T13:18:52.912Z
+gender female
+birthday 1993-09-04
+country China
+city Dangyang
+nodes:31
+edges:32
+Person
+Person_Account
+AccountTransferAccount
+Software License Agreement
+by PuppyGraph | Entities: PuppyGraph (product) | Franju (person) | China (location) | Dangyang (location) | createTime (date)
+Visible text: PuppyGraph
+Healthy 0.38
+puppygraph
+Schema
+Query
+Visualize
+Dashboard
+Settings
+Docs
+Gremlin Query
+Gremlin Console
+Cypher Console
+Graph Notebook
+Run
+Help
+Radial Layout
+Clear
+[ : ]
+[3]: g.V("Person[24189255811812]").elementMap()
+Rows: 1
+Result
+Raw
+id Person[24189255811812]
+label Person
+personName Franju
+isBlocked false
+createTime 2022-05-31T13:18:52.912Z
+expand
+[2]: g.V("Person[24189255811812]").out("PersonOwnAccount").repeat(out("AccountTransferAccount")).until(has("createTime", between("2022-05-01T00:00:00.000Z", "2023-01-01T00:00:00.000Z"))).where(or(repeat(out("Is")).is(is()), where(gt("elapsedTime")).by("createTime"))).as("t").inV().inV().as("a").dedup().by(select("t")).select("t","a").emit().times(3).simplePath().path()
+Rows: 30
+Result
+Raw
+Path Vertex Person[24189255811812]
+Vertex Account[48886739550675050]
+Edge AccountTransferAccount AccountTransferAccount[5911]
+expand
+[1]: g.V().hasLabel('Account').count()
+Person[24189255811812]
+id Person[24189255811812]
+label Person
+personName Franju
+isBlocked false
+createTime 2022-05-31T13:18:52.912Z
+gender female
+birthday 1993-09-04
+country China
+city Dangyang
+nodes:31
+edges:32
+Person
+Person_Account
+AccountTransferAccount
+Software License Agreement
+by PuppyGraph
+Entities: PuppyGraph (product) | Franju (person) | China (location) | Dangyang (location) | createTime (date)
+Caption: Figure: PuppyGraph UI - Query the data using Gremlin
+Section: How PuppyGraph Helps
+
+--- Chunk 9 ---
+chunk_id: a2358dbd-5523-4ff3-98fa-dcfc402d967d
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['Nodes and Edges in Graph Theory', 'What is a Nodes and Edges Graph?', 'Adjacency List']
+similarity: 0.3048523571074193
+adjusted_similarity: 0.02564935064935065
+rrf_score: 0.02564935064935065
+vector_rank: 28
+keyword_rank: 10
+ordinal_index: 1
+content:
+[Nodes and Edges in Graph Theory > What is a Nodes and Edges Graph? > Adjacency List]
+
+An
+adjacency list
+is a collection of lists, where each node keeps a list of its neighbors. For the undirected graph G that we defined earlier:
+Adjacency lists have a space complexity of
+O
+(
+V
++
+E
+)
+since you only store edges that actually exist, helping to save space. This makes adjacency lists a natural fit for sparse graphs, where the number of edges is relatively small compared to the maximum possible number of edges.
+Get Started with PuppyGraph for FREE
+
+--- Chunk 10 ---
+chunk_id: 04875817-b192-4c38-ad84-d0dab873c1d1
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: faq
+section_title: 
+heading_path: ['Nodes and Edges in Graph Theory', 'What is a Nodes and Edges Graph?']
+similarity: 2.0303467e-05
+adjusted_similarity: 0.020289855072463767
+rrf_score: 0.014492753623188406
+keyword_rank: 9
+ordinal_index: 11
+content:
+[Nodes and Edges in Graph Theory > What is a Nodes and Edges Graph?]
+
+Name: What is a Nodes and Edges Graph?
+Description: Formally, a graph is a pairG=(V,E):
+URL: https://www.puppygraph.com/dev-download
+Details: What is a Nodes and Edges Graph? Formally, a graph is a pair G = ( V , E ) : V, a nonempty set of unique objects, points, or nodes E, a set of pairs of nodes that represent connections. For an undirected graph G, we can define it with set notation as follows: V = { v 1 , v 2 , v 3 } E = { { v 1 , v 2 } , { v 2 , v 3 } } This notation can look abstract at first. A more intuitive way to understand it is with a node link diagram. Nodes are drawn as points or circles, and edges are drawn as lines connecting those nodes. The same formal definition G = ( V , E ) simply tells you which circles exist and which pairs of circles should be connected by lines. Figure: Example Undirected Graph We can represent the graph in two ways: adjacency lists and adjacency matrices . Adjacency List An adjacency list is a collection of lists, where each node keeps a list of its neighbors. For the undirected graph G that we defined earlier: Vertex Adjacent Vertices v1 v2 v2 v1, v3 v3 v2 Adjacency lists have a space complexity of O ( V + E ) since you only store edges that actually exist, helping to save space. This makes adjacency lists a natural fit for sparse graphs, where the number of edges is relatively small compared to the maximum possible number of edges. Get Started with PuppyGraph for FREE Adjacency Matrix An adjacency matrix is a square matrix where each row and column corresponds to a node: A = [ a i j ] where a i j = { 1 if { v i , v j } is an edge of G 0 otherwise For the undirected graph G that we defined earlier: A = [ 0 1 0 1 0 1 0 1 0 ] Get Started with PuppyGraph for FREE
+
+
+====================================================================================================
+Retrieved at: 2026-09-23T10:19:25.576222+00:00
+Chat ID: 429c746d-e447-4f29-b5a3-aedd300e42d4
+Original question: whaat is the difference in before and after puppygraph?
+Standalone question: What is the difference before and after using PuppyGraph?
+Retrieval metadata: {"confidence": 0.4, "has_lexical_match": true, "has_results": true, "reason": "lexical match", "rrf_score": 0.02258064516129032, "score_gap": 0.005913978494623655}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: a38341c0-3faa-4f19-9787-412016cdef36
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: faq
+section_title: 
+heading_path: ['Nodes and Edges in Graph Theory', 'Weighted and Unweighted Graphs: What’s the Difference?']
+similarity: 6.233458e-12
+adjusted_similarity: 0.02258064516129032
+rrf_score: 0.016129032258064516
+keyword_rank: 2
+ordinal_index: 15
+content:
+[Nodes and Edges in Graph Theory > Weighted and Unweighted Graphs: What’s the Difference?]
+
+Name: Weighted and Unweighted Graphs: What’s the Difference?
+Description: So far, we have treated edges as either present or absent. That is anunweighted graph.
+URL: https://www.puppygraph.com/dev-download
+Details: Weighted and Unweighted Graphs: What’s the Difference? So far, we have treated edges as either present or absent. That is an unweighted graph . In many real problems, though, not all connections are equal. Some are shorter, cheaper, faster, or riskier than others. That is where weights come in. In a weighted graph , edges (and sometimes nodes) carry numeric values. Formally, you can think of a weight function w : E → R that assigns a number to each edge. That number can represent the cost of using a link or taking an action: Distance in a road network Latency or bandwidth between services Risk or likelihood in a security or fraud graph Weights change both which graph algorithms you use and what their results mean. In unweighted graphs, shortest paths and centrality often treat every edge as having cost 1, so simple breadth first search is enough and “shortest” means fewest hops. In weighted graphs, you need weight aware algorithms like Dijkstra or Bellman–Ford, and “shortest” means minimum total weight. The same idea carries over to spanning trees (minimum spanning trees instead of any tree) and centrality and community detection, which can rank nodes and clusters based on low cost, low latency, or strong connections rather than just raw connectivity. Get Started with PuppyGraph for FREE
+
+--- Chunk 2 ---
+chunk_id: d244896e-e9be-40e5-9b58-a7b47a31dad1
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: image
+section_title: 
+heading_path: ['Nodes and Edges in Graph Theory', 'Image']
+similarity: 0.49035563313063046
+adjusted_similarity: 0.016666666666666666
+rrf_score: 0.015873015873015872
+vector_rank: 3
+ordinal_index: None
+content:
+[Image from Nodes and Edges in Graph Theory]
+Description: PuppyGraph logo purple puppy icon | Entities: PuppyGraph (organization) | Logo Icon (other)
+Visible text: PuppyGraph
+Entities: PuppyGraph (organization) | Logo Icon (other)
+Caption: Figure: PuppyGraph Logo
+Section: How PuppyGraph Helps
+
+--- Chunk 3 ---
+chunk_id: 6f58b532-8dd5-49ed-bf9d-71afe827f7f8
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: card
+section_title: 
+heading_path: ['Nodes and Edges in Graph Theory', 'Challenges in Managing Large-Scale Node-Edge Graphs', 'Part 3 of 3']
+similarity: 0.5672714647852611
+adjusted_similarity: 0.01639344262295082
+rrf_score: 0.01639344262295082
+vector_rank: 1
+ordinal_index: 17
+content:
+Figure: PuppyGraph UI - Query the data using Gremlin Figure: Architecture with graph database vs. with PuppyGraph Deployment is simple: download the free Docker image , connect PuppyGraph to your existing data stores, define graph schemas, and start querying. PuppyGraph can be deployed via Docker , AWS AMI , GCP Marketplace , or within a VPC or data center for full data control. Get Started with PuppyGraph for FREE
+
+--- Chunk 4 ---
+chunk_id: d2e37918-605f-43e4-8f0a-f8bdaf48e85b
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: card
+section_title: 
+heading_path: ['Nodes and Edges in Graph Theory', 'How Nodes and Edges Represent Real-World Data']
+similarity: 3.496912e-09
+adjusted_similarity: 0.01639344262295082
+rrf_score: 0.01639344262295082
+keyword_rank: 1
+ordinal_index: 16
+content:
+[Nodes and Edges in Graph Theory > How Nodes and Edges Represent Real-World Data]
+
+Name: How Nodes and Edges Represent Real-World Data
+Description: At a high level, graphs let you turn “things and how they relate” into nodes and edges. Anodestands for an entity in your system, and anedgestands for a relationship between two entities. The same raw data can be modeled in different ways, depending on what questions you care about.
+URL: https://www.puppygraph.com/dev-download
+Details: How Nodes and Edges Represent Real-World Data At a high level, graphs let you turn “things and how they relate” into nodes and edges. A node stands for an entity in your system, and an edge stands for a relationship between two entities. The same raw data can be modeled in different ways, depending on what questions you care about. You choose what a node represents based on your problem space and the level of detail you need. A node could be a user, device, IP address, services, and subnets. Edges then encode how those entities relate, such as “follows”, “owns”, “calls”, or “runs on”. Real-world graphs usually use typed nodes and edges with attributes. In a property graph, for example, nodes have labels (User, Machine, Role, Product) and key value properties like country, risk_score, or created_at. Edges do the same with labels such as FOLLOWS, DEPENDS_ON, HAS_ACCESS_TO, plus properties like since, weight, or latency_ms. Structure gives you connectivity, while attributes give you the context you filter and rank on. Some examples include: Cybersecurity Graphs Nodes: VM Instances, Roles, Resources, Security Groups, Subnets Edges: “assigned role”, “allows access to”, “contains”, “gateway to” Social Networks Nodes: users, groups, posts, events Edges: “follows”, “friend of”, “joined”, “liked”, “replied to” eCommerce Graphs Nodes: Customers, Orders, Products, Suppliers Edges: “viewed”, “added to cart”, “purchased”, “belongs to order” The power of graphs comes from matching your domain to nodes, edges, and attributes in a way that mirrors how your system behaves. Once that mapping is in place, many questions about reachability, influence, risk, and similarity become graph queries on top of your data. Get Started with PuppyGraph for FREE
+
+--- Chunk 5 ---
+chunk_id: 10bbd616-e21c-48ab-bc9e-34593df64aae
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: list
+section_title: 
+heading_path: ['How PuppyGraph Helps']
+similarity: 0.4948204268532783
+adjusted_similarity: 0.016129032258064516
+rrf_score: 0.016129032258064516
+vector_rank: 2
+ordinal_index: None
+content:
+List type: unordered
+Items (1):
+  1. Zero ETL: PuppyGraph runs as a query engine on your existing relational databases and lakes. Skip pipeline builds, reduce fragility, and start querying as a graph in minutes.
+
+--- Chunk 6 ---
+chunk_id: 7ad98802-eb20-4b29-a27b-d2c7378c0e96
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: card
+section_title: 
+heading_path: ['Nodes and Edges in Graph Theory', 'Key Concepts: Nodes, Edges, and Relationships']
+similarity: 3.330669e-16
+adjusted_similarity: 0.015873015873015872
+rrf_score: 0.015873015873015872
+keyword_rank: 3
+ordinal_index: 12
+content:
+[Nodes and Edges in Graph Theory > Key Concepts: Nodes, Edges, and Relationships]
+
+Name: Key Concepts: Nodes, Edges, and Relationships
+Description: In this section, we will walk through a few core ideas about nodes and edges that inform a graph’s overall structure and behavior.
+URL: https://www.puppygraph.com/blog/software-dependency-graph
+Details: Key Concepts: Nodes, Edges, and Relationships  Degree of a Node The degree of a node tells you how many connections it has. In an undirected graph, the degree of a node v, written deg⁡(v), is the number of neighbors it has. A neighbor is any node that shares an edge with v. If a user node is connected to three other users, its degree is 3. In directed graphs, each edge has a direction, so you split degree into: In degree : number of edges that point into v Out degree : number of edges that start at v For example, in a “follows” graph on a social platform, a high in degree often means the user is popular, while a high out degree might mean the user follows many accounts. There is a useful global property of degrees in an undirected graph. If |E| is the number of edges, then the sum of the degrees of all nodes is ∑ deg ⁡ ( v ) = 2 | E | . Each edge has two endpoints, so it contributes 1 to the degree of each endpoint and is counted twice. This also means there must be an even number of nodes with odd degree , because the total sum on the left is an even number. A self loop is an edge that starts and ends at the same node. In an undirected graph, a self loop contributes 2 to the degree of that node. The loop touches the node twice as an endpoint, and this keeps the identity ∑ deg ⁡ ( v ) = 2 | E | valid even when self loops are present. In a directed graph, a self loop counts as both one incoming and one outgoing edge for that node. Walks and Paths A walk is any sequence of nodes where each consecutive pair is connected by an edge. Nodes and edges can repeat. Walks come in two basic forms: An open walk starts and ends at different nodes. A closed walk starts and ends at the same node. A path is a more restrictive type of walk where no node repeats. If there is a path from node u to node v, then v is reachable from u. Cycles A cycle is a path that starts and ends at the same node, with no other node repeated. You follow edges from a node, visit a sequence of distinct nodes, and arrive back where you started. Cycles tell you that there are feedback loops or circular dependencies in your structure: Software dependency graphs : a library A depends on B, B depends on C, and C depends (directly or indirectly) on A again, creating a dependency cycle. Fraud graphs : a group of accounts, devices, or merchants repeatedly transact with each other in a loop, forming a fraud ring where money circulates. Compliance graphs : roles or approvers are wired so that approvals eventually route back to the original approver, creating a circular approval that can block real sign off. Figure: Example Cycle in Software Dependency Graph In directed graphs, you talk about directed cycles, where all edges in the cycle follow a consistent direction. Graphs with no directed cycles are called directed acyclic graphs (DAGs) , which means you can follow the arrows, but you can never return to your starting point. DAGs are common in task scheduling and data pipelines because they encode flows that move forward without looping back. Get Started with PuppyGraph for FREE
+
+--- Chunk 7 ---
+chunk_id: 7f5a618e-3ca3-4223-9f64-30e846136908
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['Nodes and Edges in Graph Theory', 'Challenges in Managing Large-Scale Node-Edge Graphs', 'How PuppyGraph Helps']
+similarity: 0.4862951768526156
+adjusted_similarity: 0.015625
+rrf_score: 0.015625
+vector_rank: 4
+ordinal_index: 8
+content:
+[Nodes and Edges in Graph Theory > Challenges in Managing Large-Scale Node-Edge Graphs > How PuppyGraph Helps]
+
+Figure: PuppyGraph Logo
+PuppyGraph
+is the first and only real time, zero-ETL graph query engine in the market, empowering data teams to query existing relational data stores as a unified graph model that can be deployed in under 10 minutes, bypassing traditional graph databases' cost, latency, and maintenance hurdles.
+It seamlessly integrates with data lakes like
+Apache Iceberg: ,
+Apache Hudi
+, and
+Delta Lake
+, as well as databases including
+MySQL: ,
+PostgreSQL
+, and
+DuckDB
+, so you can query across multiple sources simultaneously.
+Figure: PuppyGraph Supported Data Sources
+Figure: Example Architecture with PuppyGraph
+Key PuppyGraph capabilities include:
+Zero ETL:
+PuppyGraph runs as a query engine on your existing relational databases and lakes. Skip pipeline builds, reduce fragility, and start querying as a graph in minutes.
+No Data Duplication:
+Query your data in place, eliminating the need to copy large datasets into a separate graph database. This ensures data consistency and leverages existing data access controls.
+Real Time Analysis:
+By querying live source data, analyses reflect the current state of the environment, mitigating the problem of relying on static, potentially outdated graph snapshots. PuppyGraph users report 6-hop queries across billions of edges in less than 3 seconds.
+Scalable Performance:
+PuppyGraph’s distributed compute engine scales with your cluster size. Run petabyte-scale workloads and deep traversals like 10-hop neighbors, and get answers back in seconds. This exceptional query performance is achieved through the use of parallel processing and vectorized evaluation technology.
+Best of SQL and Graph:
+Because PuppyGraph queries your data in place, teams can use their existing SQL engines for tabular workloads and PuppyGraph for relationship-heavy analysis, all on the same source tables. No need to force every use case through a graph database or retrain teams on a new query language.
+Lower Total Cost of Ownership:
+Graph databases make you pay twice — once for pipelines, duplicated storage, and parallel governance, and again for the high-memory hardware needed to make them fast. PuppyGraph removes both costs by querying your lake directly with zero ETL and no second system to maintain. No massive RAM bills, no duplicated ACLs, and no extra infrastructure to secure.
+Flexible and Iterative Modeling:
+Using metadata driven schemas allows creating multiple graph views from the same underlying data. Models can be iterated upon quickly without rebuilding data pipelines, supporting agile analysis workflows.
+Standard Querying and Visualization:
+Support for standard graph query languages (
+openCypher: ,
+Gremlin
+) and integrated
+visualization tools
+helps analysts explore relationships intuitively and effectively.
+Proven at Enterprise Scale:
+PuppyGraph is already used by half of the top 20 cybersecurity companies, as well as engineering-driven enterprises like AMD and Coinbase. Whether it’s multi-hop security reasoning, asset intelligence, or deep relationship queries across massive datasets, these teams trust PuppyGraph to replace slow ETL pipelines and complex graph stacks with a simpler, faster architecture.
+Figure: PuppyGraph in-production clients
+Figure: What customers and partners are saying about PuppyGraph
+As data grows more complex, the most valuable insights often lie in how entities relate. PuppyGraph brings those insights to the surface, whether you’re modeling organizational networks, social introductions,
+fraud
+and
+cybersecurity
+graphs, or
+GraphRAG
+pipelines that trace knowledge provenance.
+Figure: PuppyGraph UI - Query the data using Gremlin
+Figure: Architecture with graph database vs. with PuppyGraph
+Deployment is simple:
+download the free Docker image
+, connect PuppyGraph to your existing data stores, define graph schemas, and start querying. PuppyGraph can be deployed via
+Docker: ,
+AWS AMI: ,
+GCP Marketplace
+, or within a VPC or data center for full data control.
+Get Started with PuppyGraph for FREE
+
+--- Chunk 8 ---
+chunk_id: af630d45-a8a3-485d-9da0-4398c368853e
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: list_item
+section_title: 
+heading_path: ['How PuppyGraph Helps', 'Item 1']
+similarity: 0.48310434597602303
+adjusted_similarity: 0.015384615384615385
+rrf_score: 0.015384615384615385
+vector_rank: 5
+ordinal_index: None
+content:
+List item 1 of 1
+Best of SQL and Graph: Because PuppyGraph queries your data in place, teams can use their existing SQL engines for tabular workloads and PuppyGraph for relationship-heavy analysis, all on the same source tables. No need to force every use case through a graph database or retrain teams on a new query language.
+
+--- Chunk 9 ---
+chunk_id: f4947272-037f-4a23-be76-738e8a3ed75a
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: list_item
+section_title: 
+heading_path: ['How PuppyGraph Helps', 'Item 1']
+similarity: 0.4818042119338066
+adjusted_similarity: 0.015151515151515152
+rrf_score: 0.015151515151515152
+vector_rank: 6
+ordinal_index: None
+content:
+List item 1 of 1
+Zero ETL: PuppyGraph runs as a query engine on your existing relational databases and lakes. Skip pipeline builds, reduce fragility, and start querying as a graph in minutes.
+
+--- Chunk 10 ---
+chunk_id: e10efc80-4334-4b8e-835b-a2e131c2d66c
+document_id: ee4a3629-e936-4c98-a5a3-764764ea6690
+source_url: https://www.puppygraph.com/blog/nodes-edges-graph
+chunk_category: main_content
+entity_type: list
+section_title: 
+heading_path: ['How PuppyGraph Helps']
+similarity: 0.47556913287773606
+adjusted_similarity: 0.014925373134328358
+rrf_score: 0.014925373134328358
+vector_rank: 7
+ordinal_index: None
+content:
+List type: unordered
+Items (1):
+  1. Best of SQL and Graph: Because PuppyGraph queries your data in place, teams can use their existing SQL engines for tabular workloads and PuppyGraph for relationship-heavy analysis, all on the same source tables. No need to force every use case through a graph database or retrain teams on a new query language.
+

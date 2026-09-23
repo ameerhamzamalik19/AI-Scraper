@@ -1,113 +1,68 @@
 === CONTENT PROCESSING DEBUG LOG ===
-Started: 2026-09-09T12:28:13.298646
-URL: https://www.wikihow.com/wikiHow:Cookie-Policy
-HTML Length: 303853
+Started: 2026-09-23T10:20:21.907089
+URL: https://web-scraping.dev/
+HTML Length: 41715
 ================================================================================
 
 
 ================================================================================
-[2026-09-09T12:28:13.309704] 🌐 PROCESS_HTML START
+[2026-09-23T10:20:21.910848] 🌐 PROCESS_HTML START
 {
-  "source_url": "https://www.wikihow.com/wikiHow:Cookie-Policy",
-  "page_title": "wikiHow:Cookie Policy - wikiHow",
-  "html_length": 303853,
-  "html_preview": "<!DOCTYPE html><html class=\"client-js mf-font-size-null\" lang=\"en\" dir=\"ltr\"><head>\n<meta charset=\"utf-8\">\n<title>wikiHow:Cookie Policy - wikiHow</title>\n<script async=\"\" src=\"https://www.google-analytics.com/analytics.js\"></script><script>document.documentElement.className = document.documentElement.className.replace( /(^|\\s)client-nojs(\\s|$)/, \"$1client-js$2\" );</script>\n<script>(window.RLQ=window.RLQ||[]).push(function(){mw.config.set({\"wgCanonicalNamespace\":\"Project\",\"wgCanonicalSpecialPageName\":false,\"wgNamespaceNumber\":4,\"wgPageName\":\"wikiHow:Cookie-Policy\",\"wgTitle\":\"Cookie Policy\",\"wgCurRevisionId\":28763307,\"wgRevisionId\":28763307,\"wgArticleId\":2490228,\"wgIsArticle\":true,\"wgIsRedirect\":false,\"wgAction\":\"view\",\"wgUserName\":null,\"wgUserGroups\":[\"*\"],\"wgCategories\":[],\"wgBreakFrames\":false,\"wgPageContentLanguage\":\"en\",\"wgPageContentModel\":\"wikitext\",\"wgSeparatorTransformTable\":[\"\",\"\"],\"wgDigitTransformTable\":[\"\",\"\"],\"wgDefaultDateFormat\":\"dmy\",\"wgMonthNames\":[\"\",\"January\",\"Februar..."
+  "source_url": "https://web-scraping.dev/",
+  "page_title": "web-scraping.dev - Web Scraping Testing & Learning Platform",
+  "html_length": 41715
 }
 ================================================================================
 
 ================================================================================
-[2026-09-09T12:28:13.540873] 📄 HTML PARSED
+[2026-09-23T10:20:25.310725] 📋 EXTRACT_HOWTO START
 {
-  "total_elements": 525,
-  "div_count": 174,
-  "p_count": 10,
-  "heading_count": 9
+  "url": "https://web-scraping.dev/",
+  "page_title": "web-scraping.dev - Web Scraping Testing & Learning Platform"
 }
 ================================================================================
 
 ================================================================================
-[2026-09-09T12:28:13.593744] 🗑️ NON-CONTENT TAGS REMOVED
-{
-  "removed_tags": [
-    "script",
-    "style",
-    "noscript",
-    "iframe"
-  ],
-  "remaining_text_length": 8334
-}
-================================================================================
-
-================================================================================
-[2026-09-09T12:28:13.824753] 🏷️ TITLE RESOLVED
-{
-  "title": "wikiHow:Cookie Policy - wikiHow"
-}
-================================================================================
-
-================================================================================
-[2026-09-09T12:28:14.049648] 📋 PAGE CLASSIFIED
-{
-  "page_type": "howto"
-}
-================================================================================
-
-================================================================================
-[2026-09-09T12:28:14.300637] 📋 EXTRACT_HOWTO START
-{
-  "url": "https://www.wikihow.com/wikiHow:Cookie-Policy",
-  "page_title": "wikiHow:Cookie Policy - wikiHow"
-}
-================================================================================
-
-================================================================================
-[2026-09-09T12:28:14.511069] 📋 EXTRACT_HOWTO RESULT
+[2026-09-23T10:20:25.350784] 📋 EXTRACT_HOWTO RESULT
 {
   "sections_count": 1,
   "sample": {
-    "heading": "wikiHow:Cookie Policy - wikiHow",
+    "heading": "Scraping Scenarios50 Scenarios",
     "heading_path": [
-      "wikiHow:Cookie Policy - wikiHow"
+      "web-scraping.dev - Web Scraping Testing & Learning Platform",
+      "Scraping Scenarios50 Scenarios"
     ],
-    "content": "[wikiHow:Cookie Policy - wikiHow]\n\nSkip to Content\nQuizzes\nSearch\nPRO\nCourses\nHot\nGuides\nTech Help Pro\nExpert Videos\nAbout wikiHow Pro\nUpgrade\nQUIZZES\nAll Quizzes\nHot\nCommunity Quizzes\nLove Quizzes\nPersonality Quizzes\nTrivia Quizzes\nTaylor Swift Quizzes\nEXPLORE\nTech Help Pro\nAbout Us\nRandom Article\nQuizzes\nRequest a New Article\nCommunity Dashboard\nTrending\nForums\nArts and Entertainment\nArtwork\nBooks\nMovies\nComputers and Electronics\nComputers\nPhone Skills\nTechnology Hacks\nHealth\nMen's Health\nMental Health\nWomen's Health\nRelationships\nDating\nLove\nRelationship Issues\nHobbies and Crafts\nCrafts\nDrawing\nGames\nEducation & Communication\nCommunication Skills\nPersonal Development\nStudying\nPersonal Care and Style\nFashion\nHair Care\nPersonal Hygiene\nQuizzes\nLove Quizzes\nPersonality Quizzes\nFun Games\nArts and Entertainment\nFinance and Business\nHome and Garden\nRelationship Quizzes\nCars & Other Vehicles\nFood and Entertaining\nPersonal Care and Style\nSports and Fitness\nComputers and Electronics\nHealth\nPets and Animals\nTravel\nEducation & Communication\nHobbies and Crafts\nPhilosophy and Religion\nWork World\nFamily Life\nHolidays and Traditions\nRelationships\nYouth\nLOG IN\nLog in\nSocial login does not work in incognito and private browsers. Please log in with your username or email to continue.\nFacebook\nGoogle\nwikiHow Account\nNo account yet?\nCreate an account\nRANDOM\n\nHome\nRandom\nBrowse Articles\nTrending\nNew\nQuizzes & Games\nAll Quizzes\nHot\nCommunity Quizzes\nLove Quizzes\nPersonality Quizzes\nFun Games\nDating Simulator\nLearn Something New\nForums\nCourses\nHappiness Hub\nExplore More\nSupport wikiHow\nAbout wikiHow\nLog in / Sign up\nTerms of Use\nwikiHow:Cookie Policy\nWhat are cookies?\nCookies are small text files containing a string of characters that can be placed on your computer or mobile device that uniquely identify your browser or device.  \nWhat are cookies used for?\nCookies allow a site or services to know if your computer or device has visited that site or service before.  Cookies can then be used to help understand how the site or service is being used, help you navigate between pages efficiently, help remember your preferences, and generally improve your browsing experience.  Cookies can also help ensure marketing you see online is more relevant to you and your interests.\nWhat types of cookies does wikiHow use?\nThere are generally four categories of cookies: \u201cStrictly Necessary,\u201d \u201cPerformance,\u201d \u201cFunctionality,\u201d and \u201cTargeting.\u201d wikiHow routinely uses all four categories of cookies on the Service.  You can find out more about each cookie category below.\nStrictly Necessary Cookies. These cookies are essential, as they enable you to move around the Service and use its features, such as accessing logged in or secure areas.\nPerformance Cookies. These cookies collect information about how you have used the Service, for example, information related to the unique username you have provided, so that less strain is placed on our backend infrastructure. These cookies may also be used to allow us to know that you have logged in so that we can serve you fresher content than a user who has never logged in. We also use cookies to track aggregate Service usage and experiment with new features and changes on the Service. The information collected is used to improve how the Service works.\nFunctionality Cookies. These cookies allow us to remember how you\u2019re logged in, whether you made an edit to an article on the Service while logged out, when you logged in or out, the state or history of Service tools you\u2019ve used. These cookies also allow us to tailor the Service to provide enhanced features and content for you and to remember how you\u2019ve customized the Service in other ways, such as customizing the toolbars we offer in the right column of every page. The information these cookies collect may be anonymous, and they are not used to track your browsing activity on other sites or services.\nTargeting Cookies. wikiHow, our advertising partners or other third party partners may use these types of cookies to deliver advertising that is relevant to your interests. These cookies can remember that your device has visited a site or service, and may also be able to track your device\u2019s browsing activity on other sites or services other than wikiHow. This information may be shared with organizations outside wikiHow, such as advertisers and/or advertising networks to deliver the advertising, and to help measure the effectiveness of an advertising campaign, or other business partners for the purpose of providing aggregate Service usage statistics and aggregate Service testing.\nFirst-party cookies\nFirst-party cookies are cookies that belong to wikiHow. These cookies are used to enable features on wikiHow, such as logging in to the Service, and allowing access to secured tools or pages as described above.\nThird-party cookies\nThird-party cookies are cookies that another party places on your device through our Service.  Third-party cookies may be placed on your device by someone providing a service for wikiHow, for example to help us understand how our service is being used.  Third-party cookies may also be placed on your device by our business partners so that they can use them to advertise products and services to you elsewhere on the Internet. Third-party cookies on wikiHow include the following:\nGoogle analytics\n- Google analytics uses cookies to help us analyze how visitors to wikiHow use our website. Google analytics does not receive information from wikiHow related to your user name, and your IP address is truncated by Google analytics. Data in Google analytics can only be viewed in aggregated fashion, and cannot be tied to individual users. Learn more Google Analytics and privacy from\nhttps://policies.google.com/technologies/partner-sites\n. You can opt out of Google Analytics tracking via\nhttps://tools.google.com/dlpage/gaoptout\n.\nGoogle AdSense and DoubleClick\n- Google AdSense and DoubleClick use cookies to serve advertising on some pages of the wikiHow Service. These cookies are be used to customize the advertisements that you see to provide ads that are relevant to you. Visitors in some locations may see ads that are based solely on the content of the page, and that are not based upon any personalized information. Learn more about advertising cookies at\nhttps://policies.google.com/technologies/ads\n.\nHow long will cookies stay on my device?\nThe length of time a cookie will stay on your computer or mobile device depends on whether it is a \u201cpersistent\u201d or \u201csession\u201d cookie. Session cookies will only stay on your device until you stop browsing.  Persistent cookies stay on your computer or mobile device until they expire or are deleted.\nHow to control and delete cookies\nIf you want to delete cookies follow the instructions at:\nHow to Clear Your Browser's Cookies\n. If you wish to disable your browser from receiving cookies follow the instructions at\nHow to Disable Cookies\n. Note that if you set your browser to disable cookies, you may not be able to access certain parts of our Service and other parts of our Service may not work properly. You can find out more information cookie settings at third-party information sites, such as\nhttps://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies\n.\nDisable the use of non-essential cookies on wikiHow\nSave settings\nClick here to review or change your personal data consent.\nCookies make wikiHow better. By continuing to use our site, you agree to our\ncookie policy\n.\nRandom Article\nWrite An Article\nTrending Articles\nAm I Dating a Chud Quiz\nDo I Have a Crush? (For Teen Girls)\nHow Well Would I Do In a Fight Quiz\nWhich Body Part Is My Personality?\n\u00a9 2026 wikiHow, Inc. All rights reserved. Use of site content is subject to our\nTerms of Use\n.\nwikiHow Newsletter\nYou're all set!\nHelpful how-tos delivered to\nyour inbox every week!\nSign me up!\nBy signing up you are agreeing to receive emails according to our privacy policy.\nHome\nAbout wikiHow\nExperts\nJobs\nContact Us\nSite Map\nTerms of Use\nPrivacy Policy\nDo Not\nSell or\nShare My Info\nNot Selling Info\nContribute\nFollow Us\n-\n-",
-    "source_url": "https://www.wikihow.com/wikiHow:Cookie-Policy",
-    "chunk_category": "main_content"
+    "content": "[web-scraping.dev - Web Scraping Testing & Learning Platform > Scraping Scenarios50 Scenarios]\n\nReal-world web patterns you'll encounter in production scraping projects.\n      Each scenario is tagged with difficulty level and includes working code examples.",
+    "source_url": "https://web-scraping.dev/",
+    "chunk_category": "main_content",
+    "chunk_type": "section"
   }
 }
 ================================================================================
 
 ================================================================================
-[2026-09-09T12:28:14.796032] 📊 FINAL STATS
+[2026-09-23T10:20:25.560655] 🧭 COLLECTION DETECTION
 {
-  "sections_count": 1,
-  "structured_tables": 0,
-  "structured_lists": 6,
-  "structured_cards": 0,
-  "all_text_length": 10188,
-  "total_words": 1455,
-  "has_content": true,
-  "page_type": "howto"
-}
-================================================================================
-
-================================================================================
-[2026-09-09T12:28:14.814207] ✅ PROCESS_HTML COMPLETE
-{
-  "result_keys": [
-    "page_title",
-    "source_url",
-    "page_type",
-    "main_content",
-    "ui_summary",
-    "ui_regions",
-    "metadata",
-    "document_structure",
-    "is_first_page",
-    "has_content",
-    "text_stats"
-  ],
-  "has_content": true,
-  "section_count": 1,
-  "total_chars": 10188
+  "collection_report": {
+    "sections_collection": null,
+    "list_collections": [],
+    "table_collections": [
+      {
+        "table_index": 0,
+        "size": 54,
+        "added": 54
+      }
+    ],
+    "card_collections": [],
+    "collection_offsets": [
+      {
+        "collection": "table[0]",
+        "base": 0,
+        "size": 54,
+        "added": 54
+      }
+    ]
+  },
+  "ordinal_map_size": 54
 }
 ================================================================================

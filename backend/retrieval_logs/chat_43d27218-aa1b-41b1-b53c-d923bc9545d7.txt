@@ -1,0 +1,193 @@
+
+====================================================================================================
+Retrieved at: 2026-09-22T10:50:39.978446+00:00
+Chat ID: 43d27218-aa1b-41b1-b53c-d923bc9545d7
+Original question: which blog is most popular?
+Standalone question: which blog is most popular?
+Retrieval metadata: {"confidence": 0.4, "has_lexical_match": true, "has_results": true, "reason": "lexical match", "rrf_score": 0.03200204813108039, "score_gap": 0.00022399012351417835}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: c627fdb2-cb9f-483a-89c9-ef288aca19ea
+document_id: d8bd2d9f-3636-40d6-8ce8-1f5dfedde7cd
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard']
+similarity: 0.44905823350654517
+adjusted_similarity: 0.03200204813108039
+rrf_score: 0.03200204813108039
+vector_rank: 3
+keyword_rank: 2
+ordinal_index: 0
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard]
+
+https://www.billboard.com/Best known for the Hot 100 and Billboard 200, which list the most popular songs and albums each week in the industry. Offers industry news, events, podcasts, and music streaming.
+
+--- Chunk 2 ---
+chunk_id: fa5a69a4-5334-49a8-98ee-b8d5ae880d4d
+document_id: d8bd2d9f-3636-40d6-8ce8-1f5dfedde7cd
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', "Men's Health"]
+similarity: 0.41838565617069
+adjusted_similarity: 0.03177805800756621
+rrf_score: 0.03177805800756621
+vector_rank: 5
+keyword_rank: 1
+ordinal_index: 43
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Men's Health]
+
+https://www.menshealth.com/A popular male-oriented magazine covering everything from workouts and fitness to sex and dating advice. Technology, lifestyle, and grooming tips also available.
+
+--- Chunk 3 ---
+chunk_id: ca144398-d8f3-402a-b797-920e0092cbc1
+document_id: d8bd2d9f-3636-40d6-8ce8-1f5dfedde7cd
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'People']
+similarity: 0.4050370365917203
+adjusted_similarity: 0.030330882352941176
+rrf_score: 0.030330882352941176
+vector_rank: 8
+keyword_rank: 4
+ordinal_index: 2
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > People]
+
+https://people.com/Covers all things showbusiness, including celebrity gossip, entertainment news, and the latest on new shows, movies, and popular books.
+
+--- Chunk 4 ---
+chunk_id: a1fedbbb-16c2-49e1-ab9e-4d2d34d28763
+document_id: d8bd2d9f-3636-40d6-8ce8-1f5dfedde7cd
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Digital Spy']
+similarity: 0.3929711439200747
+adjusted_similarity: 0.02871794871794872
+rrf_score: 0.02871794871794872
+vector_rank: 15
+keyword_rank: 5
+ordinal_index: 34
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Digital Spy]
+
+https://www.digitalspy.com/Entertainment news geared towards those in the UK. Daily updates include trending articles covering stars in the most popular shows, movies, and soap operas along with notable corporate and political figures.
+
+--- Chunk 5 ---
+chunk_id: bd52b40e-49b6-4b6d-88f9-12f2d62fb888
+document_id: d8bd2d9f-3636-40d6-8ce8-1f5dfedde7cd
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'E! News']
+similarity: 0.3940043601182137
+adjusted_similarity: 0.02862400327131466
+rrf_score: 0.02862400327131466
+vector_rank: 13
+keyword_rank: 7
+ordinal_index: 45
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > E! News]
+
+https://www.eonline.com/newsOffers authoritative news on the latest coming out of Hollywood, including celebrity rumors, gossip, and exclusive interviews. Articles, photos, and live online episodes give an intimate look into the lives of the most popular celebrities today.
+
+--- Chunk 6 ---
+chunk_id: 39d89d26-9a73-4a5d-9dce-0b05fceaef9a
+document_id: d8bd2d9f-3636-40d6-8ce8-1f5dfedde7cd
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Page Description']
+similarity: 0.47375328935284355
+adjusted_similarity: 0.01639344262295082
+rrf_score: 0.01639344262295082
+vector_rank: 1
+ordinal_index: 51
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Page Description]
+
+The best blogs in the world are tracked and ranked daily by our unique algorithm.
+
+--- Chunk 7 ---
+chunk_id: eab41b12-4fb7-4151-ae77-c5bbdd199836
+document_id: d8bd2d9f-3636-40d6-8ce8-1f5dfedde7cd
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Vogue.co.uk']
+similarity: 0.45740996456451666
+adjusted_similarity: 0.016129032258064516
+rrf_score: 0.016129032258064516
+vector_rank: 2
+ordinal_index: 19
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Vogue.co.uk]
+
+http://www.vogue.co.uk/Fashion, trends, latest news, catwalk photos, and designers.
+
+--- Chunk 8 ---
+chunk_id: dbb0af06-9ab9-44a3-8214-b181a0fe7e59
+document_id: d8bd2d9f-3636-40d6-8ce8-1f5dfedde7cd
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Hollywood Life']
+similarity: 0.0004078026
+adjusted_similarity: 0.015873015873015872
+rrf_score: 0.015873015873015872
+keyword_rank: 3
+ordinal_index: 41
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Hollywood Life]
+
+https://hollywoodlife.com/Entertainment news source geared towards a modern, over 18 audience. Posts include the most popular viral videos and memes sourced from around the web, with entertaining commentary links from contributors.
+
+--- Chunk 9 ---
+chunk_id: ecaf96c8-67d3-49ed-bd7e-7a1e84d9c98a
+document_id: d8bd2d9f-3636-40d6-8ce8-1f5dfedde7cd
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: list_item
+section_title: 
+heading_path: ['Projects', 'Item 3']
+similarity: 0.43524445771146136
+adjusted_similarity: 0.015625
+rrf_score: 0.015625
+vector_rank: 4
+ordinal_index: None
+content:
+List item 3 of 5
+SEO Blog (40K+ SUBS)
+
+--- Chunk 10 ---
+chunk_id: 2a77af8d-4953-435e-8bdb-08a021b6e25a
+document_id: d8bd2d9f-3636-40d6-8ce8-1f5dfedde7cd
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Elle']
+similarity: 0.4106820373201694
+adjusted_similarity: 0.015151515151515152
+rrf_score: 0.015151515151515152
+vector_rank: 6
+ordinal_index: 8
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Elle]
+
+https://www.elle.com/Featuring beauty tips, fashion news, and celebrity trends.
+

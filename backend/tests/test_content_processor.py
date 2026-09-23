@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 
 from processors.chunker import EnhancedChunker
-from processors.content_processor_old import ContentProcessor
+# from processors.content_processor_old import ContentProcessor
 
 
 def test_content_processor_handles_tags_without_attrs():

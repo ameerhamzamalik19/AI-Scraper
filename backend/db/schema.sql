@@ -437,4 +437,4 @@
 -- SELECT * FROM chunks WHERE content LIKE '%backend%' ORDER BY created_at DESC LIMIT 5;
 -- docker exec -it backend-postgres-1 pg_dump -U postgres -d universal_scraper --schema-only > universal_scraper_schema.sql
 
-docker exec -it backend-postgres-1 psql -U postgres -d universal_scraper -c "ALTER TABLE media_assets ADD COLUMN table_headers JSONB, ADD COLUMN table_rows JSONB, ADD COLUMN table_summary TEXT;"
+docker exec -it backend-postgres-1 psql -U postgres -d universal_scraper -c "CREATE INDEX idx_chunks_ordinal ON chunks (chat_id, source_url, ordinal_index) WHERE ordinal_index IS NOT NULL;"

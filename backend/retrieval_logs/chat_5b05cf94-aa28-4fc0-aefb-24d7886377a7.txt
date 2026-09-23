@@ -1,0 +1,170 @@
+
+====================================================================================================
+Retrieved at: 2026-09-23T06:38:16.150206+00:00
+Chat ID: 5b05cf94-aa28-4fc0-aefb-24d7886377a7
+Original question: How many mentions did it got?
+Standalone question: How many mentions did GQ have on https://detailed.com/50/?
+Retrieval metadata: {"confidence": 0.48674196188145324, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: 6b3ba8f2-4852-41a8-a010-1f9b31d799b0
+document_id: d410aea0-82a9-4b69-81ac-22e8fce8deaa
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'GQ']
+similarity: 0.48674196188145324
+adjusted_similarity: 0.48674196188145324
+ordinal_index: 16
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > GQ]
+
+https://www.gq.com/A well-known men’s magazine focused on men’s fashion, style, grooming, and improving lifestyle habits. There are fitness tips and nutrition advice as well as articles on men’s culture.
+
+--- Chunk 2 ---
+chunk_id: de5f8d07-1730-4c87-a429-6185d3054ef9
+document_id: d410aea0-82a9-4b69-81ac-22e8fce8deaa
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com']
+similarity: 0.4433382348341842
+adjusted_similarity: 0.4433382348341842
+ordinal_index: None
+content:
+Page: The 50 Best Blogs in the World (2026) - Detailed.com
+URL: https://detailed.com/50/
+Contains: 55 sections, 0 tables, 4 lists, 0 cards
+Top sections: Billboard | Business Insider | People
+
+--- Chunk 3 ---
+chunk_id: 15eb6a8d-7e8f-4e1d-9326-4702fa7d2e74
+document_id: d410aea0-82a9-4b69-81ac-22e8fce8deaa
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Elle']
+similarity: 0.37727773515412455
+adjusted_similarity: 0.37727773515412455
+ordinal_index: 8
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Elle]
+
+https://www.elle.com/Featuring beauty tips, fashion news, and celebrity trends.
+
+--- Chunk 4 ---
+chunk_id: 02f4cb5a-3b02-413a-a533-34476024903d
+document_id: d410aea0-82a9-4b69-81ac-22e8fce8deaa
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', "Men's Health"]
+similarity: 0.37566237628404486
+adjusted_similarity: 0.37566237628404486
+ordinal_index: 43
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Men's Health]
+
+https://www.menshealth.com/A popular male-oriented magazine covering everything from workouts and fitness to sex and dating advice. Technology, lifestyle, and grooming tips also available.
+
+--- Chunk 5 ---
+chunk_id: bf9ebc3b-fe26-411c-ab05-1ba9919a7c2c
+document_id: d410aea0-82a9-4b69-81ac-22e8fce8deaa
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'BroBible']
+similarity: 0.369332584698295
+adjusted_similarity: 0.369332584698295
+ordinal_index: 44
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > BroBible]
+
+https://brobible.com/Find the latest articles for everything guys care about, whether it’s video games, sports, fashion advice, dating tips, pop culture, and more.
+
+--- Chunk 6 ---
+chunk_id: 0ab5bce0-91a7-4e34-8768-d0a816571b43
+document_id: d410aea0-82a9-4b69-81ac-22e8fce8deaa
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Esquire']
+similarity: 0.3640703938936354
+adjusted_similarity: 0.3640703938936354
+ordinal_index: 29
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Esquire]
+
+https://www.esquire.com/A long trusted resource that keeps up-to-date with the latest in men’s fashion. Includes lifestyle advice along with breaking news covering everything from current events and politics to Hollywood celebrity gossip.
+
+--- Chunk 7 ---
+chunk_id: 1a085faa-702e-45f5-81d6-11204dde03dc
+document_id: d410aea0-82a9-4b69-81ac-22e8fce8deaa
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Vogue.co.uk']
+similarity: 0.3608500572029183
+adjusted_similarity: 0.3608500572029183
+ordinal_index: 19
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Vogue.co.uk]
+
+http://www.vogue.co.uk/Fashion, trends, latest news, catwalk photos, and designers.
+
+--- Chunk 8 ---
+chunk_id: 179f0b95-5c36-484f-95c7-92a52f9df71f
+document_id: d410aea0-82a9-4b69-81ac-22e8fce8deaa
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Entrepreneur']
+similarity: 0.35629310591151353
+adjusted_similarity: 0.35629310591151353
+ordinal_index: 4
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Entrepreneur]
+
+https://www.entrepreneur.com/Find business news, webinars and events, book recommendations, and interviews with successful entrepreneurs. The site is updated daily and even has a magazine for longer-form pieces.
+
+--- Chunk 9 ---
+chunk_id: 483d118e-27f4-4092-a0e3-41ce8c139bc0
+document_id: d410aea0-82a9-4b69-81ac-22e8fce8deaa
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'CNET']
+similarity: 0.34751970523872533
+adjusted_similarity: 0.34751970523872533
+ordinal_index: 39
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > CNET]
+
+https://www.cnet.com/news/CNET tracks all the latest consumer technology breakthroughs and shows you what's new, what matters and how technology can enrich your life.
+
+--- Chunk 10 ---
+chunk_id: 618f0a98-7969-4d07-9980-7ed815023d31
+document_id: d410aea0-82a9-4b69-81ac-22e8fce8deaa
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', "This wasn't a standard list of blogs. This isn't your standard SEO newsletter."]
+similarity: 0.3447245841122595
+adjusted_similarity: 0.3447245841122595
+ordinal_index: 50
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > This wasn't a standard list of blogs. This isn't your standard SEO newsletter.]
+
+Exclusive insights from tracking the rankings of 2,114 specifically-chosen websites.Learn more.
+

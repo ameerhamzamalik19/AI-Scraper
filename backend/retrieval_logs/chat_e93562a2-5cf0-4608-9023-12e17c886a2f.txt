@@ -1,0 +1,2401 @@
+
+====================================================================================================
+Retrieved at: 2026-09-23T07:47:38.660231+00:00
+Chat ID: e93562a2-5cf0-4608-9023-12e17c886a2f
+Original question: What's Billboard's rank and number of mentions?
+Standalone question: What is Billboard's rank and number of mentions on https://detailed.com/50/?
+Retrieval metadata: {"confidence": 0.5436102265563253, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: bb230c2b-dd15-489b-8b54-3d23eaa41811
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Entrepreneur']
+similarity: 0.5436102265563253
+adjusted_similarity: 0.5436102265563253
+ordinal_index: 4
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Entrepreneur]
+
+https://www.entrepreneur.com/
+Find business news, webinars and events, book recommendations, and interviews with successful entrepreneurs. The site is updated daily and even has a magazine for longer-form pieces.
+Rank: 5
+Mentions: 8,923
+
+--- Chunk 2 ---
+chunk_id: 68f38cf4-2d08-4316-9ee0-387f7825ebdf
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Pitchfork']
+similarity: 0.5429572719895382
+adjusted_similarity: 0.5429572719895382
+ordinal_index: 22
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Pitchfork]
+
+https://pitchfork.com/
+The latest in music and jams without the distraction of ads and clickbait. Top charts, videos, and celebrity features along with recommendations, the best apps, and music news.
+Rank: 23
+Mentions: 3,467
+
+--- Chunk 3 ---
+chunk_id: 4dfe6d2d-95de-40b4-9077-ecd8e5df5c0e
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard']
+similarity: 0.5382116848947333
+adjusted_similarity: 0.5382116848947333
+ordinal_index: 0
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard]
+
+https://www.billboard.com/
+Best known for the Hot 100 and Billboard 200, which list the most popular songs and albums each week in the industry. Offers industry news, events, podcasts, and music streaming.
+Rank: 1
+Mentions: 15,239
+
+--- Chunk 4 ---
+chunk_id: 4866ead3-b1a1-437b-978b-8348276a6c36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com']
+similarity: 0.5190012041715435
+adjusted_similarity: 0.5190012041715435
+ordinal_index: None
+content:
+Page: The 50 Best Blogs in the World (2026) - Detailed.com
+URL: https://detailed.com/50/
+Contains: 105 sections, 0 tables, 4 lists, 0 cards
+Top sections: Billboard | Business Insider | People
+
+--- Chunk 5 ---
+chunk_id: e4906ce2-c9df-49f3-8346-cfbf18d5f114
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Elle']
+similarity: 0.510091624222615
+adjusted_similarity: 0.510091624222615
+ordinal_index: 8
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Elle]
+
+https://www.elle.com/
+Featuring beauty tips, fashion news, and celebrity trends.
+Rank: 9
+Mentions: 6,673
+
+--- Chunk 6 ---
+chunk_id: 55f0330d-9b03-47ae-9e2e-49a971a45595
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Small Business Trends']
+similarity: 0.5036105876536614
+adjusted_similarity: 0.5036105876536614
+ordinal_index: 48
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Small Business Trends]
+
+https://smallbiztrends.com/
+Find financial, marketing, management, and technology advice on this site. It also covers current events and gives tips on how small business can become more successful.
+Rank: 49
+Mentions: 1,563
+
+--- Chunk 7 ---
+chunk_id: 33c210ac-3786-4623-aa6c-c874a82825ff
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Loudwire']
+similarity: 0.502946316195984
+adjusted_similarity: 0.502946316195984
+ordinal_index: 42
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Loudwire]
+
+https://loudwire.com/
+Engaging rock and metal music coverage celebrating 50 years of metal and a lifetime of loud music. Features news, lists, songs, and albums along with events and media coverage.
+Rank: 43
+Mentions: 1,780
+
+--- Chunk 8 ---
+chunk_id: dc0e6ada-71d7-456f-ba1a-672fad94d092
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'theScore.com']
+similarity: 0.49899102500984793
+adjusted_similarity: 0.49899102500984793
+ordinal_index: 36
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > theScore.com]
+
+https://www.thescore.com/
+Get highlights, in-depth features, and reports for top sports, including football and basketball, as well as how current events impact sports. An app for the site is also available.
+Rank: 37
+Mentions: 2,271
+
+--- Chunk 9 ---
+chunk_id: 56d58a8c-2a2b-4c65-975a-7d099c8c1782
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'RollingStone']
+similarity: 0.4987206986145989
+adjusted_similarity: 0.4987206986145989
+ordinal_index: 10
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > RollingStone]
+
+https://www.rollingstone.com/music/
+Features news and coverage across music, film, television, and politics, reviewing albums, songs, and celebrities. Interactive source for historical rankings and magazine content.
+Rank: 11
+Mentions: 5,763
+
+--- Chunk 10 ---
+chunk_id: e855f99c-e895-4e37-a904-e64dc3eea653
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'HotNewHipHop']
+similarity: 0.49849153120999445
+adjusted_similarity: 0.49849153120999445
+ordinal_index: 13
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > HotNewHipHop]
+
+https://www.hotnewhiphop.com/
+All the hottest news and music within hip hop. Coverage of artist activity, the reigning top 100, songs, mixtapes, and albums.
+Rank: 14
+Mentions: 4,859
+
+
+====================================================================================================
+Retrieved at: 2026-09-23T07:48:19.853448+00:00
+Chat ID: e93562a2-5cf0-4608-9023-12e17c886a2f
+Original question: Which blog is ranked number 23? And how many mentions does it have?
+Standalone question: Which blog is ranked number 23 on https://detailed.com/50/, and how many mentions does it have?
+Retrieval metadata: {"confidence": 0.5977569431156468, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: bb230c2b-dd15-489b-8b54-3d23eaa41811
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Entrepreneur']
+similarity: 0.5977569431156468
+adjusted_similarity: 0.5977569431156468
+ordinal_index: 4
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Entrepreneur]
+
+https://www.entrepreneur.com/
+Find business news, webinars and events, book recommendations, and interviews with successful entrepreneurs. The site is updated daily and even has a magazine for longer-form pieces.
+Rank: 5
+Mentions: 8,923
+
+--- Chunk 2 ---
+chunk_id: 55f0330d-9b03-47ae-9e2e-49a971a45595
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Small Business Trends']
+similarity: 0.5916583607288262
+adjusted_similarity: 0.5916583607288262
+ordinal_index: 48
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Small Business Trends]
+
+https://smallbiztrends.com/
+Find financial, marketing, management, and technology advice on this site. It also covers current events and gives tips on how small business can become more successful.
+Rank: 49
+Mentions: 1,563
+
+--- Chunk 3 ---
+chunk_id: 68f38cf4-2d08-4316-9ee0-387f7825ebdf
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Pitchfork']
+similarity: 0.5829412938272328
+adjusted_similarity: 0.5829412938272328
+ordinal_index: 22
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Pitchfork]
+
+https://pitchfork.com/
+The latest in music and jams without the distraction of ads and clickbait. Top charts, videos, and celebrity features along with recommendations, the best apps, and music news.
+Rank: 23
+Mentions: 3,467
+
+--- Chunk 4 ---
+chunk_id: 4866ead3-b1a1-437b-978b-8348276a6c36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com']
+similarity: 0.581234280334265
+adjusted_similarity: 0.581234280334265
+ordinal_index: None
+content:
+Page: The 50 Best Blogs in the World (2026) - Detailed.com
+URL: https://detailed.com/50/
+Contains: 105 sections, 0 tables, 4 lists, 0 cards
+Top sections: Billboard | Business Insider | People
+
+--- Chunk 5 ---
+chunk_id: 3b5aa17a-2771-46b6-be05-57abae56fc0e
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Vogue.co.uk']
+similarity: 0.5717389209899498
+adjusted_similarity: 0.5717389209899498
+ordinal_index: 19
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Vogue.co.uk]
+
+http://www.vogue.co.uk/
+Fashion, trends, latest news, catwalk photos, and designers.
+Rank: 20
+Mentions: 3,667
+
+--- Chunk 6 ---
+chunk_id: e4906ce2-c9df-49f3-8346-cfbf18d5f114
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Elle']
+similarity: 0.5680104086671773
+adjusted_similarity: 0.5680104086671773
+ordinal_index: 8
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Elle]
+
+https://www.elle.com/
+Featuring beauty tips, fashion news, and celebrity trends.
+Rank: 9
+Mentions: 6,673
+
+--- Chunk 7 ---
+chunk_id: dc0e6ada-71d7-456f-ba1a-672fad94d092
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'theScore.com']
+similarity: 0.5644206535003056
+adjusted_similarity: 0.5644206535003056
+ordinal_index: 36
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > theScore.com]
+
+https://www.thescore.com/
+Get highlights, in-depth features, and reports for top sports, including football and basketball, as well as how current events impact sports. An app for the site is also available.
+Rank: 37
+Mentions: 2,271
+
+--- Chunk 8 ---
+chunk_id: 71011d90-304e-4373-ac32-4562c14b3e36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Wired']
+similarity: 0.5555544925955024
+adjusted_similarity: 0.5555544925955024
+ordinal_index: 20
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Wired]
+
+https://www.wired.com
+Wired.com focuses on how emerging technologies affect culture, the economy, and politics.The website provides an in-depth coverage of current and future trends in technology.
+Rank: 21
+Mentions: 3,586
+
+--- Chunk 9 ---
+chunk_id: 79da54fe-9599-4e29-8683-3aa604ef863a
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', "Men's Health"]
+similarity: 0.5535701982696138
+adjusted_similarity: 0.5535701982696138
+ordinal_index: 43
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Men's Health]
+
+https://www.menshealth.com/
+A popular male-oriented magazine covering everything from workouts and fitness to sex and dating advice. Technology, lifestyle, and grooming tips also available.
+Rank: 44
+Mentions: 1,743
+
+--- Chunk 10 ---
+chunk_id: 65302ad7-6299-49e6-8493-548de36ded6f
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'CNET']
+similarity: 0.5501771827326595
+adjusted_similarity: 0.5501771827326595
+ordinal_index: 39
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > CNET]
+
+https://www.cnet.com/news/
+CNET tracks all the latest consumer technology breakthroughs and shows you what's new, what matters and how technology can enrich your life.
+Rank: 40
+Mentions: 2,144
+
+
+====================================================================================================
+Retrieved at: 2026-09-23T07:49:02.949142+00:00
+Chat ID: e93562a2-5cf0-4608-9023-12e17c886a2f
+Original question: Which blog is ranked number 31? And how many mentions does it have?
+Standalone question: Which blog is ranked number 31 on https://detailed.com/50/, and how many mentions does it have?
+Retrieval metadata: {"confidence": 0.5973299459987218, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: bb230c2b-dd15-489b-8b54-3d23eaa41811
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Entrepreneur']
+similarity: 0.5973299459987218
+adjusted_similarity: 0.5973299459987218
+ordinal_index: 4
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Entrepreneur]
+
+https://www.entrepreneur.com/
+Find business news, webinars and events, book recommendations, and interviews with successful entrepreneurs. The site is updated daily and even has a magazine for longer-form pieces.
+Rank: 5
+Mentions: 8,923
+
+--- Chunk 2 ---
+chunk_id: 55f0330d-9b03-47ae-9e2e-49a971a45595
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Small Business Trends']
+similarity: 0.5871497082952895
+adjusted_similarity: 0.5871497082952895
+ordinal_index: 48
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Small Business Trends]
+
+https://smallbiztrends.com/
+Find financial, marketing, management, and technology advice on this site. It also covers current events and gives tips on how small business can become more successful.
+Rank: 49
+Mentions: 1,563
+
+--- Chunk 3 ---
+chunk_id: 3b5aa17a-2771-46b6-be05-57abae56fc0e
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Vogue.co.uk']
+similarity: 0.5824002631348235
+adjusted_similarity: 0.5824002631348235
+ordinal_index: 19
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Vogue.co.uk]
+
+http://www.vogue.co.uk/
+Fashion, trends, latest news, catwalk photos, and designers.
+Rank: 20
+Mentions: 3,667
+
+--- Chunk 4 ---
+chunk_id: 4866ead3-b1a1-437b-978b-8348276a6c36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com']
+similarity: 0.5805927793377754
+adjusted_similarity: 0.5805927793377754
+ordinal_index: None
+content:
+Page: The 50 Best Blogs in the World (2026) - Detailed.com
+URL: https://detailed.com/50/
+Contains: 105 sections, 0 tables, 4 lists, 0 cards
+Top sections: Billboard | Business Insider | People
+
+--- Chunk 5 ---
+chunk_id: 68f38cf4-2d08-4316-9ee0-387f7825ebdf
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Pitchfork']
+similarity: 0.5735945130808292
+adjusted_similarity: 0.5735945130808292
+ordinal_index: 22
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Pitchfork]
+
+https://pitchfork.com/
+The latest in music and jams without the distraction of ads and clickbait. Top charts, videos, and celebrity features along with recommendations, the best apps, and music news.
+Rank: 23
+Mentions: 3,467
+
+--- Chunk 6 ---
+chunk_id: e4906ce2-c9df-49f3-8346-cfbf18d5f114
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Elle']
+similarity: 0.5730680145335629
+adjusted_similarity: 0.5730680145335629
+ordinal_index: 8
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Elle]
+
+https://www.elle.com/
+Featuring beauty tips, fashion news, and celebrity trends.
+Rank: 9
+Mentions: 6,673
+
+--- Chunk 7 ---
+chunk_id: 65302ad7-6299-49e6-8493-548de36ded6f
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'CNET']
+similarity: 0.5652104298786648
+adjusted_similarity: 0.5652104298786648
+ordinal_index: 39
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > CNET]
+
+https://www.cnet.com/news/
+CNET tracks all the latest consumer technology breakthroughs and shows you what's new, what matters and how technology can enrich your life.
+Rank: 40
+Mentions: 2,144
+
+--- Chunk 8 ---
+chunk_id: 79da54fe-9599-4e29-8683-3aa604ef863a
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', "Men's Health"]
+similarity: 0.5630543200467927
+adjusted_similarity: 0.5630543200467927
+ordinal_index: 43
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Men's Health]
+
+https://www.menshealth.com/
+A popular male-oriented magazine covering everything from workouts and fitness to sex and dating advice. Technology, lifestyle, and grooming tips also available.
+Rank: 44
+Mentions: 1,743
+
+--- Chunk 9 ---
+chunk_id: 71011d90-304e-4373-ac32-4562c14b3e36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Wired']
+similarity: 0.5615339913723361
+adjusted_similarity: 0.5615339913723361
+ordinal_index: 20
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Wired]
+
+https://www.wired.com
+Wired.com focuses on how emerging technologies affect culture, the economy, and politics.The website provides an in-depth coverage of current and future trends in technology.
+Rank: 21
+Mentions: 3,586
+
+--- Chunk 10 ---
+chunk_id: dc0e6ada-71d7-456f-ba1a-672fad94d092
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'theScore.com']
+similarity: 0.5608490002935133
+adjusted_similarity: 0.5608490002935133
+ordinal_index: 36
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > theScore.com]
+
+https://www.thescore.com/
+Get highlights, in-depth features, and reports for top sports, including football and basketball, as well as how current events impact sports. An app for the site is also available.
+Rank: 37
+Mentions: 2,271
+
+
+====================================================================================================
+Retrieved at: 2026-09-23T07:49:29.167636+00:00
+Chat ID: e93562a2-5cf0-4608-9023-12e17c886a2f
+Original question: Which blog is ranked number 32? And how many mentions does it have?
+Standalone question: Which blog is ranked number 32 on https://detailed.com/50/ and how many mentions does it have?
+Retrieval metadata: {"confidence": 0.5970591891540855, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: bb230c2b-dd15-489b-8b54-3d23eaa41811
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Entrepreneur']
+similarity: 0.5970591891540855
+adjusted_similarity: 0.5970591891540855
+ordinal_index: 4
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Entrepreneur]
+
+https://www.entrepreneur.com/
+Find business news, webinars and events, book recommendations, and interviews with successful entrepreneurs. The site is updated daily and even has a magazine for longer-form pieces.
+Rank: 5
+Mentions: 8,923
+
+--- Chunk 2 ---
+chunk_id: 55f0330d-9b03-47ae-9e2e-49a971a45595
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Small Business Trends']
+similarity: 0.5820840896579932
+adjusted_similarity: 0.5820840896579932
+ordinal_index: 48
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Small Business Trends]
+
+https://smallbiztrends.com/
+Find financial, marketing, management, and technology advice on this site. It also covers current events and gives tips on how small business can become more successful.
+Rank: 49
+Mentions: 1,563
+
+--- Chunk 3 ---
+chunk_id: 4866ead3-b1a1-437b-978b-8348276a6c36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com']
+similarity: 0.5750865313333517
+adjusted_similarity: 0.5750865313333517
+ordinal_index: None
+content:
+Page: The 50 Best Blogs in the World (2026) - Detailed.com
+URL: https://detailed.com/50/
+Contains: 105 sections, 0 tables, 4 lists, 0 cards
+Top sections: Billboard | Business Insider | People
+
+--- Chunk 4 ---
+chunk_id: 3b5aa17a-2771-46b6-be05-57abae56fc0e
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Vogue.co.uk']
+similarity: 0.563604589373795
+adjusted_similarity: 0.563604589373795
+ordinal_index: 19
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Vogue.co.uk]
+
+http://www.vogue.co.uk/
+Fashion, trends, latest news, catwalk photos, and designers.
+Rank: 20
+Mentions: 3,667
+
+--- Chunk 5 ---
+chunk_id: 68f38cf4-2d08-4316-9ee0-387f7825ebdf
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Pitchfork']
+similarity: 0.5585081926060316
+adjusted_similarity: 0.5585081926060316
+ordinal_index: 22
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Pitchfork]
+
+https://pitchfork.com/
+The latest in music and jams without the distraction of ads and clickbait. Top charts, videos, and celebrity features along with recommendations, the best apps, and music news.
+Rank: 23
+Mentions: 3,467
+
+--- Chunk 6 ---
+chunk_id: e4906ce2-c9df-49f3-8346-cfbf18d5f114
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Elle']
+similarity: 0.552817699731008
+adjusted_similarity: 0.552817699731008
+ordinal_index: 8
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Elle]
+
+https://www.elle.com/
+Featuring beauty tips, fashion news, and celebrity trends.
+Rank: 9
+Mentions: 6,673
+
+--- Chunk 7 ---
+chunk_id: 65302ad7-6299-49e6-8493-548de36ded6f
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'CNET']
+similarity: 0.5510273280352396
+adjusted_similarity: 0.5510273280352396
+ordinal_index: 39
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > CNET]
+
+https://www.cnet.com/news/
+CNET tracks all the latest consumer technology breakthroughs and shows you what's new, what matters and how technology can enrich your life.
+Rank: 40
+Mentions: 2,144
+
+--- Chunk 8 ---
+chunk_id: dc0e6ada-71d7-456f-ba1a-672fad94d092
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'theScore.com']
+similarity: 0.5509693862529473
+adjusted_similarity: 0.5509693862529473
+ordinal_index: 36
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > theScore.com]
+
+https://www.thescore.com/
+Get highlights, in-depth features, and reports for top sports, including football and basketball, as well as how current events impact sports. An app for the site is also available.
+Rank: 37
+Mentions: 2,271
+
+--- Chunk 9 ---
+chunk_id: 71011d90-304e-4373-ac32-4562c14b3e36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Wired']
+similarity: 0.5489702614345028
+adjusted_similarity: 0.5489702614345028
+ordinal_index: 20
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Wired]
+
+https://www.wired.com
+Wired.com focuses on how emerging technologies affect culture, the economy, and politics.The website provides an in-depth coverage of current and future trends in technology.
+Rank: 21
+Mentions: 3,586
+
+--- Chunk 10 ---
+chunk_id: 79da54fe-9599-4e29-8683-3aa604ef863a
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', "Men's Health"]
+similarity: 0.5463905536910809
+adjusted_similarity: 0.5463905536910809
+ordinal_index: 43
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Men's Health]
+
+https://www.menshealth.com/
+A popular male-oriented magazine covering everything from workouts and fitness to sex and dating advice. Technology, lifestyle, and grooming tips also available.
+Rank: 44
+Mentions: 1,743
+
+
+====================================================================================================
+Retrieved at: 2026-09-23T07:49:48.557963+00:00
+Chat ID: e93562a2-5cf0-4608-9023-12e17c886a2f
+Original question: Which blog is ranked number 29? And how many mentions does it have?
+Standalone question: Which blog is ranked number 29 on https://detailed.com/50/, and how many mentions does it have?
+Retrieval metadata: {"confidence": 0.5993513166930947, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: bb230c2b-dd15-489b-8b54-3d23eaa41811
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Entrepreneur']
+similarity: 0.5993513166930947
+adjusted_similarity: 0.5993513166930947
+ordinal_index: 4
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Entrepreneur]
+
+https://www.entrepreneur.com/
+Find business news, webinars and events, book recommendations, and interviews with successful entrepreneurs. The site is updated daily and even has a magazine for longer-form pieces.
+Rank: 5
+Mentions: 8,923
+
+--- Chunk 2 ---
+chunk_id: 55f0330d-9b03-47ae-9e2e-49a971a45595
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Small Business Trends']
+similarity: 0.5949925382340813
+adjusted_similarity: 0.5949925382340813
+ordinal_index: 48
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Small Business Trends]
+
+https://smallbiztrends.com/
+Find financial, marketing, management, and technology advice on this site. It also covers current events and gives tips on how small business can become more successful.
+Rank: 49
+Mentions: 1,563
+
+--- Chunk 3 ---
+chunk_id: 3b5aa17a-2771-46b6-be05-57abae56fc0e
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Vogue.co.uk']
+similarity: 0.5812950389050067
+adjusted_similarity: 0.5812950389050067
+ordinal_index: 19
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Vogue.co.uk]
+
+http://www.vogue.co.uk/
+Fashion, trends, latest news, catwalk photos, and designers.
+Rank: 20
+Mentions: 3,667
+
+--- Chunk 4 ---
+chunk_id: e4906ce2-c9df-49f3-8346-cfbf18d5f114
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Elle']
+similarity: 0.5792953445553475
+adjusted_similarity: 0.5792953445553475
+ordinal_index: 8
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Elle]
+
+https://www.elle.com/
+Featuring beauty tips, fashion news, and celebrity trends.
+Rank: 9
+Mentions: 6,673
+
+--- Chunk 5 ---
+chunk_id: 4866ead3-b1a1-437b-978b-8348276a6c36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com']
+similarity: 0.5772782505184666
+adjusted_similarity: 0.5772782505184666
+ordinal_index: None
+content:
+Page: The 50 Best Blogs in the World (2026) - Detailed.com
+URL: https://detailed.com/50/
+Contains: 105 sections, 0 tables, 4 lists, 0 cards
+Top sections: Billboard | Business Insider | People
+
+--- Chunk 6 ---
+chunk_id: 68f38cf4-2d08-4316-9ee0-387f7825ebdf
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Pitchfork']
+similarity: 0.5718941010262998
+adjusted_similarity: 0.5718941010262998
+ordinal_index: 22
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Pitchfork]
+
+https://pitchfork.com/
+The latest in music and jams without the distraction of ads and clickbait. Top charts, videos, and celebrity features along with recommendations, the best apps, and music news.
+Rank: 23
+Mentions: 3,467
+
+--- Chunk 7 ---
+chunk_id: dc0e6ada-71d7-456f-ba1a-672fad94d092
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'theScore.com']
+similarity: 0.5666710067885641
+adjusted_similarity: 0.5666710067885641
+ordinal_index: 36
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > theScore.com]
+
+https://www.thescore.com/
+Get highlights, in-depth features, and reports for top sports, including football and basketball, as well as how current events impact sports. An app for the site is also available.
+Rank: 37
+Mentions: 2,271
+
+--- Chunk 8 ---
+chunk_id: 79da54fe-9599-4e29-8683-3aa604ef863a
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', "Men's Health"]
+similarity: 0.5616570075661469
+adjusted_similarity: 0.5616570075661469
+ordinal_index: 43
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Men's Health]
+
+https://www.menshealth.com/
+A popular male-oriented magazine covering everything from workouts and fitness to sex and dating advice. Technology, lifestyle, and grooming tips also available.
+Rank: 44
+Mentions: 1,743
+
+--- Chunk 9 ---
+chunk_id: 71011d90-304e-4373-ac32-4562c14b3e36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Wired']
+similarity: 0.5611578594912058
+adjusted_similarity: 0.5611578594912058
+ordinal_index: 20
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Wired]
+
+https://www.wired.com
+Wired.com focuses on how emerging technologies affect culture, the economy, and politics.The website provides an in-depth coverage of current and future trends in technology.
+Rank: 21
+Mentions: 3,586
+
+--- Chunk 10 ---
+chunk_id: 65302ad7-6299-49e6-8493-548de36ded6f
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'CNET']
+similarity: 0.5604811018709354
+adjusted_similarity: 0.5604811018709354
+ordinal_index: 39
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > CNET]
+
+https://www.cnet.com/news/
+CNET tracks all the latest consumer technology breakthroughs and shows you what's new, what matters and how technology can enrich your life.
+Rank: 40
+Mentions: 2,144
+
+
+====================================================================================================
+Retrieved at: 2026-09-23T07:50:05.280355+00:00
+Chat ID: e93562a2-5cf0-4608-9023-12e17c886a2f
+Original question: Which blog is ranked number 25? And how many mentions does it have?
+Standalone question: Which blog is ranked number 25 on https://detailed.com/50/, and how many mentions does it have?
+Retrieval metadata: {"confidence": 0.6068261080109574, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: bb230c2b-dd15-489b-8b54-3d23eaa41811
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Entrepreneur']
+similarity: 0.6068261080109574
+adjusted_similarity: 0.6068261080109574
+ordinal_index: 4
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Entrepreneur]
+
+https://www.entrepreneur.com/
+Find business news, webinars and events, book recommendations, and interviews with successful entrepreneurs. The site is updated daily and even has a magazine for longer-form pieces.
+Rank: 5
+Mentions: 8,923
+
+--- Chunk 2 ---
+chunk_id: 55f0330d-9b03-47ae-9e2e-49a971a45595
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Small Business Trends']
+similarity: 0.5909830441053633
+adjusted_similarity: 0.5909830441053633
+ordinal_index: 48
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Small Business Trends]
+
+https://smallbiztrends.com/
+Find financial, marketing, management, and technology advice on this site. It also covers current events and gives tips on how small business can become more successful.
+Rank: 49
+Mentions: 1,563
+
+--- Chunk 3 ---
+chunk_id: 3b5aa17a-2771-46b6-be05-57abae56fc0e
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Vogue.co.uk']
+similarity: 0.5841289841954621
+adjusted_similarity: 0.5841289841954621
+ordinal_index: 19
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Vogue.co.uk]
+
+http://www.vogue.co.uk/
+Fashion, trends, latest news, catwalk photos, and designers.
+Rank: 20
+Mentions: 3,667
+
+--- Chunk 4 ---
+chunk_id: 4866ead3-b1a1-437b-978b-8348276a6c36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com']
+similarity: 0.5829904954731331
+adjusted_similarity: 0.5829904954731331
+ordinal_index: None
+content:
+Page: The 50 Best Blogs in the World (2026) - Detailed.com
+URL: https://detailed.com/50/
+Contains: 105 sections, 0 tables, 4 lists, 0 cards
+Top sections: Billboard | Business Insider | People
+
+--- Chunk 5 ---
+chunk_id: 68f38cf4-2d08-4316-9ee0-387f7825ebdf
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Pitchfork']
+similarity: 0.5761094877070877
+adjusted_similarity: 0.5761094877070877
+ordinal_index: 22
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Pitchfork]
+
+https://pitchfork.com/
+The latest in music and jams without the distraction of ads and clickbait. Top charts, videos, and celebrity features along with recommendations, the best apps, and music news.
+Rank: 23
+Mentions: 3,467
+
+--- Chunk 6 ---
+chunk_id: e4906ce2-c9df-49f3-8346-cfbf18d5f114
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Elle']
+similarity: 0.5702481059463987
+adjusted_similarity: 0.5702481059463987
+ordinal_index: 8
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Elle]
+
+https://www.elle.com/
+Featuring beauty tips, fashion news, and celebrity trends.
+Rank: 9
+Mentions: 6,673
+
+--- Chunk 7 ---
+chunk_id: dc0e6ada-71d7-456f-ba1a-672fad94d092
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'theScore.com']
+similarity: 0.5693788060568225
+adjusted_similarity: 0.5693788060568225
+ordinal_index: 36
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > theScore.com]
+
+https://www.thescore.com/
+Get highlights, in-depth features, and reports for top sports, including football and basketball, as well as how current events impact sports. An app for the site is also available.
+Rank: 37
+Mentions: 2,271
+
+--- Chunk 8 ---
+chunk_id: 71011d90-304e-4373-ac32-4562c14b3e36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Wired']
+similarity: 0.5620961805081534
+adjusted_similarity: 0.5620961805081534
+ordinal_index: 20
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Wired]
+
+https://www.wired.com
+Wired.com focuses on how emerging technologies affect culture, the economy, and politics.The website provides an in-depth coverage of current and future trends in technology.
+Rank: 21
+Mentions: 3,586
+
+--- Chunk 9 ---
+chunk_id: 65302ad7-6299-49e6-8493-548de36ded6f
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'CNET']
+similarity: 0.5607468505977141
+adjusted_similarity: 0.5607468505977141
+ordinal_index: 39
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > CNET]
+
+https://www.cnet.com/news/
+CNET tracks all the latest consumer technology breakthroughs and shows you what's new, what matters and how technology can enrich your life.
+Rank: 40
+Mentions: 2,144
+
+--- Chunk 10 ---
+chunk_id: 79da54fe-9599-4e29-8683-3aa604ef863a
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', "Men's Health"]
+similarity: 0.5574361294551984
+adjusted_similarity: 0.5574361294551984
+ordinal_index: 43
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Men's Health]
+
+https://www.menshealth.com/
+A popular male-oriented magazine covering everything from workouts and fitness to sex and dating advice. Technology, lifestyle, and grooming tips also available.
+Rank: 44
+Mentions: 1,743
+
+
+====================================================================================================
+Retrieved at: 2026-09-23T07:50:28.001303+00:00
+Chat ID: e93562a2-5cf0-4608-9023-12e17c886a2f
+Original question: Which blog is ranked number 24? And how many mentions does it have?
+Standalone question: Which blog is ranked number 24 on https://detailed.com/50/, and how many mentions does it have?
+Retrieval metadata: {"confidence": 0.6001696016923402, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: bb230c2b-dd15-489b-8b54-3d23eaa41811
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Entrepreneur']
+similarity: 0.6001696016923402
+adjusted_similarity: 0.6001696016923402
+ordinal_index: 4
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Entrepreneur]
+
+https://www.entrepreneur.com/
+Find business news, webinars and events, book recommendations, and interviews with successful entrepreneurs. The site is updated daily and even has a magazine for longer-form pieces.
+Rank: 5
+Mentions: 8,923
+
+--- Chunk 2 ---
+chunk_id: 55f0330d-9b03-47ae-9e2e-49a971a45595
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Small Business Trends']
+similarity: 0.5862928401811719
+adjusted_similarity: 0.5862928401811719
+ordinal_index: 48
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Small Business Trends]
+
+https://smallbiztrends.com/
+Find financial, marketing, management, and technology advice on this site. It also covers current events and gives tips on how small business can become more successful.
+Rank: 49
+Mentions: 1,563
+
+--- Chunk 3 ---
+chunk_id: 68f38cf4-2d08-4316-9ee0-387f7825ebdf
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Pitchfork']
+similarity: 0.5814089279409067
+adjusted_similarity: 0.5814089279409067
+ordinal_index: 22
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Pitchfork]
+
+https://pitchfork.com/
+The latest in music and jams without the distraction of ads and clickbait. Top charts, videos, and celebrity features along with recommendations, the best apps, and music news.
+Rank: 23
+Mentions: 3,467
+
+--- Chunk 4 ---
+chunk_id: 4866ead3-b1a1-437b-978b-8348276a6c36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com']
+similarity: 0.5807935202602179
+adjusted_similarity: 0.5807935202602179
+ordinal_index: None
+content:
+Page: The 50 Best Blogs in the World (2026) - Detailed.com
+URL: https://detailed.com/50/
+Contains: 105 sections, 0 tables, 4 lists, 0 cards
+Top sections: Billboard | Business Insider | People
+
+--- Chunk 5 ---
+chunk_id: 3b5aa17a-2771-46b6-be05-57abae56fc0e
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Vogue.co.uk']
+similarity: 0.5789015665665349
+adjusted_similarity: 0.5789015665665349
+ordinal_index: 19
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Vogue.co.uk]
+
+http://www.vogue.co.uk/
+Fashion, trends, latest news, catwalk photos, and designers.
+Rank: 20
+Mentions: 3,667
+
+--- Chunk 6 ---
+chunk_id: e4906ce2-c9df-49f3-8346-cfbf18d5f114
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Elle']
+similarity: 0.5691264701221218
+adjusted_similarity: 0.5691264701221218
+ordinal_index: 8
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Elle]
+
+https://www.elle.com/
+Featuring beauty tips, fashion news, and celebrity trends.
+Rank: 9
+Mentions: 6,673
+
+--- Chunk 7 ---
+chunk_id: dc0e6ada-71d7-456f-ba1a-672fad94d092
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'theScore.com']
+similarity: 0.5659792617334409
+adjusted_similarity: 0.5659792617334409
+ordinal_index: 36
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > theScore.com]
+
+https://www.thescore.com/
+Get highlights, in-depth features, and reports for top sports, including football and basketball, as well as how current events impact sports. An app for the site is also available.
+Rank: 37
+Mentions: 2,271
+
+--- Chunk 8 ---
+chunk_id: 71011d90-304e-4373-ac32-4562c14b3e36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Wired']
+similarity: 0.5590265583499158
+adjusted_similarity: 0.5590265583499158
+ordinal_index: 20
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Wired]
+
+https://www.wired.com
+Wired.com focuses on how emerging technologies affect culture, the economy, and politics.The website provides an in-depth coverage of current and future trends in technology.
+Rank: 21
+Mentions: 3,586
+
+--- Chunk 9 ---
+chunk_id: 79da54fe-9599-4e29-8683-3aa604ef863a
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', "Men's Health"]
+similarity: 0.5561597426363731
+adjusted_similarity: 0.5561597426363731
+ordinal_index: 43
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Men's Health]
+
+https://www.menshealth.com/
+A popular male-oriented magazine covering everything from workouts and fitness to sex and dating advice. Technology, lifestyle, and grooming tips also available.
+Rank: 44
+Mentions: 1,743
+
+--- Chunk 10 ---
+chunk_id: 65302ad7-6299-49e6-8493-548de36ded6f
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'CNET']
+similarity: 0.5546185265986081
+adjusted_similarity: 0.5546185265986081
+ordinal_index: 39
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > CNET]
+
+https://www.cnet.com/news/
+CNET tracks all the latest consumer technology breakthroughs and shows you what's new, what matters and how technology can enrich your life.
+Rank: 40
+Mentions: 2,144
+
+
+====================================================================================================
+Retrieved at: 2026-09-23T07:50:43.940419+00:00
+Chat ID: e93562a2-5cf0-4608-9023-12e17c886a2f
+Original question: Which blog is ranked number 23? And how many mentions does it have?
+Standalone question: Which blog is ranked number 23 on the list at https://detailed.com/50/ and how many mentions does it have?
+Retrieval metadata: {"confidence": 0.5919548696478577, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: bb230c2b-dd15-489b-8b54-3d23eaa41811
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Entrepreneur']
+similarity: 0.5919548696478577
+adjusted_similarity: 0.5919548696478577
+ordinal_index: 4
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Entrepreneur]
+
+https://www.entrepreneur.com/
+Find business news, webinars and events, book recommendations, and interviews with successful entrepreneurs. The site is updated daily and even has a magazine for longer-form pieces.
+Rank: 5
+Mentions: 8,923
+
+--- Chunk 2 ---
+chunk_id: 55f0330d-9b03-47ae-9e2e-49a971a45595
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Small Business Trends']
+similarity: 0.5853946610551521
+adjusted_similarity: 0.5853946610551521
+ordinal_index: 48
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Small Business Trends]
+
+https://smallbiztrends.com/
+Find financial, marketing, management, and technology advice on this site. It also covers current events and gives tips on how small business can become more successful.
+Rank: 49
+Mentions: 1,563
+
+--- Chunk 3 ---
+chunk_id: 4866ead3-b1a1-437b-978b-8348276a6c36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com']
+similarity: 0.5842902406262002
+adjusted_similarity: 0.5842902406262002
+ordinal_index: None
+content:
+Page: The 50 Best Blogs in the World (2026) - Detailed.com
+URL: https://detailed.com/50/
+Contains: 105 sections, 0 tables, 4 lists, 0 cards
+Top sections: Billboard | Business Insider | People
+
+--- Chunk 4 ---
+chunk_id: 68f38cf4-2d08-4316-9ee0-387f7825ebdf
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Pitchfork']
+similarity: 0.5744417616338936
+adjusted_similarity: 0.5744417616338936
+ordinal_index: 22
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Pitchfork]
+
+https://pitchfork.com/
+The latest in music and jams without the distraction of ads and clickbait. Top charts, videos, and celebrity features along with recommendations, the best apps, and music news.
+Rank: 23
+Mentions: 3,467
+
+--- Chunk 5 ---
+chunk_id: 3b5aa17a-2771-46b6-be05-57abae56fc0e
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Vogue.co.uk']
+similarity: 0.56725940165421
+adjusted_similarity: 0.56725940165421
+ordinal_index: 19
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Vogue.co.uk]
+
+http://www.vogue.co.uk/
+Fashion, trends, latest news, catwalk photos, and designers.
+Rank: 20
+Mentions: 3,667
+
+--- Chunk 6 ---
+chunk_id: e4906ce2-c9df-49f3-8346-cfbf18d5f114
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Elle']
+similarity: 0.5632614247549326
+adjusted_similarity: 0.5632614247549326
+ordinal_index: 8
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Elle]
+
+https://www.elle.com/
+Featuring beauty tips, fashion news, and celebrity trends.
+Rank: 9
+Mentions: 6,673
+
+--- Chunk 7 ---
+chunk_id: dc0e6ada-71d7-456f-ba1a-672fad94d092
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'theScore.com']
+similarity: 0.5600984369807332
+adjusted_similarity: 0.5600984369807332
+ordinal_index: 36
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > theScore.com]
+
+https://www.thescore.com/
+Get highlights, in-depth features, and reports for top sports, including football and basketball, as well as how current events impact sports. An app for the site is also available.
+Rank: 37
+Mentions: 2,271
+
+--- Chunk 8 ---
+chunk_id: 71011d90-304e-4373-ac32-4562c14b3e36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Wired']
+similarity: 0.5560323552392851
+adjusted_similarity: 0.5560323552392851
+ordinal_index: 20
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Wired]
+
+https://www.wired.com
+Wired.com focuses on how emerging technologies affect culture, the economy, and politics.The website provides an in-depth coverage of current and future trends in technology.
+Rank: 21
+Mentions: 3,586
+
+--- Chunk 9 ---
+chunk_id: 65302ad7-6299-49e6-8493-548de36ded6f
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'CNET']
+similarity: 0.5484102487392394
+adjusted_similarity: 0.5484102487392394
+ordinal_index: 39
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > CNET]
+
+https://www.cnet.com/news/
+CNET tracks all the latest consumer technology breakthroughs and shows you what's new, what matters and how technology can enrich your life.
+Rank: 40
+Mentions: 2,144
+
+--- Chunk 10 ---
+chunk_id: 79da54fe-9599-4e29-8683-3aa604ef863a
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', "Men's Health"]
+similarity: 0.5478241792953584
+adjusted_similarity: 0.5478241792953584
+ordinal_index: 43
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Men's Health]
+
+https://www.menshealth.com/
+A popular male-oriented magazine covering everything from workouts and fitness to sex and dating advice. Technology, lifestyle, and grooming tips also available.
+Rank: 44
+Mentions: 1,743
+
+
+====================================================================================================
+Retrieved at: 2026-09-23T07:51:06.743134+00:00
+Chat ID: e93562a2-5cf0-4608-9023-12e17c886a2f
+Original question: Which blog is ranked number 50? And how many mentions does it have?
+Standalone question: Which blog is ranked number 50 on the list from https://detailed.com/50/, and how many mentions does it have?
+Retrieval metadata: {"confidence": 0.6056664705856328, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: bb230c2b-dd15-489b-8b54-3d23eaa41811
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Entrepreneur']
+similarity: 0.6056664705856328
+adjusted_similarity: 0.6056664705856328
+ordinal_index: 4
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Entrepreneur]
+
+https://www.entrepreneur.com/
+Find business news, webinars and events, book recommendations, and interviews with successful entrepreneurs. The site is updated daily and even has a magazine for longer-form pieces.
+Rank: 5
+Mentions: 8,923
+
+--- Chunk 2 ---
+chunk_id: 55f0330d-9b03-47ae-9e2e-49a971a45595
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Small Business Trends']
+similarity: 0.5987497866894833
+adjusted_similarity: 0.5987497866894833
+ordinal_index: 48
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Small Business Trends]
+
+https://smallbiztrends.com/
+Find financial, marketing, management, and technology advice on this site. It also covers current events and gives tips on how small business can become more successful.
+Rank: 49
+Mentions: 1,563
+
+--- Chunk 3 ---
+chunk_id: 4866ead3-b1a1-437b-978b-8348276a6c36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com']
+similarity: 0.5889730240806955
+adjusted_similarity: 0.5889730240806955
+ordinal_index: None
+content:
+Page: The 50 Best Blogs in the World (2026) - Detailed.com
+URL: https://detailed.com/50/
+Contains: 105 sections, 0 tables, 4 lists, 0 cards
+Top sections: Billboard | Business Insider | People
+
+--- Chunk 4 ---
+chunk_id: 3b5aa17a-2771-46b6-be05-57abae56fc0e
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Vogue.co.uk']
+similarity: 0.5838302941875813
+adjusted_similarity: 0.5838302941875813
+ordinal_index: 19
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Vogue.co.uk]
+
+http://www.vogue.co.uk/
+Fashion, trends, latest news, catwalk photos, and designers.
+Rank: 20
+Mentions: 3,667
+
+--- Chunk 5 ---
+chunk_id: e4906ce2-c9df-49f3-8346-cfbf18d5f114
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Elle']
+similarity: 0.577057488051319
+adjusted_similarity: 0.577057488051319
+ordinal_index: 8
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Elle]
+
+https://www.elle.com/
+Featuring beauty tips, fashion news, and celebrity trends.
+Rank: 9
+Mentions: 6,673
+
+--- Chunk 6 ---
+chunk_id: 68f38cf4-2d08-4316-9ee0-387f7825ebdf
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Pitchfork']
+similarity: 0.5703886633991542
+adjusted_similarity: 0.5703886633991542
+ordinal_index: 22
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Pitchfork]
+
+https://pitchfork.com/
+The latest in music and jams without the distraction of ads and clickbait. Top charts, videos, and celebrity features along with recommendations, the best apps, and music news.
+Rank: 23
+Mentions: 3,467
+
+--- Chunk 7 ---
+chunk_id: dc0e6ada-71d7-456f-ba1a-672fad94d092
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'theScore.com']
+similarity: 0.5688805100534391
+adjusted_similarity: 0.5688805100534391
+ordinal_index: 36
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > theScore.com]
+
+https://www.thescore.com/
+Get highlights, in-depth features, and reports for top sports, including football and basketball, as well as how current events impact sports. An app for the site is also available.
+Rank: 37
+Mentions: 2,271
+
+--- Chunk 8 ---
+chunk_id: 79da54fe-9599-4e29-8683-3aa604ef863a
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', "Men's Health"]
+similarity: 0.5652782028192641
+adjusted_similarity: 0.5652782028192641
+ordinal_index: 43
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Men's Health]
+
+https://www.menshealth.com/
+A popular male-oriented magazine covering everything from workouts and fitness to sex and dating advice. Technology, lifestyle, and grooming tips also available.
+Rank: 44
+Mentions: 1,743
+
+--- Chunk 9 ---
+chunk_id: 71011d90-304e-4373-ac32-4562c14b3e36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Wired']
+similarity: 0.5622053610360561
+adjusted_similarity: 0.5622053610360561
+ordinal_index: 20
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Wired]
+
+https://www.wired.com
+Wired.com focuses on how emerging technologies affect culture, the economy, and politics.The website provides an in-depth coverage of current and future trends in technology.
+Rank: 21
+Mentions: 3,586
+
+--- Chunk 10 ---
+chunk_id: 65302ad7-6299-49e6-8493-548de36ded6f
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'CNET']
+similarity: 0.5605061150952325
+adjusted_similarity: 0.5605061150952325
+ordinal_index: 39
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > CNET]
+
+https://www.cnet.com/news/
+CNET tracks all the latest consumer technology breakthroughs and shows you what's new, what matters and how technology can enrich your life.
+Rank: 40
+Mentions: 2,144
+
+
+====================================================================================================
+Retrieved at: 2026-09-23T07:52:04.774053+00:00
+Chat ID: e93562a2-5cf0-4608-9023-12e17c886a2f
+Original question: What's the rank of the blog EssentiallySports. Also tell me the number of mentions
+Standalone question: What is the rank of the blog EssentiallySports, and how many mentions does it have?
+Retrieval metadata: {"confidence": 0.6931220648401006, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 2
+
+--- Chunk 1 ---
+chunk_id: b1379721-10f7-48f0-b83f-43547d1f352d
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'EssentiallySports']
+similarity: 0.6931220648401006
+adjusted_similarity: 0.6931220648401006
+ordinal_index: 30
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > EssentiallySports]
+
+https://www.essentiallysports.com/
+Aims to close the gap between fan opinion and expert analysis. Articles include sports news, op-eds, and in-depth features. Sports include formula 1, MMA, football, cricket, tennis, and MBA.
+Rank: 31
+Mentions: 2,494
+
+--- Chunk 2 ---
+chunk_id: 89574765-908f-4d9c-8b20-4d9b8ae3cd47
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'EssentiallySports']
+similarity: 0.581028223067821
+adjusted_similarity: 0.581028223067821
+ordinal_index: 80
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > EssentiallySports]
+
+https://www.essentiallysports.com/Aims to close the gap between fan opinion and expert analysis. Articles include sports news, op-eds, and in-depth features. Sports include formula 1, MMA, football, cricket, tennis, and MBA.
+
+
+====================================================================================================
+Retrieved at: 2026-09-23T07:52:44.201282+00:00
+Chat ID: e93562a2-5cf0-4608-9023-12e17c886a2f
+Original question: What's the rank of the blog Louder. Also tell me the number of mentions
+Standalone question: What is the rank of the blog Louder, and how many mentions does it have?
+Retrieval metadata: {"confidence": 0.6054812140989398, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: 87989e29-8396-4c06-a9f6-5bc751aa35e7
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Louder']
+similarity: 0.6054812140989398
+adjusted_similarity: 0.6054812140989398
+ordinal_index: 33
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Louder]
+
+https://www.loudersound.com/
+Rock-specific music site with significant social media influence. Home of magazines Classic Rock, Metal Hammer, Prog, and Blues, covering news in alternative rock, hard rock, indie, and more.
+Rank: 34
+Mentions: 2,339
+
+--- Chunk 2 ---
+chunk_id: 33c210ac-3786-4623-aa6c-c874a82825ff
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Loudwire']
+similarity: 0.5097202258350906
+adjusted_similarity: 0.5097202258350906
+ordinal_index: 42
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Loudwire]
+
+https://loudwire.com/
+Engaging rock and metal music coverage celebrating 50 years of metal and a lifetime of loud music. Features news, lists, songs, and albums along with events and media coverage.
+Rank: 43
+Mentions: 1,780
+
+--- Chunk 3 ---
+chunk_id: 37a682fc-6684-4db1-84e3-df5d2d360438
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Louder']
+similarity: 0.48037775898371193
+adjusted_similarity: 0.48037775898371193
+ordinal_index: 83
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Louder]
+
+https://www.loudersound.com/Rock-specific music site with significant social media influence. Home of magazines Classic Rock, Metal Hammer, Prog, and Blues, covering news in alternative rock, hard rock, indie, and more.
+
+--- Chunk 4 ---
+chunk_id: 68f38cf4-2d08-4316-9ee0-387f7825ebdf
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Pitchfork']
+similarity: 0.44596814820870234
+adjusted_similarity: 0.44596814820870234
+ordinal_index: 22
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Pitchfork]
+
+https://pitchfork.com/
+The latest in music and jams without the distraction of ads and clickbait. Top charts, videos, and celebrity features along with recommendations, the best apps, and music news.
+Rank: 23
+Mentions: 3,467
+
+--- Chunk 5 ---
+chunk_id: 7df36cc6-c636-4d9f-ae6d-c7c84cc289ef
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'NME']
+similarity: 0.42591588282493564
+adjusted_similarity: 0.42591588282493564
+ordinal_index: 9
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > NME]
+
+https://www.nme.com/
+Standout voice in pop culture and music delivering top news across artists, albums, film, TV, and video. Online gig guide, shop, and radio access covering the latest.
+Rank: 10
+Mentions: 6,639
+
+--- Chunk 6 ---
+chunk_id: 3b5aa17a-2771-46b6-be05-57abae56fc0e
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Vogue.co.uk']
+similarity: 0.42364968466782094
+adjusted_similarity: 0.42364968466782094
+ordinal_index: 19
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Vogue.co.uk]
+
+http://www.vogue.co.uk/
+Fashion, trends, latest news, catwalk photos, and designers.
+Rank: 20
+Mentions: 3,667
+
+--- Chunk 7 ---
+chunk_id: 5a39c578-9458-4fb0-bfff-62f091a389f0
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Far Out Magazine']
+similarity: 0.41995981371998936
+adjusted_similarity: 0.41995981371998936
+ordinal_index: 49
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Far Out Magazine]
+
+http://faroutmagazine.co.uk
+Over the last ten years, Far Out has been building an outstanding reputation among its growing audience, covering new music and classic rock.
+Rank: 50
+Mentions: 1,548
+Share
+
+--- Chunk 8 ---
+chunk_id: bb230c2b-dd15-489b-8b54-3d23eaa41811
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Entrepreneur']
+similarity: 0.4196010753438508
+adjusted_similarity: 0.4196010753438508
+ordinal_index: 4
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Entrepreneur]
+
+https://www.entrepreneur.com/
+Find business news, webinars and events, book recommendations, and interviews with successful entrepreneurs. The site is updated daily and even has a magazine for longer-form pieces.
+Rank: 5
+Mentions: 8,923
+
+--- Chunk 9 ---
+chunk_id: e855f99c-e895-4e37-a904-e64dc3eea653
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'HotNewHipHop']
+similarity: 0.41654201551335535
+adjusted_similarity: 0.41654201551335535
+ordinal_index: 13
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > HotNewHipHop]
+
+https://www.hotnewhiphop.com/
+All the hottest news and music within hip hop. Coverage of artist activity, the reigning top 100, songs, mixtapes, and albums.
+Rank: 14
+Mentions: 4,859
+
+--- Chunk 10 ---
+chunk_id: 56d58a8c-2a2b-4c65-975a-7d099c8c1782
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'RollingStone']
+similarity: 0.41270820208632275
+adjusted_similarity: 0.41270820208632275
+ordinal_index: 10
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > RollingStone]
+
+https://www.rollingstone.com/music/
+Features news and coverage across music, film, television, and politics, reviewing albums, songs, and celebrities. Interactive source for historical rankings and magazine content.
+Rank: 11
+Mentions: 5,763
+
+
+====================================================================================================
+Retrieved at: 2026-09-23T07:53:24.619845+00:00
+Chat ID: e93562a2-5cf0-4608-9023-12e17c886a2f
+Original question: What's the rank of the blog Sky Sports. Also tell me the number of mentions
+Standalone question: What’s the rank of the blog Sky Sports in https://detailed.com/50/ and how many mentions does it have?
+Retrieval metadata: {"confidence": 0.7204412127621038, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: e4117e75-6230-4118-9bc5-3b5a85a0b6c2
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Sky Sports']
+similarity: 0.7204412127621038
+adjusted_similarity: 0.7204412127621038
+ordinal_index: 35
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Sky Sports]
+
+https://www.skysports.com/
+Get the latest sports news as well as live TV, live football scores, bets, games, and more. Sports include F1, cricket, golf, tennis, racing, rugby, cycling, and darts.
+Rank: 36
+Mentions: 2,275
+
+--- Chunk 2 ---
+chunk_id: 0d74d655-2a0b-4828-90e7-2d3789faf670
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Sky Sports']
+similarity: 0.6489535083328423
+adjusted_similarity: 0.6489535083328423
+ordinal_index: 85
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Sky Sports]
+
+https://www.skysports.com/Get the latest sports news as well as live TV, live football scores, bets, games, and more. Sports include F1, cricket, golf, tennis, racing, rugby, cycling, and darts.
+
+--- Chunk 3 ---
+chunk_id: dc0e6ada-71d7-456f-ba1a-672fad94d092
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'theScore.com']
+similarity: 0.6259460254895192
+adjusted_similarity: 0.6259460254895192
+ordinal_index: 36
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > theScore.com]
+
+https://www.thescore.com/
+Get highlights, in-depth features, and reports for top sports, including football and basketball, as well as how current events impact sports. An app for the site is also available.
+Rank: 37
+Mentions: 2,271
+
+--- Chunk 4 ---
+chunk_id: e11b4d80-a6ac-4f16-8f0b-58475bc974cc
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Sports Illustrated']
+similarity: 0.5887101163526027
+adjusted_similarity: 0.5887101163526027
+ordinal_index: 46
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Sports Illustrated]
+
+https://www.si.com/
+Sports Illustrated provides sports news, expert analysis, highlights, stats and scores for the NFL, NBA, MLB, NHL, college football, soccer, fantasy, gambling and more
+Rank: 47
+Mentions: 1,689
+
+--- Chunk 5 ---
+chunk_id: 788d1e95-10d9-4d56-91d9-9c5f063adb3d
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'The Athletic']
+similarity: 0.5886394082693444
+adjusted_similarity: 0.5886394082693444
+ordinal_index: 14
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > The Athletic]
+
+https://www.nytimes.com/athletic/
+This site offers a subscription for in-depth sports news and features. It also has a podcast for avid sports fans. Find articles about major sports, sports teams, and top cities.
+Rank: 15
+Mentions: 4,636
+
+--- Chunk 6 ---
+chunk_id: cd56d020-a94d-4660-9c22-f308346da83e
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Yahoo! Sports']
+similarity: 0.5880517296579918
+adjusted_similarity: 0.5880517296579918
+ordinal_index: 6
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Yahoo! Sports]
+
+https://sports.yahoo.com/
+Covers all the top sports as well as fantasy leagues. In addition to sports coverage, opinion pieces and predictions over football, hockey, and soccer and other sports can be found.
+Rank: 7
+Mentions: 6,841
+
+--- Chunk 7 ---
+chunk_id: 62bdbb80-b416-4943-99c2-f1261c9a7099
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'FanSided']
+similarity: 0.5829067879526529
+adjusted_similarity: 0.5829067879526529
+ordinal_index: 38
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > FanSided]
+
+https://fansided.com/
+A sports news site focusing on sports, sport fandoms, entertainment, and lifestyle pieces. It’s family owned and provides editorial content for all things sports related, such as football or racing.
+Rank: 39
+Mentions: 2,165
+
+--- Chunk 8 ---
+chunk_id: 291aa6fd-8da0-465b-942e-a2b5de9d8814
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Bleacher Report']
+similarity: 0.5810500077311871
+adjusted_similarity: 0.5810500077311871
+ordinal_index: 17
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Bleacher Report]
+
+https://bleacherreport.com/
+Covers top viewed sports such as football, hockey, basketball, MMA, and more. Betting and video games are covered too. There’s a magazine in addition to the site offering in-depth features.
+Rank: 18
+Mentions: 4,107
+
+--- Chunk 9 ---
+chunk_id: 8776ed15-cdf4-4655-be44-b5e85fc94314
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Sporting News']
+similarity: 0.5678434856837455
+adjusted_similarity: 0.5678434856837455
+ordinal_index: 27
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Sporting News]
+
+https://www.sportingnews.com/
+Frequently updated and covers sports ranging from football, basketball, baseball, and more. Fantasy and betting also included. Offers sports news for four other countries too, such as Canada and China.
+Rank: 28
+Mentions: 2,880
+
+--- Chunk 10 ---
+chunk_id: 14da5e85-7035-4bad-bd79-b02a89bfe9c0
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'talkSPORT']
+similarity: 0.5633350643676619
+adjusted_similarity: 0.5633350643676619
+ordinal_index: 26
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > talkSPORT]
+
+https://talksport.com/
+This sports radio station covers various sports, among them football and boxing. There’s even an option to listen live to sport commentators and active events. Podcasts and schedules available too.
+Rank: 27
+Mentions: 2,905
+
+
+====================================================================================================
+Retrieved at: 2026-09-23T09:23:08.528309+00:00
+Chat ID: e93562a2-5cf0-4608-9023-12e17c886a2f
+Original question: What's the rank of the blog Louder. Also tell me the number of mentions
+Standalone question: What is the rank of the blog Louder on https://detailed.com/50/, and how many mentions does it have?
+Retrieval metadata: {"confidence": 0.6360314897521168, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: 87989e29-8396-4c06-a9f6-5bc751aa35e7
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Louder']
+similarity: 0.6360314897521168
+adjusted_similarity: 0.6360314897521168
+ordinal_index: 33
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Louder]
+
+https://www.loudersound.com/
+Rock-specific music site with significant social media influence. Home of magazines Classic Rock, Metal Hammer, Prog, and Blues, covering news in alternative rock, hard rock, indie, and more.
+Rank: 34
+Mentions: 2,339
+
+--- Chunk 2 ---
+chunk_id: 33c210ac-3786-4623-aa6c-c874a82825ff
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Loudwire']
+similarity: 0.603384393743066
+adjusted_similarity: 0.603384393743066
+ordinal_index: 42
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Loudwire]
+
+https://loudwire.com/
+Engaging rock and metal music coverage celebrating 50 years of metal and a lifetime of loud music. Features news, lists, songs, and albums along with events and media coverage.
+Rank: 43
+Mentions: 1,780
+
+--- Chunk 3 ---
+chunk_id: 37a682fc-6684-4db1-84e3-df5d2d360438
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Louder']
+similarity: 0.548765067822503
+adjusted_similarity: 0.548765067822503
+ordinal_index: 83
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Louder]
+
+https://www.loudersound.com/Rock-specific music site with significant social media influence. Home of magazines Classic Rock, Metal Hammer, Prog, and Blues, covering news in alternative rock, hard rock, indie, and more.
+
+--- Chunk 4 ---
+chunk_id: 68f38cf4-2d08-4316-9ee0-387f7825ebdf
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Pitchfork']
+similarity: 0.5417861455220109
+adjusted_similarity: 0.5417861455220109
+ordinal_index: 22
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Pitchfork]
+
+https://pitchfork.com/
+The latest in music and jams without the distraction of ads and clickbait. Top charts, videos, and celebrity features along with recommendations, the best apps, and music news.
+Rank: 23
+Mentions: 3,467
+
+--- Chunk 5 ---
+chunk_id: bb230c2b-dd15-489b-8b54-3d23eaa41811
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Entrepreneur']
+similarity: 0.5387934336410908
+adjusted_similarity: 0.5387934336410908
+ordinal_index: 4
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Entrepreneur]
+
+https://www.entrepreneur.com/
+Find business news, webinars and events, book recommendations, and interviews with successful entrepreneurs. The site is updated daily and even has a magazine for longer-form pieces.
+Rank: 5
+Mentions: 8,923
+
+--- Chunk 6 ---
+chunk_id: 74795c51-1b50-41d4-a1e8-29dc016fab3a
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Loudwire']
+similarity: 0.5136350801183005
+adjusted_similarity: 0.5136350801183005
+ordinal_index: 92
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Loudwire]
+
+https://loudwire.com/Engaging rock and metal music coverage celebrating 50 years of metal and a lifetime of loud music. Features news, lists, songs, and albums along with events and media coverage.
+
+--- Chunk 7 ---
+chunk_id: 4866ead3-b1a1-437b-978b-8348276a6c36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com']
+similarity: 0.5135387381663072
+adjusted_similarity: 0.5135387381663072
+ordinal_index: None
+content:
+Page: The 50 Best Blogs in the World (2026) - Detailed.com
+URL: https://detailed.com/50/
+Contains: 105 sections, 0 tables, 4 lists, 0 cards
+Top sections: Billboard | Business Insider | People
+
+--- Chunk 8 ---
+chunk_id: dc0e6ada-71d7-456f-ba1a-672fad94d092
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'theScore.com']
+similarity: 0.5045689460983331
+adjusted_similarity: 0.5045689460983331
+ordinal_index: 36
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > theScore.com]
+
+https://www.thescore.com/
+Get highlights, in-depth features, and reports for top sports, including football and basketball, as well as how current events impact sports. An app for the site is also available.
+Rank: 37
+Mentions: 2,271
+
+--- Chunk 9 ---
+chunk_id: 71011d90-304e-4373-ac32-4562c14b3e36
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Wired']
+similarity: 0.5041024423405525
+adjusted_similarity: 0.5041024423405525
+ordinal_index: 20
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Wired]
+
+https://www.wired.com
+Wired.com focuses on how emerging technologies affect culture, the economy, and politics.The website provides an in-depth coverage of current and future trends in technology.
+Rank: 21
+Mentions: 3,586
+
+--- Chunk 10 ---
+chunk_id: 55f0330d-9b03-47ae-9e2e-49a971a45595
+document_id: c2e712ed-0e96-4011-b276-9e6d54fdce3a
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard', 'Small Business Trends']
+similarity: 0.5038383117785841
+adjusted_similarity: 0.5038383117785841
+ordinal_index: 48
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard > Small Business Trends]
+
+https://smallbiztrends.com/
+Find financial, marketing, management, and technology advice on this site. It also covers current events and gives tips on how small business can become more successful.
+Rank: 49
+Mentions: 1,563
+

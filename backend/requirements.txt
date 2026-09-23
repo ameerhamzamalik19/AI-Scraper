@@ -19,3 +19,5 @@ pillow==11.1.0
 ollama==0.4.7
 trafilatura==2.0.0
 readability-lxml==0.8.4.1
+spacy==3.8.16
+pycountry==26.2.16

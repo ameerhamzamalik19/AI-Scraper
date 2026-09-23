@@ -1,0 +1,160 @@
+
+====================================================================================================
+Retrieved at: 2026-09-21T12:25:46.209414+00:00
+Chat ID: 153eaf9a-9cf8-46a2-878f-9cd1492858c7
+Original question: which blog is most popular?
+Standalone question: Which blog is most popular on https://detailed.com/50/?
+Retrieval metadata: {"confidence": 0.6374651986087512, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: b1998466-7f5e-4ff2-927e-58518ca1998b
+document_id: 398a6a31-a9e6-4d66-ab32-d6ce60f56fb1
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com']
+similarity: 0.6374651986087512
+adjusted_similarity: 0.6374651986087512
+content:
+Page: The 50 Best Blogs in the World (2026) - Detailed.com
+URL: https://detailed.com/50/
+Contains: 55 sections, 0 tables, 4 lists, 0 cards
+Top sections: Billboard | Business Insider | People
+
+--- Chunk 2 ---
+chunk_id: 6fccfac7-3880-4246-b2a6-3f068b884c27
+document_id: 398a6a31-a9e6-4d66-ab32-d6ce60f56fb1
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Page Description']
+similarity: 0.5655556239164513
+adjusted_similarity: 0.5655556239164513
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Page Description]
+
+The best blogs in the world are tracked and ranked daily by our unique algorithm.
+
+--- Chunk 3 ---
+chunk_id: f2ad233f-ad16-412e-8369-e716c885d536
+document_id: 398a6a31-a9e6-4d66-ab32-d6ce60f56fb1
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Vogue.co.uk']
+similarity: 0.5390759975346013
+adjusted_similarity: 0.5390759975346013
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Vogue.co.uk]
+
+http://www.vogue.co.uk/Fashion, trends, latest news, catwalk photos, and designers.
+
+--- Chunk 4 ---
+chunk_id: 5ccb079c-5aa0-45d8-a294-f046fae1ef18
+document_id: 398a6a31-a9e6-4d66-ab32-d6ce60f56fb1
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Elle']
+similarity: 0.5373161187490324
+adjusted_similarity: 0.5373161187490324
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Elle]
+
+https://www.elle.com/Featuring beauty tips, fashion news, and celebrity trends.
+
+--- Chunk 5 ---
+chunk_id: cd964896-8c57-4897-9d31-65297d706dd3
+document_id: 398a6a31-a9e6-4d66-ab32-d6ce60f56fb1
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Entrepreneur']
+similarity: 0.5262877640830396
+adjusted_similarity: 0.5262877640830396
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Entrepreneur]
+
+https://www.entrepreneur.com/Find business news, webinars and events, book recommendations, and interviews with successful entrepreneurs. The site is updated daily and even has a magazine for longer-form pieces.
+
+--- Chunk 6 ---
+chunk_id: 2cb9f447-6f84-4f9d-82ee-3030f0fd177d
+document_id: 398a6a31-a9e6-4d66-ab32-d6ce60f56fb1
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', "This wasn't a standard list of blogs. This isn't your standard SEO newsletter."]
+similarity: 0.5232205020539851
+adjusted_similarity: 0.5232205020539851
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > This wasn't a standard list of blogs. This isn't your standard SEO newsletter.]
+
+Exclusive insights from tracking the rankings of 2,114 specifically-chosen websites.Learn more.
+
+--- Chunk 7 ---
+chunk_id: f8c02aa8-ec4e-4df1-946a-7fb3de1cd602
+document_id: 398a6a31-a9e6-4d66-ab32-d6ce60f56fb1
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'CNET']
+similarity: 0.5164968567361996
+adjusted_similarity: 0.5164968567361996
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > CNET]
+
+https://www.cnet.com/news/CNET tracks all the latest consumer technology breakthroughs and shows you what's new, what matters and how technology can enrich your life.
+
+--- Chunk 8 ---
+chunk_id: fb139903-8e73-48af-971d-cd956a0ce935
+document_id: 398a6a31-a9e6-4d66-ab32-d6ce60f56fb1
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Small Business Trends']
+similarity: 0.5145404210970338
+adjusted_similarity: 0.5145404210970338
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Small Business Trends]
+
+https://smallbiztrends.com/Find financial, marketing, management, and technology advice on this site. It also covers current events and gives tips on how small business can become more successful.
+
+--- Chunk 9 ---
+chunk_id: 45166e09-3367-433c-8a57-491455eaa7f1
+document_id: 398a6a31-a9e6-4d66-ab32-d6ce60f56fb1
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'BroBible']
+similarity: 0.49600485517973825
+adjusted_similarity: 0.49600485517973825
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > BroBible]
+
+https://brobible.com/Find the latest articles for everything guys care about, whether it’s video games, sports, fashion advice, dating tips, pop culture, and more.
+
+--- Chunk 10 ---
+chunk_id: 7ebc0da5-3db5-47ac-aef0-244e2ca954f2
+document_id: 398a6a31-a9e6-4d66-ab32-d6ce60f56fb1
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Sports Illustrated']
+similarity: 0.4888313689310968
+adjusted_similarity: 0.4888313689310968
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Sports Illustrated]
+
+https://www.si.com/Sports Illustrated provides sports news, expert analysis, highlights, stats and scores for the NFL, NBA, MLB, NHL, college football, soccer, fantasy, gambling and more
+

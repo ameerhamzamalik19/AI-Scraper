@@ -1,0 +1,198 @@
+
+====================================================================================================
+Retrieved at: 2026-09-23T06:17:54.614493+00:00
+Chat ID: 5903dbc6-6aa6-45ec-a883-4020f398506a
+Original question: How many mentions did it got?
+Standalone question: How many mentions did Billboard get on https://detailed.com/50/?
+Retrieval metadata: {"confidence": 0.5170382111370239, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: 0615ac3c-67a2-4f70-8b18-744ff398b7fc
+document_id: 3b9ff062-62a2-4f7f-a49a-29d1462d34c0
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com']
+similarity: 0.5170382111370239
+adjusted_similarity: 0.5170382111370239
+ordinal_index: None
+content:
+Page: The 50 Best Blogs in the World (2026) - Detailed.com
+URL: https://detailed.com/50/
+Contains: 55 sections, 0 tables, 4 lists, 0 cards
+Top sections: Billboard | Business Insider | People
+
+--- Chunk 2 ---
+chunk_id: aab073ee-ac64-4ada-be7c-d5a9abb237d7
+document_id: 3b9ff062-62a2-4f7f-a49a-29d1462d34c0
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: image
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Image']
+similarity: 0.4232750365391358
+adjusted_similarity: 0.4444387883660926
+ordinal_index: None
+content:
+[Image from The 50 Best Blogs in the World (2026) - Detailed.com]
+Description: Billboard website Coronavirus music events canceled virtual concerts resource guide music professionals The Hot 100 Drake Billboard 200 The Weeknd Pop Songs Adult Contemporary Maroon 5 | Visible text: billboard CHARTS NEWS VIDEO PHOTOS PRO NEWSLETTERS Subscribe sign in Events The Beat Hot 100 Billboard 200 Festivals Podcasts Chart Beat CORONAVIRUS Here Are All the Live Streams & Virtual Concerts to Watch During Coronavirus Crisis (Updating) Here Are All the Major Music Events Canceled Due to Coronavirus (Updating) A State-by-State Resource Guide for Music Professionals Who Need Help During Coronavirus Crisis (Updating) billboard b Get Billboard Delivered At Home TOP HEADLINES The Hot 100 Drake Billboard 200 The Weeknd Pop Songs The Weeknd Adult Contemporary Maroon 5 | Entities: Billboard (organization) | Drake (person) | The Weeknd (person) | Maroon 5 (person) | Coronavirus Crisis (event)
+Visible text: billboard CHARTS NEWS VIDEO PHOTOS PRO NEWSLETTERS Subscribe sign in Events The Beat Hot 100 Billboard 200 Festivals Podcasts Chart Beat CORONAVIRUS Here Are All the Live Streams & Virtual Concerts to Watch During Coronavirus Crisis (Updating) Here Are All the Major Music Events Canceled Due to Coronavirus (Updating) A State-by-State Resource Guide for Music Professionals Who Need Help During Coronavirus Crisis (Updating) billboard b Get Billboard Delivered At Home TOP HEADLINES The Hot 100 Drake Billboard 200 The Weeknd Pop Songs The Weeknd Adult Contemporary Maroon 5
+Entities: Billboard (organization) | Drake (person) | The Weeknd (person) | Maroon 5 (person) | Coronavirus Crisis (event)
+Alt text: top blogs thumbnail
+Section: Billboard
+
+--- Chunk 3 ---
+chunk_id: 0c9a6f94-4e4b-4e10-9b1b-075e8e4910b3
+document_id: 3b9ff062-62a2-4f7f-a49a-29d1462d34c0
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard']
+similarity: 0.4276978835053149
+adjusted_similarity: 0.4276978835053149
+ordinal_index: 0
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard]
+
+https://www.billboard.com/Best known for the Hot 100 and Billboard 200, which list the most popular songs and albums each week in the industry. Offers industry news, events, podcasts, and music streaming.
+
+--- Chunk 4 ---
+chunk_id: b7c75329-b30a-42cb-9d5d-b54720b434cd
+document_id: 3b9ff062-62a2-4f7f-a49a-29d1462d34c0
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'RollingStone']
+similarity: 0.377049193922394
+adjusted_similarity: 0.377049193922394
+ordinal_index: 10
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > RollingStone]
+
+https://www.rollingstone.com/music/Features news and coverage across music, film, television, and politics, reviewing albums, songs, and celebrities. Interactive source for historical rankings and magazine content.
+
+--- Chunk 5 ---
+chunk_id: 4db4ec42-c87c-46a1-af4e-97f9d02b2b22
+document_id: 3b9ff062-62a2-4f7f-a49a-29d1462d34c0
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Pitchfork']
+similarity: 0.36089915736718203
+adjusted_similarity: 0.36089915736718203
+ordinal_index: 22
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Pitchfork]
+
+https://pitchfork.com/The latest in music and jams without the distraction of ads and clickbait. Top charts, videos, and celebrity features along with recommendations, the best apps, and music news.
+
+--- Chunk 6 ---
+chunk_id: 2be83a90-4539-46a0-a908-bc21e20c847a
+document_id: 3b9ff062-62a2-4f7f-a49a-29d1462d34c0
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Elle']
+similarity: 0.3604450467487521
+adjusted_similarity: 0.3604450467487521
+ordinal_index: 8
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Elle]
+
+https://www.elle.com/Featuring beauty tips, fashion news, and celebrity trends.
+
+--- Chunk 7 ---
+chunk_id: 62b9a70f-65cb-4a6a-9ddd-f06adfeff330
+document_id: 3b9ff062-62a2-4f7f-a49a-29d1462d34c0
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'HotNewHipHop']
+similarity: 0.358125411042582
+adjusted_similarity: 0.358125411042582
+ordinal_index: 13
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > HotNewHipHop]
+
+https://www.hotnewhiphop.com/All the hottest news and music within hip hop. Coverage of artist activity, the reigning top 100, songs, mixtapes, and albums.
+
+--- Chunk 8 ---
+chunk_id: 465e2c33-665c-437d-9484-53d07fccf9e4
+document_id: 3b9ff062-62a2-4f7f-a49a-29d1462d34c0
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Loudwire']
+similarity: 0.3513830896066247
+adjusted_similarity: 0.3513830896066247
+ordinal_index: 42
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Loudwire]
+
+https://loudwire.com/Engaging rock and metal music coverage celebrating 50 years of metal and a lifetime of loud music. Features news, lists, songs, and albums along with events and media coverage.
+
+--- Chunk 9 ---
+chunk_id: 089e27c5-0aa9-4c61-9481-79f4f4c4ef2a
+document_id: 3b9ff062-62a2-4f7f-a49a-29d1462d34c0
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Entrepreneur']
+similarity: 0.3484771217022077
+adjusted_similarity: 0.3484771217022077
+ordinal_index: 4
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Entrepreneur]
+
+https://www.entrepreneur.com/Find business news, webinars and events, book recommendations, and interviews with successful entrepreneurs. The site is updated daily and even has a magazine for longer-form pieces.
+
+--- Chunk 10 ---
+chunk_id: 8c167423-3342-4c83-ab95-eed8f251a2de
+document_id: 3b9ff062-62a2-4f7f-a49a-29d1462d34c0
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Small Business Trends']
+similarity: 0.34820566065404746
+adjusted_similarity: 0.34820566065404746
+ordinal_index: 48
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Small Business Trends]
+
+https://smallbiztrends.com/Find financial, marketing, management, and technology advice on this site. It also covers current events and gives tips on how small business can become more successful.
+
+
+====================================================================================================
+Retrieved at: 2026-09-23T06:19:39.282236+00:00
+Chat ID: 5903dbc6-6aa6-45ec-a883-4020f398506a
+Original question: How many mentions did it got?
+Standalone question: How many mentions did HotNewHipHop get on https://detailed.com/50/?
+Retrieval metadata: {"confidence": 0.5465960465926542, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 1
+
+--- Chunk 1 ---
+chunk_id: 62b9a70f-65cb-4a6a-9ddd-f06adfeff330
+document_id: 3b9ff062-62a2-4f7f-a49a-29d1462d34c0
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'HotNewHipHop']
+similarity: 0.5465960465926542
+adjusted_similarity: 0.5465960465926542
+ordinal_index: 13
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > HotNewHipHop]
+
+https://www.hotnewhiphop.com/All the hottest news and music within hip hop. Coverage of artist activity, the reigning top 100, songs, mixtapes, and albums.
+

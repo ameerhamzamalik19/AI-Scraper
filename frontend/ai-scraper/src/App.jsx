@@ -57,7 +57,7 @@ function App() {
   const MAX_RECONNECT_ATTEMPTS = 5;
   const RECONNECT_DELAY = 3000;
   
-  const API_URL = 'http://localhost:8000';
+  const API_URL = 'http://127.0.0.1:8000';
 
   // Helper functions
   const scrollToBottom = () => {

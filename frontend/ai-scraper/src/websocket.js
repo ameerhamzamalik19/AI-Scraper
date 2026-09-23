@@ -32,7 +32,7 @@ export class ChatWebSocket {
     
     this.isConnecting = true;
     
-    const wsUrl = `ws://localhost:8000/ws/${this.chatId}`;
+    const wsUrl = `ws://127.0.0.1:8000/ws/${this.chatId}`;
     console.log(`🔌 Connecting WebSocket: ${wsUrl}`);
     
     try {

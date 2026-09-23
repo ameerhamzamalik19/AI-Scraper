@@ -1,4 +1,5 @@
 from crawler.content_processor import ContentProcessor
+from processors.chunker import EnhancedChunker
 
 
 def test_listing_detection_preserves_article_body():
@@ -37,3 +38,32 @@ def test_listing_detection_preserves_article_body():
     assert result['page_type'] == 'listing'
     assert 'Each chess piece moves' in section_text
     assert 'Related article 1' in section_text
+
+
+def test_json_ld_product_survives_as_queryable_entity_chunk():
+    html = '''
+    <html><head>
+      <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"Product","name":"Atlas Pro",
+       "description":"A durable analytics platform.","sku":"ATLAS-1",
+       "offers":{"price":"99.00","priceCurrency":"USD"}}
+      </script>
+    </head><body><main><h1>Catalog</h1><p>Products for teams.</p></main></body></html>
+    '''
+
+    result = ContentProcessor.process_html(
+        html,
+        source_url='https://example.com/catalog',
+        page_title='Catalog',
+    )
+    structure = result['document_structure']
+    chunks = EnhancedChunker.chunk_structure({
+        'page_title': structure['page_title'],
+        'source_url': structure['source_url'],
+        'main_content': structure,
+        'structured_data': structure['structured_data'],
+    })
+
+    product_chunks = [chunk for chunk in chunks if chunk['entity_type'] == 'product']
+    assert product_chunks
+    assert any('Atlas Pro' in chunk['content'] and '99.00' in chunk['content'] for chunk in product_chunks)

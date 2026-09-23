@@ -11,9 +11,10 @@ from utils.progress_tracker import get_progress_tracker
 import logging
 from utils.embedding_service import (
     EMBEDDING_DIMENSION,
+    EMBEDDING_BATCH_SIZE,
     MODEL_NAME,
     NVIDIA_API_KEY,
-    get_embedding,
+    get_embeddings,
 )
 from utils.worker_event_loop import start_worker_event_loop
 
@@ -22,6 +23,9 @@ start_worker_event_loop("embedder")
 # logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 logging.info("✅ Embedder worker loaded")
+
+EMBEDDING_ATTEMPTS_PER_CHUNK = 3
+MAX_FAILED_CHUNKS_PER_CHAT = 3
 
 def _mark_document_ready(chat_id: str, document_id: str, message: str) -> bool:
     """Complete a page only after every chunk for it is embedded."""
@@ -71,14 +75,61 @@ def _mark_document_ready(chat_id: str, document_id: str, message: str) -> bool:
 
 
 def _mark_document_failed(chat_id: str, document_id: str, error: str) -> None:
-    """Keep a page incomplete when embedding cannot finish."""
+    """Record a document warning without failing the whole chat."""
     execute_update(
         """UPDATE crawled_urls
            SET status = 'failed', error_message = %s, crawled_at = NOW()
            WHERE chat_id = %s AND document_id = %s AND status <> 'completed'""",
         (error[:500], chat_id, document_id)
     )
-    get_progress_tracker(chat_id).mark_failed(error)
+    tracker = get_progress_tracker(chat_id)
+    failed_count = execute_one(
+        """SELECT COUNT(*) AS failed
+           FROM chunks c
+           JOIN crawled_urls u ON u.document_id = c.document_id
+           WHERE u.chat_id = %s AND c.embedding_status = 'FAILED'""",
+        (chat_id,)
+    )
+    if failed_count and failed_count.get('failed', 0) >= MAX_FAILED_CHUNKS_PER_CHAT:
+        current_chat = execute_one(
+            "SELECT status FROM chats WHERE id = %s",
+            (chat_id,)
+        )
+        if not current_chat or current_chat.get('status') != 'failed':
+            tracker.mark_failed(
+                f"Chat failed after {failed_count['failed']} chunks failed to embed. "
+                f"Reason: {error[:300]}"
+            )
+        return
+
+    tracker.update_stage(
+        'embedding',
+        90,
+        f"Embedding warning: {error[:160]}. Continuing with the remaining chunks.",
+    )
+
+    remaining = execute_one(
+        """SELECT COUNT(*) AS active
+           FROM crawled_urls
+           WHERE chat_id = %s AND status IN ('pending', 'processing')""",
+        (chat_id,)
+    )
+    usable_chunks = execute_one(
+        """SELECT COUNT(*) AS completed
+           FROM chunks c
+           JOIN crawled_urls u ON u.document_id = c.document_id
+           WHERE u.chat_id = %s AND c.embedding_status = 'COMPLETED'""",
+        (chat_id,)
+    )
+    if (
+        remaining
+        and remaining.get('active', 0) == 0
+        and usable_chunks
+        and usable_chunks.get('completed', 0) > 0
+    ):
+        tracker.mark_completed(
+            f"Ready with warning: {error[:140]}"
+        )
 
 
 # workers/embedder_worker.py - Fixed progress calculation
@@ -87,7 +138,7 @@ def _mark_document_failed(chat_id: str, document_id: str, error: str) -> None:
     actor_name="workers.embedder_worker.embed_chunks",
     queue_name=EMBEDDING_QUEUE_NAME,
     max_retries=3,
-    time_limit=300000
+    time_limit=900000
 )
 def embed_chunks(chat_id: str, document_id: str):
     """
@@ -207,89 +258,98 @@ def embed_chunks(chat_id: str, document_id: str):
         
         chunks_embedded = 0
         chunks_failed = 0
+        failed_chunk_errors = []
         
-        for i, chunk in enumerate(pending_chunks):
-            chunk_id = chunk['id']
-            chunk_index = chunk.get('chunk_index', i)
-            
+        for batch_start in range(0, total_pending, EMBEDDING_BATCH_SIZE):
+            batch = pending_chunks[batch_start:batch_start + EMBEDDING_BATCH_SIZE]
+            batch_ids = [chunk['id'] for chunk in batch]
+            batch_end = batch_start + len(batch)
             try:
-                # ✅ Calculate stage progress as percentage of chunks processed
-                # stage_progress goes from 10 to 90 (leaving room for completion)
-                stage_progress = 10 + int(((i + 1) / total_pending) * 80)
-                
-                # ✅ Update status every chunk (not every 5)
+                stage_progress = 10 + int((batch_end / total_pending) * 80)
                 tracker.update_stage(
-                    'embedding', 
-                    stage_progress, 
-                    f"Embedding chunk {i+1}/{total_pending}..."
+                    'embedding',
+                    stage_progress,
+                    f"Embedding chunks {batch_end}/{total_pending}..."
                 )
-                
-                # Update chunk status to processing
+
                 now = get_current_datetime().isoformat()
+                placeholders = ','.join(['%s'] * len(batch_ids))
                 execute_update(
-                    "UPDATE chunks SET embedding_status = 'PROCESSING', updated_at = %s WHERE id = %s",
-                    (now, chunk_id)
+                    f"UPDATE chunks SET embedding_status = 'PROCESSING', updated_at = %s WHERE id IN ({placeholders})",
+                    (now, *batch_ids)
                 )
-                
-                # Generate embedding
-                embedding = None
-                last_error = None
-                for attempt in range(3):
-                    try:
-                        embedding = get_embedding(chunk['content'])
-                        break
-                    except Exception as error:
-                        last_error = error
-                        logger.warning(
-                            "Embedding attempt %s/3 failed for chunk %s: %s",
-                            attempt + 1,
-                            chunk_id,
-                            error,
-                        )
-                if embedding is None:
-                    raise RuntimeError(str(last_error or "Embedding generation failed"))
-                
-                # Store embedding
-                execute_update(
-                    """UPDATE chunks 
-                       SET embedding = %s::vector,
-                           embedding_model = %s,
-                           embedding_dimension = %s,
-                           embedding_status = 'COMPLETED',
-                           updated_at = %s
-                       WHERE id = %s""",
-                    (embedding, MODEL_NAME, EMBEDDING_DIMENSION, now, chunk_id)
+                embeddings = get_embeddings(
+                    [chunk['content'] for chunk in batch],
+                    max_retries=EMBEDDING_ATTEMPTS_PER_CHUNK,
                 )
-                
-                chunks_embedded += 1
-                
-                if chunks_embedded % 10 == 0:
-                    print(f"📊 Embedded {chunks_embedded}/{total_pending} chunks")
-                
+                for chunk, embedding in zip(batch, embeddings):
+                    execute_update(
+                        """UPDATE chunks
+                           SET embedding = %s::vector, embedding_model = %s,
+                               embedding_dimension = %s, embedding_status = 'COMPLETED',
+                               updated_at = %s WHERE id = %s""",
+                        (embedding, MODEL_NAME, EMBEDDING_DIMENSION, now, chunk['id'])
+                    )
+                chunks_embedded += len(batch)
+                print(f"📊 Embedded {chunks_embedded}/{total_pending} chunks")
             except Exception as e:
-                error_msg = f"Error embedding chunk {chunk_id}: {str(e)}"
-                print(f"❌ {error_msg}")
-                now = get_current_datetime().isoformat()
-                execute_update(
-                    "UPDATE chunks SET embedding_status = 'FAILED', updated_at = %s WHERE id = %s",
-                    (now, chunk_id)
-                )
-                chunks_failed += 1
+                if len(batch) == 1:
+                    chunk_id = batch[0]['id']
+                    error_msg = f"Error embedding chunk {chunk_id}: {e}"
+                    print(f"❌ {error_msg}")
+                    execute_update(
+                        "UPDATE chunks SET embedding_status = 'FAILED', updated_at = %s WHERE id = %s",
+                        (get_current_datetime().isoformat(), chunk_id)
+                    )
+                    chunks_failed += 1
+                    failed_chunk_errors.append(error_msg)
+                    continue
+                print(f"❌ Error embedding batch {batch_start + 1}-{batch_end}: {e}; retrying individually")
+                for chunk in batch:
+                    chunk_id = chunk['id']
+                    try:
+                        embedding = get_embeddings(
+                            [chunk['content']],
+                            max_retries=EMBEDDING_ATTEMPTS_PER_CHUNK,
+                        )[0]
+                        execute_update(
+                            """UPDATE chunks SET embedding = %s::vector, embedding_model = %s,
+                               embedding_dimension = %s, embedding_status = 'COMPLETED',
+                               updated_at = %s WHERE id = %s""",
+                            (embedding, MODEL_NAME, EMBEDDING_DIMENSION,
+                             get_current_datetime().isoformat(), chunk_id)
+                        )
+                        chunks_embedded += 1
+                    except Exception as chunk_error:
+                        error_msg = f"Error embedding chunk {chunk_id}: {chunk_error}"
+                        print(f"❌ {error_msg}")
+                        execute_update(
+                            "UPDATE chunks SET embedding_status = 'FAILED', updated_at = %s WHERE id = %s",
+                            (get_current_datetime().isoformat(), chunk_id)
+                        )
+                        chunks_failed += 1
+                        failed_chunk_errors.append(error_msg)
         
         # Final status update. A partial document is not usable and cannot
         # complete the chat.
         if chunks_failed > 0 and chunks_embedded == 0:
             print(f"❌ All {total_pending} chunks failed for document {document_id}")
-            _mark_document_failed(chat_id, document_id, "All chunks failed to embed")
-            raise RuntimeError("All chunks failed to embed")
-        elif chunks_failed > 0:
-            print(f"⚠️ Document {document_id}: {chunks_embedded} embedded, {chunks_failed} failed")
+            first_error = failed_chunk_errors[0] if failed_chunk_errors else "Unknown embedding error"
             _mark_document_failed(
                 chat_id,
                 document_id,
-                f"{chunks_failed} of {total_pending} chunks failed to embed",
+                f"{chunks_failed} chunk(s) failed. Reason: {first_error}",
             )
-            raise RuntimeError(f"{chunks_failed} chunks failed to embed")
+            return 0
+        elif chunks_failed > 0:
+            print(f"⚠️ Document {document_id}: {chunks_embedded} embedded, {chunks_failed} failed")
+            first_error = failed_chunk_errors[0] if failed_chunk_errors else "Unknown embedding error"
+            _mark_document_failed(
+                chat_id,
+                document_id,
+                f"{chunks_failed} of {total_pending} chunks failed. Reason: {first_error}",
+            )
+            return chunks_embedded
         else:
             print(f"✅ Successfully embedded all {chunks_embedded} chunks for document {document_id}")
             _mark_document_ready(

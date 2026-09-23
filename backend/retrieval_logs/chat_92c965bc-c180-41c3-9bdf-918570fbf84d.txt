@@ -1,0 +1,343 @@
+
+====================================================================================================
+Retrieved at: 2026-09-23T04:57:05.647292+00:00
+Chat ID: 92c965bc-c180-41c3-9bdf-918570fbf84d
+Original question: How many mentions did it got?
+Standalone question: How many mentions did Billboard receive on https://detailed.com/50/?
+Retrieval metadata: {"confidence": 0.5154792777652142, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: 85e5a387-69a8-4d8f-a2e6-a07a86e85947
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com']
+similarity: 0.5154792777652142
+adjusted_similarity: 0.5154792777652142
+ordinal_index: None
+content:
+Page: The 50 Best Blogs in the World (2026) - Detailed.com
+URL: https://detailed.com/50/
+Contains: 55 sections, 0 tables, 4 lists, 0 cards
+Top sections: Billboard | Business Insider | People
+
+--- Chunk 2 ---
+chunk_id: a2e8c9da-34ee-4550-b3c7-f221d1fddeb2
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: image
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Image']
+similarity: 0.43999232956016043
+adjusted_similarity: 0.46199194603816846
+ordinal_index: None
+content:
+[Image from The 50 Best Blogs in the World (2026) - Detailed.com]
+Description: Billboard website Coronavirus music industry updates live streams virtual concerts canceled music events resource guide for music professionals The Hot 100 Drake Billboard 200 The Weeknd Pop Songs Adult Contemporary Maroon 5 | Visible text: billboard CHARTS NEWS VIDEO PHOTOS PRO NEWSLETTERS subscribe sign in Events The Beat Hot 100 Billboard 200 Festivals Podcasts Chart Beat CORONAVIRUS Here Are All the Live Streams & Virtual Concerts to Watch During Coronavirus Crisis (Updating) Here Are All the Major Music Events Canceled Due to Coronavirus (Updating) A State-by-State Resource Guide for Music Professionals Who Need Help During Coronavirus Crisis (Updating) billboard Get Billboard Delivered At Home TOP HEADLINES The Hot 100 Drake Billboard 200 The Weeknd Pop Songs The Weeknd Adult Contemporary Maroon 5 | Entities: Billboard (organization) | Drake (person) | The Weeknd (person) | Maroon 5 (person) | Coronavirus (other)
+Visible text: billboard CHARTS NEWS VIDEO PHOTOS PRO NEWSLETTERS subscribe sign in Events The Beat Hot 100 Billboard 200 Festivals Podcasts Chart Beat CORONAVIRUS Here Are All the Live Streams & Virtual Concerts to Watch During Coronavirus Crisis (Updating) Here Are All the Major Music Events Canceled Due to Coronavirus (Updating) A State-by-State Resource Guide for Music Professionals Who Need Help During Coronavirus Crisis (Updating) billboard Get Billboard Delivered At Home TOP HEADLINES The Hot 100 Drake Billboard 200 The Weeknd Pop Songs The Weeknd Adult Contemporary Maroon 5
+Entities: Billboard (organization) | Drake (person) | The Weeknd (person) | Maroon 5 (person) | Coronavirus (other)
+Alt text: top blogs thumbnail
+Section: Billboard
+
+--- Chunk 3 ---
+chunk_id: 4c5b88cf-f4ba-4dc4-8dde-91b7a06016d1
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Billboard']
+similarity: 0.42181612681797886
+adjusted_similarity: 0.42181612681797886
+ordinal_index: 0
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Billboard]
+
+https://www.billboard.com/Best known for the Hot 100 and Billboard 200, which list the most popular songs and albums each week in the industry. Offers industry news, events, podcasts, and music streaming.
+
+--- Chunk 4 ---
+chunk_id: 31412648-770f-4b3d-b413-9b9808189292
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'RollingStone']
+similarity: 0.37502033938750645
+adjusted_similarity: 0.37502033938750645
+ordinal_index: 10
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > RollingStone]
+
+https://www.rollingstone.com/music/Features news and coverage across music, film, television, and politics, reviewing albums, songs, and celebrities. Interactive source for historical rankings and magazine content.
+
+--- Chunk 5 ---
+chunk_id: aab5f7cc-f5b2-471c-ad65-0d910c5c13bd
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Elle']
+similarity: 0.3563670066920769
+adjusted_similarity: 0.3563670066920769
+ordinal_index: 8
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Elle]
+
+https://www.elle.com/Featuring beauty tips, fashion news, and celebrity trends.
+
+--- Chunk 6 ---
+chunk_id: 75d7dd3e-076e-4a20-9ed1-3cd0cd025674
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'HotNewHipHop']
+similarity: 0.35517923922916506
+adjusted_similarity: 0.35517923922916506
+ordinal_index: 13
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > HotNewHipHop]
+
+https://www.hotnewhiphop.com/All the hottest news and music within hip hop. Coverage of artist activity, the reigning top 100, songs, mixtapes, and albums.
+
+--- Chunk 7 ---
+chunk_id: 4d01aa6a-1c51-4030-aa6c-1f0fd983b2c6
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Pitchfork']
+similarity: 0.35212218839565645
+adjusted_similarity: 0.35212218839565645
+ordinal_index: 22
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Pitchfork]
+
+https://pitchfork.com/The latest in music and jams without the distraction of ads and clickbait. Top charts, videos, and celebrity features along with recommendations, the best apps, and music news.
+
+--- Chunk 8 ---
+chunk_id: 0fec6192-42f3-4fc3-932e-9a60121c0fbe
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Small Business Trends']
+similarity: 0.34398969936415424
+adjusted_similarity: 0.34398969936415424
+ordinal_index: 48
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Small Business Trends]
+
+https://smallbiztrends.com/Find financial, marketing, management, and technology advice on this site. It also covers current events and gives tips on how small business can become more successful.
+
+--- Chunk 9 ---
+chunk_id: e7261ed1-c5d3-4ead-bd1c-b04f8b2b7ade
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', "This wasn't a standard list of blogs. This isn't your standard SEO newsletter."]
+similarity: 0.3437773638232805
+adjusted_similarity: 0.3437773638232805
+ordinal_index: 50
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > This wasn't a standard list of blogs. This isn't your standard SEO newsletter.]
+
+Exclusive insights from tracking the rankings of 2,114 specifically-chosen websites.Learn more.
+
+--- Chunk 10 ---
+chunk_id: d0ee5bea-a15d-4f91-921b-86663ca098d5
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Loudwire']
+similarity: 0.34354821362541477
+adjusted_similarity: 0.34354821362541477
+ordinal_index: 42
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Loudwire]
+
+https://loudwire.com/Engaging rock and metal music coverage celebrating 50 years of metal and a lifetime of loud music. Features news, lists, songs, and albums along with events and media coverage.
+
+
+====================================================================================================
+Retrieved at: 2026-09-23T05:48:03.072290+00:00
+Chat ID: 92c965bc-c180-41c3-9bdf-918570fbf84d
+Original question: How many mentions did Far Out Magazine got?
+Standalone question: How many mentions did Far Out Magazine get on https://detailed.com/50/?
+Retrieval metadata: {"confidence": 0.5349575370059062, "has_lexical_match": false, "has_results": true, "reason": "Vector search only"}
+Retrieved chunks: 10
+
+--- Chunk 1 ---
+chunk_id: a19c46e1-af88-44ec-9387-241c9a904a7b
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Far Out Magazine']
+similarity: 0.5349575370059062
+adjusted_similarity: 0.5349575370059062
+ordinal_index: 49
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Far Out Magazine]
+
+http://faroutmagazine.co.ukOver the last ten years, Far Out has been building an outstanding reputation among its growing audience, covering new music and classic rock.
+
+--- Chunk 2 ---
+chunk_id: 85e5a387-69a8-4d8f-a2e6-a07a86e85947
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: summary
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com']
+similarity: 0.4142251432222466
+adjusted_similarity: 0.4142251432222466
+ordinal_index: None
+content:
+Page: The 50 Best Blogs in the World (2026) - Detailed.com
+URL: https://detailed.com/50/
+Contains: 55 sections, 0 tables, 4 lists, 0 cards
+Top sections: Billboard | Business Insider | People
+
+--- Chunk 3 ---
+chunk_id: 314eaf3c-e596-4d1d-8bef-89e2c7028f21
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Entrepreneur']
+similarity: 0.3854981781620417
+adjusted_similarity: 0.3854981781620417
+ordinal_index: 4
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Entrepreneur]
+
+https://www.entrepreneur.com/Find business news, webinars and events, book recommendations, and interviews with successful entrepreneurs. The site is updated daily and even has a magazine for longer-form pieces.
+
+--- Chunk 4 ---
+chunk_id: 31412648-770f-4b3d-b413-9b9808189292
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'RollingStone']
+similarity: 0.3569966093652872
+adjusted_similarity: 0.3569966093652872
+ordinal_index: 10
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > RollingStone]
+
+https://www.rollingstone.com/music/Features news and coverage across music, film, television, and politics, reviewing albums, songs, and celebrities. Interactive source for historical rankings and magazine content.
+
+--- Chunk 5 ---
+chunk_id: aab5f7cc-f5b2-471c-ad65-0d910c5c13bd
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Elle']
+similarity: 0.35322151089568665
+adjusted_similarity: 0.35322151089568665
+ordinal_index: 8
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Elle]
+
+https://www.elle.com/Featuring beauty tips, fashion news, and celebrity trends.
+
+--- Chunk 6 ---
+chunk_id: ebf5f44b-1e70-4baf-9455-a274289d1d41
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', "Men's Health"]
+similarity: 0.34635935706592025
+adjusted_similarity: 0.34635935706592025
+ordinal_index: 43
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Men's Health]
+
+https://www.menshealth.com/A popular male-oriented magazine covering everything from workouts and fitness to sex and dating advice. Technology, lifestyle, and grooming tips also available.
+
+--- Chunk 7 ---
+chunk_id: add0d723-78ac-4c11-b402-c06146cfa6bd
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Louder']
+similarity: 0.3381881621367342
+adjusted_similarity: 0.3381881621367342
+ordinal_index: 33
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Louder]
+
+https://www.loudersound.com/Rock-specific music site with significant social media influence. Home of magazines Classic Rock, Metal Hammer, Prog, and Blues, covering news in alternative rock, hard rock, indie, and more.
+
+--- Chunk 8 ---
+chunk_id: bd6baebe-2bf5-473b-a247-4f0b68b1d9a7
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Vogue.co.uk']
+similarity: 0.33743948312343686
+adjusted_similarity: 0.33743948312343686
+ordinal_index: 19
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Vogue.co.uk]
+
+http://www.vogue.co.uk/Fashion, trends, latest news, catwalk photos, and designers.
+
+--- Chunk 9 ---
+chunk_id: 860da8cf-3748-4f85-8118-e3e9b17c9248
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Bleacher Report']
+similarity: 0.328645249210908
+adjusted_similarity: 0.328645249210908
+ordinal_index: 17
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Bleacher Report]
+
+https://bleacherreport.com/Covers top viewed sports such as football, hockey, basketball, MMA, and more. Betting and video games are covered too. There’s a magazine in addition to the site offering in-depth features.
+
+--- Chunk 10 ---
+chunk_id: d0ee5bea-a15d-4f91-921b-86663ca098d5
+document_id: 0d340dd9-663f-4a20-ba3e-b4d071ac95cf
+source_url: https://detailed.com/50/
+chunk_category: main_content
+entity_type: content
+section_title: 
+heading_path: ['The 50 Best Blogs in the World (2026) - Detailed.com', 'Loudwire']
+similarity: 0.32725371147370286
+adjusted_similarity: 0.32725371147370286
+ordinal_index: 42
+content:
+[The 50 Best Blogs in the World (2026) - Detailed.com > Loudwire]
+
+https://loudwire.com/Engaging rock and metal music coverage celebrating 50 years of metal and a lifetime of loud music. Features news, lists, songs, and albums along with events and media coverage.
+

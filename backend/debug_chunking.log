@@ -1,122 +1,57 @@
 === CHUNKING DEBUG LOG ===
-Started: 2026-09-09T12:29:14.390457
+Started: 2026-09-23T10:20:27.133134
 ================================================================================
 
 
 ================================================================================
-[2026-09-09T12:29:14.430775] 🧩 CHUNK_STRUCTURE START
+[2026-09-23T10:20:27.135750] 🧩 CHUNK_STRUCTURE START
 {
   "content_type": "ContentType.ECOMMERCE",
   "structure_keys": [
     "page_title",
     "source_url",
     "main_content",
+    "structured_data",
+    "media_chunks",
     "ui_summary"
   ],
-  "page_title": "Travel - how to articles from wikiHow",
-  "source_url": "https://www.wikihow.com/Category:Travel"
+  "page_title": "web-scraping.dev - Web Scraping Testing & Learning Platform",
+  "source_url": "https://web-scraping.dev/",
+  "ner_enabled": true,
+  "pycountry_enabled": true
 }
 ================================================================================
 
 ================================================================================
-[2026-09-09T12:29:14.466346] 📊 INPUT STRUCTURE STATS
+[2026-09-23T10:20:27.144575] 📋 SECTION PROCESSING COMPLETE
 {
-  "sections_count": 64,
-  "tables_count": 0,
-  "lists_count": 8,
-  "cards_count": 0,
-  "has_all_text": false
-}
-================================================================================
-
-================================================================================
-[2026-09-09T12:29:14.917623] 📝 PROCESSED SECTION #10
-{
-  "heading": "How toHack (and Share) the Royal Caribbean Drink Package",
-  "content_length": 291,
-  "word_count": 38,
-  "entity_type": "content"
-}
-================================================================================
-
-================================================================================
-[2026-09-09T12:29:14.984051] 📝 PROCESSED SECTION #20
-{
-  "heading": "How toDress Like a Tourist",
-  "content_length": 210,
-  "word_count": 30,
-  "entity_type": "content"
-}
-================================================================================
-
-================================================================================
-[2026-09-09T12:29:15.040166] 📝 PROCESSED SECTION #30
-{
-  "heading": "How toGet to the Freedom Tunnel",
-  "content_length": 206,
-  "word_count": 29,
-  "entity_type": "content"
-}
-================================================================================
-
-================================================================================
-[2026-09-09T12:29:15.100388] 📝 PROCESSED SECTION #40
-{
-  "heading": "How toContact Kayak Customer Service 1",
-  "content_length": 254,
-  "word_count": 32,
-  "entity_type": "content"
-}
-================================================================================
-
-================================================================================
-[2026-09-09T12:29:15.133320] 📝 PROCESSED SECTION #50
-{
-  "heading": "Image 6",
-  "content_length": 263,
-  "word_count": 21,
-  "entity_type": "image"
-}
-================================================================================
-
-================================================================================
-[2026-09-09T12:29:15.172293] 📝 PROCESSED SECTION #60
-{
-  "heading": "Image 16",
-  "content_length": 369,
-  "word_count": 37,
-  "entity_type": "image"
-}
-================================================================================
-
-================================================================================
-[2026-09-09T12:29:15.219580] 📋 SECTION PROCESSING COMPLETE
-{
-  "total_sections": 64,
-  "processed": 64,
+  "total_sections": 3,
+  "processed": 3,
   "empty_skipped": 0,
-  "chunks_created": 64
+  "sections_split": 0
 }
 ================================================================================
 
 ================================================================================
-[2026-09-09T12:29:15.680047] 📊 TABLE PROCESSING COMPLETE
+[2026-09-23T10:20:27.294228] 📊 TABLE PROCESSING COMPLETE
 {
-  "total_tables": 0,
-  "chunks_created": 0
+  "total_tables": 1,
+  "summary_chunks": 1,
+  "row_chunks": 54
 }
 ================================================================================
 
 ================================================================================
-[2026-09-09T12:29:15.763551] 📋 LIST PROCESSING COMPLETE
+[2026-09-23T10:20:27.308002] 📋 LIST PROCESSING COMPLETE
 {
-  "total_lists": 8,
-  "chunks_created": 8
+  "total_lists": 4,
+  "list_chunks": 4,
+  "list_item_chunks": 5
 }
 ================================================================================
 
 ================================================================================
-[2026-09-09T12:29:15.829828] 🃏 CARD PROCESSING COMPLETE
+[2026-09-23T10:20:27.318955] 🃏 CARD PROCESSING COMPLETE
 {
   "total_cards": 0,
   "chunks_created": 0
@@ -124,91 +59,39 @@ Started: 2026-09-09T12:29:14.390457
 ================================================================================
 
 ================================================================================
-[2026-09-09T12:29:16.070290] 📐 STRUCTURED DATA PROCESSING COMPLETE
-{
-  "has_structured_data": false,
-  "chunks_created": 0
-}
-================================================================================
-
-================================================================================
-[2026-09-09T12:29:16.824902] 🖼️ MEDIA CHUNK PROCESSING COMPLETE
+[2026-09-23T10:20:27.326991] 🖼️ MEDIA CHUNK PROCESSING COMPLETE
 {
   "total_media_chunks": 0,
-  "chunks_created": 0
+  "image_chunks_created": 0,
+  "skipped": 0
 }
 ================================================================================
 
 ================================================================================
-[2026-09-09T12:29:16.886789] 📊 UI SUMMARY PROCESSING COMPLETE
+[2026-09-23T10:20:27.342793] ✅ CHUNK_STRUCTURE COMPLETE
 {
-  "total_ui_chunks": 0,
-  "chunks_created": 0
-}
-================================================================================
-
-================================================================================
-[2026-09-09T12:29:17.258721] 🔍 FINAL FILTERING
-{
-  "before_filter": 72,
-  "after_filter": 72,
-  "removed": 0
-}
-================================================================================
-
-================================================================================
-[2026-09-09T12:29:17.386712] 📊 ENTITY TYPE DISTRIBUTION
-{
-  "product": 2,
-  "content": 40,
-  "faq": 2,
-  "image": 20,
-  "list": 8
-}
-================================================================================
-
-================================================================================
-[2026-09-09T12:29:17.461245] ✅ CHUNK_STRUCTURE COMPLETE
-{
-  "total_chunks": 72,
-  "total_words": 3735,
+  "total_chunks": 69,
+  "total_words": 1761,
   "category_counts": {
-    "main_content": 72
+    "main_content": 69
   },
   "entity_counts": {
-    "product": 2,
-    "content": 40,
-    "faq": 2,
-    "image": 20,
-    "list": 8
+    "content": 3,
+    "table": 1,
+    "table_row": 54,
+    "list": 4,
+    "list_item": 5,
+    "structured_data": 1,
+    "summary": 1
   },
-  "sample_chunk": {
-    "content": "[Travel - how to articles from wikiHow]\n\nSkip to Content\nQuizzes\nSearch\nPRO\nCourses\nHot\nGuides\nTech Help Pro\nExpert Videos\nAbout wikiHow Pro\nUpgrade\nQUIZZES\nAll Quizzes\nHot\nCommunity Quizzes\nLove Quizzes\nPersonality Quizzes\nTrivia Quizzes\nTaylor Swift Quizzes\nEXPLORE\nTech Help Pro\nAbout Us\nRandom Article\nQuizzes\nRequest a New Article\nCommunity Dashboard\nTrending\nForums\nArts and Entertainment\nArtwork\nBooks\nMovies\nComputers and Electronics\nComputers\nPhone Skills\nTechnology Hacks\nHealth\nMen's Health\nMental Health\nWomen's Health\nRelationships\nDating\nLove\nRelationship Issues\nHobbies and Crafts\nCrafts\nDrawing\nGames\nEducation & Communication\nCommunication Skills\nPersonal Development\nStudying\nPersonal Care and Style\nFashion\nHair Care\nPersonal Hygiene\nQuizzes\nLove Quizzes\nPersonality Quizzes\nFun Games\nArts and Entertainment\nFinance and Business\nHome and Garden\nRelationship Quizzes\nCars & Other Vehicles\nFood and Entertaining\nPersonal Care and Style\nSports and Fitness\nComputers and Electronics\nHealth\nPets and Animals\nTravel\nEducation & Communication\nHobbies and Crafts\nPhilosophy and Religion\nWork World\nFamily Life\nHolidays and Traditions\nRelationships\nYouth\nLOG IN\nLog in\nSocial login does not work in incognito and private browsers. Please log in with your username or email to continue.\nFacebook\nGoogle\nwikiHow Account\nNo account yet?\nCreate an account\nRANDOM\n\nHome\nRandom\nBrowse Articles\nTrending\nNew\nQuizzes & Games\nAll Quizzes\nHot\nCommunity Quizzes\nLove Quizzes\nPersonality Quizzes\nFun Games\nDating Simulator\nLearn Something New\nForums\nCourses\nHappiness Hub\nExplore More\nSupport wikiHow\nAbout wikiHow\nLog in / Sign up\nTerms of Use\nTravel\nHome\n<\nTravel\nTravel\nIf you're looking to\nbook a hotel room\n,\ncreate a travel budget\n, or\npack a suitcase like a pro\n, wikiHow's Travel articles have got you covered. Our guides will help you\nchoose the perfect travel destination\n, whether you prefer to\nplan out your vacations\nor travel spontaneously. Learn to safely\ntravel the world\n, be a tourist in your own hometown, and more!\nFeatured Topics\nNavigation and Directions\nPlanning Travel\nTravel Packing\nTravel Safety\nArticles about Travel\nHow to\nDisappear Completely\nExpert\nThe Pinky Finger Isn\u2019t the Middle Finger in China & Here\u2019s Why\nExpert\nHow to\nMake an Itinerary on Google Maps: A Step-by-Step Guide\nExpert\nCan You Take Food Through TSA? Which Foods Go in Your Carry On\nExpert\nWhere Should I Move Quiz\nExpert\n115 Travel Hacks & Tips for the Smoothest Trip of Your Life\n270 Travel Captions for Your Vacation Photos\nExpert\nHow to\nContact Klook Customer Support\nHow to\nTravel\nExpert\nHow to\nHack (and Share) the Royal Caribbean Drink Package\nHow to\nContact Priceline\nExpert\nHow to\nWrite a Review on TripAdvisor\nExpert\nHow to\nUse a Travel Pillow\nExpert\nHow to\nGet a Known Traveler Number\nExpert\nWhat's My Perfect Vacation Spot Quiz\nExpert\nWhat \"Inbound Into Customs\" Status Means for Your International Package\nExpert\nHow to\nChew Betel Nut in Papua New Guinea\nExpert\nHow to\nCarry Surfboards on the Roof of a Vehicle\n13 Ways to Surprise Someone with a Trip\nExpert\nHow to\nDress Like a Tourist\nExpert\nHow to\nBook a Flight Itinerary for a Visa Application without Paying for a Ticket\nExpert\nHow to\nMove to Another Country from the United States\nExpert\nHow to\nContact Kayak Customer Service\nExpert\nHow to\nCreate a Travel Brochure for Beginners\nExpert\nHow to\nFly Standby on Southwest (& Maximize Your Boarding Odds)\nExpert\nHow to\nSurvive Family Vacations Without Losing Your Mind\nHow to\nTravel Abroad\nHow to\nTake the Staten Island Ferry\nExpert\nHow to\nTravel Alone\nExpert\nHow to\nFlush a British Toilet\nExpert\nHow to\nGet to the Freedom Tunnel\nHow to\nPlan a Multi Family Vacation\nHow to\nGet Directions from Google Maps: Navigation Guide\nExpert\nHow to\nEnjoy Summer Vacation\nExpert\nHow to\nStay Safe and Healthy When Using a Public Bathroom\nExpert\nHow to\nReach Bannerghatta National Park from Bangalore\nHow to\nPolitely Tell Relatives to Stay in a Hotel Instead of Your Home\nExpert\nHow to\nSurvive After a Shipwreck\nExpert\nHow to\nTravel\nExpert\nHow to\nUse a Travel Pillow\nExpert\nHow to\nSurvive a Long Road Trip\nExpert\nHow to\nContact Kayak Customer Service\nExpert\nHow to\nVisit a Nudist Resort or Beach\nExpert\nThe Proper Way to Sleep with a Neck Pillow\nExpert\nRelated Topics\nBudget Travel\nCanada Travel\nDestinations\nAfrica Travel\nAsia Travel\nEurope Travel\nLiving in Specific Countries\nLiving in Europe\nLiving in the United States\nMaking International Calls\nCalling Asia\nCalling Europe\nCalling the United States\nMindful Travel\nNavigation and Directions\nGlobal Positioning System (GPS)\nGoogle Earth\nMaps\nMeasuring Distance\nOrienteering\nWaze\nNiche Travel\nOfficial Travel Documentation\nPassports\nTravel Visas\nUS Visas\nWork Visas\nPlanning Travel\nBuying Air Travel\nPlanning a Vacation\nPublic Transport\nAir Travel\nBus Travel\nTrain Travel\nRoad Travel\nBus Travel\nRecreational Vehicles\nRenting Cars\nRoad Safety\nRoad Trips\nToll Roads\nSolo Travel\nTravel Cruises\nTravel Entertainment\nTravel Finances\nBudget Travel\nForeign Exchange Market\nTravel Health\nTravel Packing\nFlight Packing\nFolding Clothes\nTravel Bags\nTravel Safety\nUnited States Travel\nCalifornia Travel\nHawaii Travel\nNew York Travel\nVacation Time\nFamily Vacations\nPlanning a Vacation\nNew Articles about Travel\nWhat Are the 5 Layers of the Ocean? A Deep Dive\nExpert\nA Complete Cruise Packing List (with Printable PDF)\nExpert\nHome\n\u00a9 2026 wikiHow, Inc. All rights reserved. Use of site content is subject to our\nTerms of Use\n.\nwikiHow Newsletter\nYou're all set!\nHelpful how-tos delivered to\nyour inbox every week!\nSign me up!\nBy signing up you are agreeing to receive emails according to our privacy policy.\nHome\nAbout wikiHow\nExperts\nJobs\nContact Us\nSite Map\nTerms of Use\nPrivacy Policy\nDo Not\nSell or\nShare My Info\nNot Selling Info\nContribute\nFollow Us\n\u00d7\nwikiHow Tech Help Pro:\nLevel up your tech skills and stay ahead of the curve\nLet's go!\nX\nJoin us in our mission\nFor over two decades, we\u2019ve been on a mission: to help everyone in the world learn how to do anything. Our articles are human written and expert endorsed to ensure readers like you get reliable, current information.\nBefore you get back to learning, we would be grateful if you could take a minute to support wikiHow. Any amount helps. Thank you.\nLet\u2019s do this!\n-\n-",
-    "heading_path": [
-      "Travel - how to articles from wikiHow"
-    ],
-    "chunk_type": "section",
-    "chunk_category": "main_content",
-    "entity_type": "product",
-    "token_count": 1033,
-    "source_url": "https://www.wikihow.com/Category:Travel",
-    "page_title": "Travel - how to articles from wikiHow",
-    "content_structure": {
-      "has_table": false,
-      "has_list": false,
-      "has_images": false,
-      "has_code": false,
-      "has_structured_data": false,
-      "heading": "Travel - how to articles from wikiHow",
-      "relevance_score": 0.6987,
-      "quality_score": 0.6
-    },
-    "chunk_hash": "6fab7fc777d25344ff6d6a92061b56a839dce6dbfc19bb063f7fab27ea269289",
-    "chunk_index": 0,
-    "category_weight": 1.0,
-    "entity_boost": 1.3,
-    "structured_boost": 1.0,
-    "information_density": 1033.0
+  "chunk_type_counts": {
+    "section": 3,
+    "table_summary": 1,
+    "table_row": 54,
+    "list": 4,
+    "list_item": 5,
+    "structured_data": 1,
+    "summary": 1
   }
 }
 ================================================================================

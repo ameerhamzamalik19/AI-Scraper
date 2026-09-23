@@ -1,0 +1,1048 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #F7F8FA;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  .shell {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 240px;
+    min-width: 240px;
+    background: #0f1729;
+    padding: 36px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+
+  .sidebar-logo {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+    opacity: 0.9;
+  }
+
+  .sidebar-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #4a5580;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .sidebar-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    padding-left: 12px;
+    margin-left: -12px;
+    transition: border-color 0.15s;
+  }
+
+  .sidebar-step.active {
+    border-left-color: #4f8ef7;
+  }
+
+  .sidebar-step.done {
+    border-left-color: #2ecc71;
+  }
+
+  .step-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #1e2a4a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #4a5580;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+
+  .sidebar-step.active .step-dot {
+    background: #4f8ef7;
+    color: #fff;
+  }
+
+  .sidebar-step.done .step-dot {
+    background: #2ecc71;
+    color: #fff;
+  }
+
+  .step-dot-check { display: none; }
+  .sidebar-step.done .step-dot-check { display: block; }
+  .sidebar-step.done .step-dot-num { display: none; }
+
+  .step-label {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #4a5580;
+    transition: color 0.15s;
+    line-height: 1.3;
+  }
+
+  .sidebar-step.active .step-label { color: #e8ecf7; }
+  .sidebar-step.done .step-label { color: #7aa8f5; }
+
+  /* Main */
+  .main {
+    flex: 1;
+    padding: 48px 56px 80px;
+    max-width: 720px;
+  }
+
+  .section {
+    display: none;
+  }
+  .section.active {
+    display: block;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    color: #4f8ef7;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .section-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: #0f1729;
+    margin-bottom: 6px;
+    line-height: 1.25;
+  }
+
+  .section-desc {
+    font-size: 14px;
+    color: #6b7494;
+    margin-bottom: 36px;
+    line-height: 1.6;
+    max-width: 560px;
+  }
+
+  .field {
+    margin-bottom: 28px;
+  }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 6px;
+  }
+
+  .field-hint {
+    font-size: 12px;
+    color: #8a90aa;
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  textarea,
+  select {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid #dde1ef;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: #1a1a2e;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    appearance: none;
+  }
+
+  input[type="text"]:focus,
+  input[type="email"]:focus,
+  textarea:focus,
+  select:focus {
+    border-color: #4f8ef7;
+    box-shadow: 0 0 0 3px rgba(79,142,247,0.12);
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 90px;
+    line-height: 1.6;
+  }
+
+  .char-count {
+    font-size: 11px;
+    color: #aab0c8;
+    text-align: right;
+    margin-top: 4px;
+  }
+
+  /* FAQ pairs */
+  .faq-pair {
+    background: #fff;
+    border: 1.5px solid #dde1ef;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+
+  .faq-pair label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #8a90aa;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 5px;
+  }
+
+  .faq-pair input, .faq-pair textarea {
+    border-color: #eef0f8;
+    background: #fafbfe;
+    font-size: 13.5px;
+  }
+
+  .faq-pair input:focus, .faq-pair textarea:focus {
+    border-color: #4f8ef7;
+    background: #fff;
+  }
+
+  .faq-pair textarea { min-height: 60px; }
+
+  .remove-faq {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    background: none;
+    border: none;
+    color: #c0c5d8;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.12s;
+  }
+  .remove-faq:hover { color: #e05252; }
+
+  .add-btn {
+    background: none;
+    border: 1.5px dashed #c0c8e8;
+    color: #4f8ef7;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.15s;
+    margin-top: 4px;
+  }
+  .add-btn:hover {
+    background: #f0f4ff;
+    border-color: #4f8ef7;
+  }
+
+  /* Tone selector */
+  .tone-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .tone-card {
+    border: 1.5px solid #dde1ef;
+    border-radius: 10px;
+    padding: 14px 12px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    background: #fff;
+  }
+
+  .tone-card:hover {
+    border-color: #4f8ef7;
+    background: #f5f8ff;
+  }
+
+  .tone-card.selected {
+    border-color: #4f8ef7;
+    background: #f0f4ff;
+  }
+
+  .tone-card input { display: none; }
+
+  .tone-emoji { font-size: 22px; margin-bottom: 6px; }
+
+  .tone-name {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 3px;
+  }
+
+  .tone-desc {
+    font-size: 11px;
+    color: #8a90aa;
+    line-height: 1.4;
+  }
+
+  /* Escalation */
+  .escalation-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .esc-option {
+    border: 1.5px solid #dde1ef;
+    border-radius: 10px;
+    padding: 12px 14px;
+    cursor: pointer;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.15s;
+  }
+
+  .esc-option:hover { border-color: #4f8ef7; background: #f5f8ff; }
+  .esc-option.selected { border-color: #4f8ef7; background: #f0f4ff; }
+  .esc-option input { display: none; }
+
+  .esc-icon { font-size: 18px; }
+
+  .esc-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a2e;
+  }
+
+  /* Nav buttons */
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid #edf0f8;
+  }
+
+  .btn-back {
+    background: none;
+    border: 1.5px solid #dde1ef;
+    color: #6b7494;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 11px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-back:hover { border-color: #9ba4c0; color: #1a1a2e; }
+
+  .btn-next {
+    background: #0f1729;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 11px 28px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-next:hover { background: #1e2f52; }
+
+  .btn-next.primary {
+    background: #4f8ef7;
+  }
+  .btn-next.primary:hover { background: #3a7ae0; }
+
+  /* Progress */
+  .progress-bar {
+    height: 3px;
+    background: #edf0f8;
+    border-radius: 2px;
+    margin-bottom: 48px;
+    max-width: 480px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: #4f8ef7;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+
+  /* Summary / Complete */
+  .complete-screen {
+    text-align: center;
+    padding: 60px 0 40px;
+  }
+  .complete-icon {
+    width: 64px;
+    height: 64px;
+    background: #eaf5ee;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 24px;
+  }
+  .complete-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0f1729;
+    margin-bottom: 10px;
+  }
+  .complete-desc {
+    font-size: 14px;
+    color: #6b7494;
+    max-width: 420px;
+    margin: 0 auto 32px;
+    line-height: 1.7;
+  }
+
+  .prompt-preview {
+    background: #0f1729;
+    border-radius: 12px;
+    padding: 24px 28px;
+    text-align: left;
+    margin-top: 32px;
+  }
+  .prompt-preview-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #4a5580;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .prompt-preview pre {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #a8c0f0;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .prompt-highlight { color: #7dd3a8; }
+  .prompt-key { color: #f0c070; }
+
+  .divider {
+    border: none;
+    border-top: 1px solid #edf0f8;
+    margin: 28px 0;
+  }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236b7494' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .tag {
+    border: 1.5px solid #dde1ef;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #6b7494;
+    cursor: pointer;
+    background: #fff;
+    transition: all 0.12s;
+    user-select: none;
+  }
+
+  .tag:hover { border-color: #4f8ef7; color: #4f8ef7; }
+  .tag.selected { border-color: #4f8ef7; background: #f0f4ff; color: #4f8ef7; font-weight: 600; }
+
+  @media (max-width: 700px) {
+    .sidebar { display: none; }
+    .main { padding: 28px 20px 60px; }
+    .tone-grid { grid-template-columns: 1fr 1fr; }
+    .escalation-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">ChatSetup</div>
+    <div class="sidebar-label">Setup Steps</div>
+
+    <div class="sidebar-step active" id="nav-1" onclick="goTo(1)">
+      <div class="step-dot"><span class="step-dot-num">1</span><span class="step-dot-check">✓</span></div>
+      <div class="step-label">Business Info</div>
+    </div>
+    <div class="sidebar-step" id="nav-2" onclick="goTo(2)">
+      <div class="step-dot"><span class="step-dot-num">2</span><span class="step-dot-check">✓</span></div>
+      <div class="step-label">Your Customers</div>
+    </div>
+    <div class="sidebar-step" id="nav-3" onclick="goTo(3)">
+      <div class="step-dot"><span class="step-dot-num">3</span><span class="step-dot-check">✓</span></div>
+      <div class="step-label">FAQs & Answers</div>
+    </div>
+    <div class="sidebar-step" id="nav-4" onclick="goTo(4)">
+      <div class="step-dot"><span class="step-dot-num">4</span><span class="step-dot-check">✓</span></div>
+      <div class="step-label">Workflows</div>
+    </div>
+    <div class="sidebar-step" id="nav-5" onclick="goTo(5)">
+      <div class="step-dot"><span class="step-dot-num">5</span><span class="step-dot-check">✓</span></div>
+      <div class="step-label">Bot Personality</div>
+    </div>
+    <div class="sidebar-step" id="nav-6" onclick="goTo(6)">
+      <div class="step-dot"><span class="step-dot-num">6</span><span class="step-dot-check">✓</span></div>
+      <div class="step-label">Escalation Rules</div>
+    </div>
+    <div class="sidebar-step" id="nav-7" onclick="goTo(7)">
+      <div class="step-dot"><span class="step-dot-num">7</span><span class="step-dot-check">✓</span></div>
+      <div class="step-label">Review & Generate</div>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="main">
+
+    <!-- Step 1: Business Info -->
+    <div class="section active" id="section-1">
+      <div class="progress-bar"><div class="progress-fill" style="width:14%"></div></div>
+      <div class="section-eyebrow">Step 1 of 7</div>
+      <div class="section-title">Tell us about your business</div>
+      <div class="section-desc">This helps the chatbot introduce itself and understand the context of every conversation.</div>
+
+      <div class="field">
+        <label>Business name</label>
+        <input type="text" id="biz-name" placeholder="e.g. Green Leaf Café" oninput="updateCharCount(this, 'biz-name-count', 60)">
+        <div class="char-count" id="biz-name-count">0 / 60</div>
+      </div>
+
+      <div class="field">
+        <label>What does your business do?</label>
+        <div class="field-hint">Write it as you would explain to a new customer. Plain language, no jargon.</div>
+        <textarea id="biz-desc" placeholder="e.g. We're a specialty coffee shop in Lahore that serves handcrafted drinks and light meals. We also offer catering for small events." oninput="updateCharCount(this, 'biz-desc-count', 300)"></textarea>
+        <div class="char-count" id="biz-desc-count">0 / 300</div>
+      </div>
+
+      <div class="field">
+        <label>Business category</label>
+        <select id="biz-category">
+          <option value="">Select a category</option>
+          <option>Restaurant / Café / Food</option>
+          <option>Retail / E-commerce</option>
+          <option>Health & Wellness / Clinic</option>
+          <option>Beauty / Salon / Spa</option>
+          <option>Education / Tutoring</option>
+          <option>Real Estate</option>
+          <option>Gym / Fitness</option>
+          <option>Software / SaaS</option>
+          <option>Professional Services</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Business hours</label>
+        <div class="field-hint">The chatbot will use this when customers ask "are you open?" or "when do you close?"</div>
+        <input type="text" id="biz-hours" placeholder="e.g. Mon–Sat 9am–10pm, Sunday 11am–8pm. Closed on public holidays.">
+      </div>
+
+      <div class="field">
+        <label>Location or service area</label>
+        <input type="text" id="biz-location" placeholder="e.g. Gulberg, Lahore — or — We deliver across all of Pakistan">
+      </div>
+
+      <div class="nav-row">
+        <div></div>
+        <button class="btn-next primary" onclick="next(1)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Your Customers -->
+    <div class="section" id="section-2">
+      <div class="progress-bar"><div class="progress-fill" style="width:28%"></div></div>
+      <div class="section-eyebrow">Step 2 of 7</div>
+      <div class="section-title">Who are your customers?</div>
+      <div class="section-desc">The chatbot uses this to match its language and tone to the people it will talk with.</div>
+
+      <div class="field">
+        <label>Describe your typical customer</label>
+        <div class="field-hint">Age range, what they usually want, how they usually contact you.</div>
+        <textarea id="cust-desc" placeholder="e.g. Mostly young professionals aged 20–35. They usually ask about menu items, delivery options, and reservation availability. Most reach out via WhatsApp or Instagram." oninput="updateCharCount(this, 'cust-desc-count', 300)"></textarea>
+        <div class="char-count" id="cust-desc-count">0 / 300</div>
+      </div>
+
+      <div class="field">
+        <label>What languages do your customers use?</label>
+        <div class="tag-row" id="lang-tags">
+          <div class="tag" onclick="toggleTag(this)">English</div>
+          <div class="tag" onclick="toggleTag(this)">Urdu</div>
+          <div class="tag" onclick="toggleTag(this)">Arabic</div>
+          <div class="tag" onclick="toggleTag(this)">Hindi</div>
+          <div class="tag" onclick="toggleTag(this)">French</div>
+          <div class="tag" onclick="toggleTag(this)">Spanish</div>
+          <div class="tag" onclick="toggleTag(this)">Other</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>What do customers ask you most often? <span style="font-weight:400;color:#8a90aa">(before the chatbot)</span></label>
+        <div class="field-hint">Think about your WhatsApp messages, phone calls, or front desk questions. Even simple things.</div>
+        <textarea id="cust-common" placeholder="e.g. They ask about our prices, whether we do home delivery, how long orders take, and whether we can customize meals for dietary restrictions." oninput="updateCharCount(this, 'cust-common-count', 400)"></textarea>
+        <div class="char-count" id="cust-common-count">0 / 400</div>
+      </div>
+
+      <div class="field">
+        <label>What do customers ask that surprises you?</label>
+        <div class="field-hint">Questions that seem obvious to you but customers still ask. This is often what the chatbot needs most.</div>
+        <textarea id="cust-surprise" placeholder="e.g. People always ask if we have parking, whether the WiFi password is available, and whether we accept cards or cash only." oninput="updateCharCount(this, 'cust-surprise-count', 300)"></textarea>
+        <div class="char-count" id="cust-surprise-count">0 / 300</div>
+      </div>
+
+      <div class="nav-row">
+        <button class="btn-back" onclick="prev(2)">← Back</button>
+        <button class="btn-next primary" onclick="next(2)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: FAQs -->
+    <div class="section" id="section-3">
+      <div class="progress-bar"><div class="progress-fill" style="width:42%"></div></div>
+      <div class="section-eyebrow">Step 3 of 7</div>
+      <div class="section-title">Your FAQs and answers</div>
+      <div class="section-desc">Add at least 5 common questions and your exact answers. The chatbot will use these word-for-word when relevant.</div>
+
+      <div id="faq-container">
+        <!-- FAQ pairs added dynamically -->
+      </div>
+
+      <button class="add-btn" onclick="addFaq()">+ Add another question</button>
+
+      <div class="nav-row">
+        <button class="btn-back" onclick="prev(3)">← Back</button>
+        <button class="btn-next primary" onclick="next(3)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Workflows -->
+    <div class="section" id="section-4">
+      <div class="progress-bar"><div class="progress-fill" style="width:57%"></div></div>
+      <div class="section-eyebrow">Step 4 of 7</div>
+      <div class="section-title">How things work at your business</div>
+      <div class="section-desc">Describe your key processes step by step. The chatbot will walk customers through these when they ask.</div>
+
+      <div class="field">
+        <label>How does a customer place an order or make a booking?</label>
+        <div class="field-hint">List the steps as you would tell a new customer.</div>
+        <textarea id="wf-order" placeholder="e.g. 1. Browse our menu on the website or WhatsApp us. 2. Tell us your items and delivery address. 3. We confirm and give you an estimated time. 4. Payment on delivery or via Easypaisa." style="min-height:110px;"></textarea>
+      </div>
+
+      <div class="field">
+        <label>What is your refund or return policy?</label>
+        <textarea id="wf-refund" placeholder="e.g. We accept returns within 7 days if the product is unused and in original packaging. Refunds are processed within 3–5 business days to the original payment method."></textarea>
+      </div>
+
+      <div class="field">
+        <label>How does a customer track their order or booking status?</label>
+        <textarea id="wf-tracking" placeholder="e.g. We send a WhatsApp confirmation with an estimated delivery window. Customers can reply to that message to get an update at any time."></textarea>
+      </div>
+
+      <div class="field">
+        <label>Any other process customers often ask about?</label>
+        <div class="field-hint">Membership signup, subscription cancellation, appointment rescheduling, etc.</div>
+        <textarea id="wf-other" placeholder="e.g. To reschedule an appointment, customers need to give us at least 24 hours notice by calling or WhatsApp."></textarea>
+      </div>
+
+      <div class="nav-row">
+        <button class="btn-back" onclick="prev(4)">← Back</button>
+        <button class="btn-next primary" onclick="next(4)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 5: Personality -->
+    <div class="section" id="section-5">
+      <div class="progress-bar"><div class="progress-fill" style="width:71%"></div></div>
+      <div class="section-eyebrow">Step 5 of 7</div>
+      <div class="section-title">Your chatbot's personality</div>
+      <div class="section-desc">How should the chatbot sound? This determines how every response is written.</div>
+
+      <div class="field">
+        <label>Chatbot name</label>
+        <div class="field-hint">What should the bot call itself? Keep it simple and on-brand.</div>
+        <input type="text" id="bot-name" placeholder="e.g. Lumi, Aria, Support Bot, or just your business name + Assistant">
+      </div>
+
+      <div class="field">
+        <label>Tone of voice</label>
+        <div class="field-hint">Choose the style that best matches your brand.</div>
+        <div class="tone-grid">
+          <div class="tone-card" onclick="selectTone(this, 'friendly')">
+            <div class="tone-emoji">😊</div>
+            <div class="tone-name">Friendly</div>
+            <div class="tone-desc">Warm, casual, approachable</div>
+          </div>
+          <div class="tone-card" onclick="selectTone(this, 'professional')">
+            <div class="tone-emoji">💼</div>
+            <div class="tone-name">Professional</div>
+            <div class="tone-desc">Clear, reliable, business-like</div>
+          </div>
+          <div class="tone-card" onclick="selectTone(this, 'formal')">
+            <div class="tone-emoji">🎩</div>
+            <div class="tone-name">Formal</div>
+            <div class="tone-desc">Respectful, structured, precise</div>
+          </div>
+          <div class="tone-card" onclick="selectTone(this, 'playful')">
+            <div class="tone-emoji">🎉</div>
+            <div class="tone-name">Playful</div>
+            <div class="tone-desc">Fun, energetic, light</div>
+          </div>
+          <div class="tone-card" onclick="selectTone(this, 'empathetic')">
+            <div class="tone-emoji">🤝</div>
+            <div class="tone-name">Empathetic</div>
+            <div class="tone-desc">Caring, patient, understanding</div>
+          </div>
+          <div class="tone-card" onclick="selectTone(this, 'concise')">
+            <div class="tone-emoji">⚡</div>
+            <div class="tone-name">Concise</div>
+            <div class="tone-desc">Direct, no fluff, fast answers</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:28px;">
+        <label>What should the bot never say or do?</label>
+        <div class="field-hint">Promises you can't keep, topics to avoid, competitor names, sensitive subjects.</div>
+        <textarea id="bot-never" placeholder="e.g. Never promise same-day delivery. Never discuss competitor pricing. Never make commitments about discounts without manager approval."></textarea>
+      </div>
+
+      <div class="field">
+        <label>Opening message</label>
+        <div class="field-hint">The first thing the bot says when a customer starts a chat.</div>
+        <textarea id="bot-greeting" placeholder="e.g. Hi! I'm Lumi, your assistant at Green Leaf Café 🌿 How can I help you today?" style="min-height:70px;"></textarea>
+      </div>
+
+      <div class="nav-row">
+        <button class="btn-back" onclick="prev(5)">← Back</button>
+        <button class="btn-next primary" onclick="next(5)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 6: Escalation -->
+    <div class="section" id="section-6">
+      <div class="progress-bar"><div class="progress-fill" style="width:85%"></div></div>
+      <div class="section-eyebrow">Step 6 of 7</div>
+      <div class="section-title">When to involve a human</div>
+      <div class="section-desc">The chatbot should know its limits. Define when and how it hands off to your team.</div>
+
+      <div class="field">
+        <label>When should the bot immediately involve a human?</label>
+        <div class="field-hint">Select all that apply.</div>
+        <div class="tag-row" id="escalation-triggers">
+          <div class="tag" onclick="toggleTag(this)">Customer is angry or frustrated</div>
+          <div class="tag" onclick="toggleTag(this)">Complaint about a product or service</div>
+          <div class="tag" onclick="toggleTag(this)">Refund or compensation request</div>
+          <div class="tag" onclick="toggleTag(this)">Legal or billing dispute</div>
+          <div class="tag" onclick="toggleTag(this)">Question not in knowledge base</div>
+          <div class="tag" onclick="toggleTag(this)">Customer explicitly asks for human</div>
+          <div class="tag" onclick="toggleTag(this)">Large or custom order</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>How should the bot hand off?</label>
+        <div class="escalation-grid">
+          <div class="esc-option" onclick="selectEsc(this, 'whatsapp')">
+            <div class="esc-icon">📱</div>
+            <div class="esc-label">WhatsApp number</div>
+          </div>
+          <div class="esc-option" onclick="selectEsc(this, 'email')">
+            <div class="esc-icon">📧</div>
+            <div class="esc-label">Email address</div>
+          </div>
+          <div class="esc-option" onclick="selectEsc(this, 'callback')">
+            <div class="esc-icon">📞</div>
+            <div class="esc-label">Request a callback</div>
+          </div>
+          <div class="esc-option" onclick="selectEsc(this, 'form')">
+            <div class="esc-icon">📋</div>
+            <div class="esc-label">Fill a contact form</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Contact details for handoff</label>
+        <div class="field-hint">The exact number, email, or link the bot will share.</div>
+        <input type="text" id="esc-contact" placeholder="e.g. +92 300 1234567 or support@yourbusiness.com">
+      </div>
+
+      <div class="field">
+        <label>What should the bot say when handing off?</label>
+        <div class="field-hint">Keep it warm and clear. The customer shouldn't feel abandoned.</div>
+        <textarea id="esc-message" placeholder="e.g. I want to make sure you get the best help with this. Let me connect you with our team directly — you can reach them at the contact below and they'll get back to you within an hour." style="min-height:80px;"></textarea>
+      </div>
+
+      <div class="nav-row">
+        <button class="btn-back" onclick="prev(6)">← Back</button>
+        <button class="btn-next primary" onclick="next(6)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 7: Review -->
+    <div class="section" id="section-7">
+      <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+
+      <div class="complete-screen">
+        <div class="complete-icon">✅</div>
+        <div class="complete-title">Your chatbot is ready to generate</div>
+        <div class="complete-desc">Everything you've entered will be converted into a structured system prompt that powers your chatbot. Review the summary below, then generate.</div>
+
+        <div style="text-align:left; margin-top:8px;">
+          <div style="background:#fff; border:1.5px solid #dde1ef; border-radius:12px; padding:24px 28px; margin-bottom:16px;">
+            <div style="font-size:11px;font-weight:700;color:#4a5580;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:14px;">Summary</div>
+            <div id="summary-content" style="font-size:13.5px;color:#3a405e;line-height:1.8;"></div>
+          </div>
+
+          <div class="prompt-preview">
+            <div class="prompt-preview-label">Generated System Prompt Preview</div>
+            <pre id="prompt-output">Fill in the form to see your generated system prompt here.</pre>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;justify-content:center;margin-top:32px;">
+          <button class="btn-back" onclick="prev(7)">← Edit answers</button>
+          <button class="btn-next primary" onclick="copyPrompt()" id="copy-btn">Copy system prompt</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let currentStep = 1;
+  let selectedTone = '';
+  let selectedEsc = '';
+  let faqCount = 0;
+
+  // Init 3 FAQs
+  window.onload = function() {
+    addFaq(); addFaq(); addFaq();
+  };
+
+  function addFaq() {
+    faqCount++;
+    const c = document.getElementById('faq-container');
+    const div = document.createElement('div');
+    div.className = 'faq-pair';
+    div.id = 'faq-' + faqCount;
+    div.innerHTML = `
+      <button class="remove-faq" onclick="removeFaq(${faqCount})" title="Remove">×</button>
+      <label>Question ${faqCount}</label>
+      <input type="text" id="fq-${faqCount}" placeholder="e.g. Do you offer home delivery?" style="margin-bottom:10px;">
+      <label>Answer</label>
+      <textarea id="fa-${faqCount}" placeholder="e.g. Yes! We deliver within a 10km radius. Orders over Rs. 1,000 get free delivery. Otherwise there's a flat Rs. 100 fee."></textarea>
+    `;
+    c.appendChild(div);
+  }
+
+  function removeFaq(id) {
+    const el = document.getElementById('faq-' + id);
+    if (el) el.remove();
+  }
+
+  function selectTone(el, tone) {
+    document.querySelectorAll('.tone-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedTone = tone;
+  }
+
+  function selectEsc(el, type) {
+    document.querySelectorAll('.esc-option').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedEsc = type;
+  }
+
+  function toggleTag(el) {
+    el.classList.toggle('selected');
+  }
+
+  function updateCharCount(el, counterId, max) {
+    const counter = document.getElementById(counterId);
+    if (counter) counter.textContent = el.value.length + ' / ' + max;
+  }
+
+  function goTo(step) {
+    document.getElementById('section-' + currentStep).classList.remove('active');
+    document.getElementById('nav-' + currentStep).classList.remove('active');
+    document.getElementById('nav-' + currentStep).classList.add('done');
+
+    currentStep = step;
+    document.getElementById('section-' + step).classList.add('active');
+
+    document.querySelectorAll('.sidebar-step').forEach((s, i) => {
+      s.classList.remove('active');
+      if (i + 1 < step) s.classList.add('done');
+    });
+    document.getElementById('nav-' + step).classList.add('active');
+    document.getElementById('nav-' + step).classList.remove('done');
+
+    if (step === 7) generateSummary();
+  }
+
+  function next(step) { goTo(step + 1); }
+  function prev(step) { goTo(step - 1); }
+
+  function getSelectedTags(containerId) {
+    const tags = document.querySelectorAll('#' + containerId + ' .tag.selected');
+    return Array.from(tags).map(t => t.textContent.trim());
+  }
+
+  function collectFaqs() {
+    const pairs = [];
+    document.querySelectorAll('.faq-pair').forEach(pair => {
+      const id = pair.id.split('-')[1];
+      const q = document.getElementById('fq-' + id);
+      const a = document.getElementById('fa-' + id);
+      if (q && a && q.value.trim() && a.value.trim()) {
+        pairs.push({ q: q.value.trim(), a: a.value.trim() });
+      }
+    });
+    return pairs;
+  }
+
+  function generateSummary() {
+    const name = document.getElementById('biz-name').value || '[Business Name]';
+    const desc = document.getElementById('biz-desc').value || '[Description]';
+    const hours = document.getElementById('biz-hours').value || 'Not specified';
+    const location = document.getElementById('biz-location').value || 'Not specified';
+    const botName = document.getElementById('bot-name').value || 'Assistant';
+    const greeting = document.getElementById('bot-greeting').value || '';
+    const never = document.getElementById('bot-never').value || '';
+    const escContact = document.getElementById('esc-contact').value || '[contact]';
+    const escMsg = document.getElementById('esc-message').value || '';
+    const faqs = collectFaqs();
+    const langs = getSelectedTags('lang-tags');
+    const escalationTriggers = getSelectedTags('escalation-triggers');
+    const wfOrder = document.getElementById('wf-order').value || '';
+    const wfRefund = document.getElementById('wf-refund').value || '';
+
+    // Summary
+    const summaryEl = document.getElementById('summary-content');
+    summaryEl.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 28px;">
+        <div><span style="color:#8a90aa;font-size:12px;">Business</span><br>${name}</div>
+        <div><span style="color:#8a90aa;font-size:12px;">Bot name</span><br>${botName}</div>
+        <div><span style="color:#8a90aa;font-size:12px;">Hours</span><br>${hours}</div>
+        <div><span style="color:#8a90aa;font-size:12px;">Tone</span><br>${selectedTone || 'Not selected'}</div>
+        <div><span style="color:#8a90aa;font-size:12px;">FAQs added</span><br>${faqs.length} questions</div>
+        <div><span style="color:#8a90aa;font-size:12px;">Languages</span><br>${langs.join(', ') || 'Not specified'}</div>
+        <div><span style="color:#8a90aa;font-size:12px;">Escalation via</span><br>${selectedEsc || 'Not selected'}</div>
+        <div><span style="color:#8a90aa;font-size:12px;">Contact</span><br>${escContact}</div>
+      </div>
+    `;
+
+    // Build prompt
+    let faqBlock = faqs.map((f, i) => `Q${i+1}: ${f.q}\nA${i+1}: ${f.a}`).join('\n\n');
+
+    let prompt = `You are ${botName}, a customer support assistant for ${name}.
+
+ABOUT THE BUSINESS:
+${desc}
+Hours: ${hours}
+Location: ${location}
+
+YOUR PERSONALITY:
+Tone: ${selectedTone || 'professional'}
+${langs.length ? 'Always respond in the same language the customer uses. Supported: ' + langs.join(', ') + '.' : ''}
+Keep answers clear and to the point. Do not repeat yourself.
+
+${greeting ? 'OPENING MESSAGE:\n' + greeting + '\n' : ''}
+KNOWLEDGE BASE — FAQs:
+${faqBlock || '[No FAQs entered yet]'}
+
+${wfOrder ? 'ORDERING / BOOKING PROCESS:\n' + wfOrder : ''}
+${wfRefund ? '\nREFUND / RETURN POLICY:\n' + wfRefund : ''}
+
+RULES:
+- Answer only from the information above. Do not guess or add details not listed.
+- If unsure what the customer is asking, ask ONE short clarifying question before answering.
+- If a question is not covered above, say exactly: "${escMsg || 'Let me connect you with our team.'}" and provide: ${escContact}
+${never ? '- NEVER: ' + never : ''}
+
+ESCALATE IMMEDIATELY (hand off to human) when:
+${escalationTriggers.length ? escalationTriggers.map(t => '- ' + t).join('\n') : '- Customer explicitly requests a human'}`;
+
+    document.getElementById('prompt-output').textContent = prompt;
+  }
+
+  function copyPrompt() {
+    const text = document.getElementById('prompt-output').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => btn.textContent = 'Copy system prompt', 2000);
+    });
+  }
+</script>
+
+</body>
+</html>
